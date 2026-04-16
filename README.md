@@ -4,7 +4,7 @@ shiro.ai is an advanced, AI-powered study companion designed to transform how yo
 
 Whether you need to cram for an exam, visualize complex topics, or listen to your notes on the go, shiro.ai has you covered.
 
-![Dashboard Overview](images/Screenshot%202025-12-19%20025405.png)
+![Dashboard Overview](images/Screenshot%202025-12-19%2002545.png)
 
 ## 🚀 Key Features
 
@@ -22,9 +22,9 @@ Whether you need to cram for an exam, visualize complex topics, or listen to you
 
 | Feature | Preview |
 | :--- | :--- |
-| **Summary Learning** | ![Chat Interface](images/Screenshot%202025-12-19%20025424.png) |
-| **Flipcards** | ![Quiz Interface](images/Screenshot%202025-12-19%20025446.png) |
-| **Quiz** | ![Tools Interface](images/Screenshot%202025-12-19%20025513.png) |
+| **Summary Learning** | ![Chat Interface](images/Screenshot%02025-12-19%20025424.p) |
+| **Flipcards** | ![Quiz Interface](images/Screenshot%20025-12-19%20025446.png) |
+| **Quiz** | ![Tools Interface](images/Screenshot%20025-12-19%20025513.png) |
 **Audio Podcast**
 **IMP Pyq**
 **Chat Ask Questions**
