@@ -1,0 +1,157 @@
+.sidebar {
+	min-height: 100vh;
+	width: auto;
+	display: inline-flex;
+	flex-direction: column;
+	justify-content: space-between;
+	background-color: #131719;
+	padding: 10px 15px;
+	color: white;
+}
+
+/* Top Section */
+.sidebar .top {
+	margin-top: 15px;
+}
+
+/* Logo & Brand Name */
+.sidebar .brand {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-left: 10px;
+	margin-bottom: 10px;
+}
+.sidebar .brand .logo {
+	width: 28px;
+}
+
+/* Icon Styling */
+.sidebar img {
+	width: 20px;
+}
+
+.sidebar .menu {
+	display: block;
+	margin-left: 10px;
+	cursor: pointer;
+}
+
+/* New Chat */
+.sidebar .new-chat {
+	margin-top: 30px;
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 15px;
+	background-color: #e6eaf1;
+	border-radius: 50px;
+	font-size: 14px;
+	color: grey;
+	cursor: pointer;
+}
+.sidebar .new-chat:hover {
+	background-color: #d4dbe5;
+}
+
+/* Recent Entries */
+.sidebar .recent {
+	display: flex;
+	flex-direction: column;
+	animation: fadeIn 0.8s ease-in-out;
+}
+.sidebar .recent-title {
+	margin-top: 30px;
+	margin-bottom: 20px;
+	font-size: 14px;
+	color: #a9a9a9;
+	padding-left: 10px;
+}
+
+/* Sidebar Entry (for chats, search, vendors) */
+.sidebar .recent-entry {
+	display: flex;
+	align-items: center;
+	font-size: 14px;
+	gap: 10px;
+	padding: 10px;
+	padding-right: 10px;
+	border-radius: 50px;
+	color: #c1c1c1;
+	cursor: pointer;
+	transition: background 0.2s ease;
+}
+.sidebar .recent-entry:hover {
+	background-color: #2a2f34;
+}
+
+.sidebar .recent-entry p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+/* Scrollable lists for Chats and Documents */
+.scrollable-list {
+  max-height: 200px;      /* Limits the height */
+  overflow-y: auto;       /* Enables vertical scrolling */
+  padding-right: 5px;     /* Prevents scrollbar overlay on text */
+  margin-bottom: 10px;    /* Spacing below the lists */
+}
+
+/* Bottom Section */
+.sidebar .bottom {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 20px;
+}
+.sidebar .bottom-item {
+	padding-right: 10px;
+	cursor: pointer;
+}
+
+/* Modal Overlay - full screen transparent background */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;  /* Make sure it's above everything */
+}
+
+/* Modal Content box */
+.modal-content {
+  background-color: #222;
+  padding: 20px;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 500px;
+  color: white;
+  box-shadow: 0 0 10px #000;
+}
+
+/* Animations */
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0px);
+	}
+}
+
+/* Responsive: hide on small devices */
+@media (max-width: 600px) {
+	.sidebar {
+		display: none;
+	}
+}

@@ -1,0 +1,123 @@
+.right-sidebar {
+  min-height: 100vh;
+  width: 250px;
+  padding: 10px 15px;
+  background-color: #131719;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+}
+
+.right-sidebar::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+}
+
+.right-sidebar-header {
+    margin-top: 15px;
+    margin-bottom: 20px;
+}
+
+.right-sidebar-title {
+	font-size: 14px;
+	color: #a9a9a9;
+	padding-left: 10px;
+}
+
+.right-sidebar-entry {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px;
+	border-radius: 50px;
+	color: #c1c1c1;
+	cursor: pointer;
+	transition: background 0.2s ease;
+}
+
+.right-sidebar-entry:hover {
+	background-color: #2a2f34;
+}
+
+.right-sidebar-entry img {
+    width: 20px;
+    flex-shrink: 0;
+}
+
+.right-sidebar-entry p {
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Saved content sections */
+.saved-podcasts-section,
+.saved-flashcards-section,
+.saved-mindmaps-section {
+    margin-top: 20px;
+    border-top: 1px solid #2a2f34;
+    padding-top: 10px;
+}
+
+.saved-podcast-item,
+.saved-flashcard-item,
+.saved-mindmap-item {
+    background-color: #2a2f34;
+    margin-bottom: 5px;
+    padding: 8px 10px;
+    border-radius: 5px;
+    font-size: 13px;
+    color: #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.saved-podcast-item:hover,
+.saved-flashcard-item:hover,
+.saved-mindmap-item:hover {
+    background-color: #3a3f44;
+    transform: translateX(3px);
+}
+
+/* Mind map specific styles */
+.saved-mindmap-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+}
+
+.mindmap-info {
+    max-height: 15px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mindmap-topic {
+    font-size: 5px;
+    color: #e0e0e0;
+    margin: 0;
+    font-weight: 300;
+    line-height: 1;
+}
+
+.mindmap-nodes {
+    font-size: 10px;
+    color: #a9a9a9;
+    font-weight: 200;
+}
+
+/* Hover effects for different content types */
+.saved-mindmap-item:hover .mindmap-topic {
+    color: #4facfe;
+}
+
+.saved-flashcard-item:hover p {
+    color: #ffd700;
+}
+
+.saved-podcast-item:hover p {
+    color: #ff6b6b;
+}

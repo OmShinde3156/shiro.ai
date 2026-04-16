@@ -1,0 +1,101 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
+:root {
+  --bg-main: #0b0f1a;
+  --bg-card: rgba(20, 26, 46, 0.6);
+  --bg-card-light: #1c2540;
+  --primary: #72dcff;
+  --secondary: #dd8bfb;
+  --text-main: #ecedf6;
+  --text-muted: rgba(236, 237, 246, 0.6);
+  --border: rgba(255, 255, 255, 0.08);
+  --sidebar-bg: #0b0e14;
+  --app-gradient: radial-gradient(circle at top, #0f172a, #020617);
+}
+
+.light-mode {
+  --bg-main: #faf9f6; /* Softer, highly readable off-white */
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-card-light: #ffffff;
+  --primary: #0ea5e9; /* Vibrant Sky Blue */
+  --secondary: #8b5cf6; /* Vibrant Violet */
+  --text-main: #1e293b; /* Slate 800 - crisp text */
+  --text-muted: #64748b; /* Slate 500 */
+  --border: rgba(15, 23, 42, 0.08); /* Subtle dark border */
+  --sidebar-bg: #f1f0ea; /* Slightly distinct from main background */
+  --app-gradient: radial-gradient(circle at top, #ffffff, #faf9f6);
+}
+
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: 'Outfit', sans-serif;
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+              color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* 🌌 BACKGROUND */
+body {
+  background: var(--app-gradient);
+  color: var(--text-main);
+  background-attachment: fixed;
+}
+
+/* ✨ SMOOTH FADE */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 🧊 GLASS CARD */
+.glass-card {
+  background: rgba(20, 26, 46, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  transition: 0.3s;
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+}
+
+/* 🔘 NEON BUTTON */
+.neon-btn {
+  background: linear-gradient(135deg, #5eead4, #a78bfa);
+  border: none;
+  padding: 12px 20px;
+  border-radius: 12px;
+  color: black;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.neon-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(167, 139, 250, 0.6);
+}
+
+/* 🧭 SCROLLBAR */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2f45;
+  border-radius: 10px;
+}

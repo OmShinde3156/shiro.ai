@@ -1,0 +1,63 @@
+# SHIRO.AI - PROJECT KNOWLEDGE BASE
+
+## 1. PROJECT OVERVIEW
+**Project Name:** Shiro.ai (formerly Rexy.AI)
+**Tagline:** The Neon Curator / AI-Powered Personalized Study Guide
+**Domain:** EdTech / AI-Assisted Learning
+**Architecture:** RAG (Retrieval-Augmented Generation) Architecture
+
+## 2. ARCHITECTURE & TECH STACK
+### Frontend (buscul/)
+- **Framework:** React (Vite)
+- **Styling:** Tailwind CSS + Vanilla CSS (Neon Dark Theme)
+- **Visualization:** React Flow (Mind Maps), CSS Bento Grids
+- **Icons:** Material Symbols (Google)
+- **State Management:** React Context API (AuthContext, PodcastContext, Context)
+
+### Backend (Backend/)
+- **Framework:** FastAPI (Python)
+- **Server:** Uvicorn
+- **Database:** SQLAlchemy (SQLite default)
+- **Vector DB:** ChromaDB (for RAG/Semantic Search)
+- **AI Models:** Groq (Llama 3.3 70B), OpenAI (GPT-4o-mini)
+- **Embeddings:** SentenceTransformers (all-MiniLM-L6-v2)
+- **Processing:** PyMuPDF (PDF), python-docx (DOCX), OCR for images
+
+## 3. CORE FEATURES
+1. **RAG-based AI Tutor (Shiro):** Chat with uploaded documents using semantic retrieval.
+2. **Document Management:** Multi-format upload (PDF, DOCX, Images) with automatic subject categorization.
+3. **AI Quiz Generator:** Dynamic MCQ generation from content with difficulty settings and automated scoring.
+4. **Flashcard System:** AI-generated flashcards using SM-2 Spaced Repetition algorithm for long-term retention.
+5. **Mind Map Generator:** Hierarchical visualization of document concepts with "Knowledge Score" overlays.
+6. **Audio Summaries (Podcasts):** Text-to-Speech (TTS) conversion of document summaries into episodic audio content.
+7. **PYQ Prediction:** Analysis of Previous Year Questions alongside study material to predict important topics.
+8. **Study Timetable:** Automated study plan generator based on exam dates and subject priorities.
+9. **Progress Analytics:** Activity history tracking, study streaks, knowledge heatmaps, and subject performance analysis.
+10. **Multilingual Support:** Support for English, Hindi, and Marathi.
+
+## 4. DIRECTORY STRUCTURE
+- `/Backend`
+    - `/database`: DB connection and Vector DB (Chroma) logic.
+    - `/models`: SQLAlchemy models and Pydantic schemas.
+    - `/services`: Core business logic (Quiz, Flashcard, MindMap, PDF, Podcast, etc.).
+    - `/utils`: LLM client, Text splitters, Document processors, TTS client.
+    - `/static`: Generated audio files and temporary assets.
+    - `main.py`: FastAPI entry point and route definitions.
+- `/buscul`
+    - `/src/components`: UI components split into Main, Sidebar, RightSidebar, and Pages.
+    - `/src/context`: React Context providers for global state.
+    - `/src/api`: API configuration (Base URL).
+    - `index.html`: Main entry point with Shiro.ai branding.
+
+## 5. API ENDPOINTS (KEY)
+- **Auth:** `/login`, `/users`, `/request-otp`, `/verify-otp`
+- **Docs:** `POST /upload-document`, `GET /documents/{user_id}`, `DELETE /documents/{id}`
+- **Quiz:** `POST /generate-quiz`, `POST /submit-quiz`, `POST /important-questions`
+- **Study:** `POST /generate-flashcards`, `POST /generate-mindmap`, `POST /summarize`
+- **Analytics:** `GET /progress/{user_id}`, `GET /activity/{user_id}`, `GET /dashboard/{user_id}`
+- **Plan:** `POST /create-timetable`, `GET /timetable/{user_id}`
+
+## 6. STORAGE STRATEGY
+- **Relational:** User profiles, document metadata, quiz results, and activity logs in SQLite.
+- **Vector:** Text chunks and embeddings stored in ChromaDB collections mapped to Document IDs.
+- **Filesystem:** Original uploads and generated audio files stored in local directories.

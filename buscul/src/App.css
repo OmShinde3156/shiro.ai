@@ -1,0 +1,15 @@
+.app-container {
+  display: flex;
+  height: 100vh;
+  animation:fadeIn 2.0s ;
+}
+
+.main-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+}
+
+.main-content::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+}

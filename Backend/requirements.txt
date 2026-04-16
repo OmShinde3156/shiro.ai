@@ -1,0 +1,29 @@
+fastapi==0.135.1
+uvicorn[standard]==0.41.0
+python-multipart==0.0.22
+pydantic==2.12.5
+SQLAlchemy==2.0.48
+alembic==1.18.4
+python-dotenv==1.0.1
+requests==2.32.3
+aiofiles==25.1.0
+
+# Direct LLM APIs
+openai==2.29.0
+httpx==0.28.1
+groq==0.37.1
+
+# Vector DB & Embeddings
+sentence-transformers==5.3.0
+chromadb==1.5.2
+
+# Document Processing
+PyMuPDF==1.27.2
+pytesseract==0.3.13
+python-docx==1.2.0
+pillow==11.1.0
+gTTS==2.5.4
+networkx==3.6.1
+python-louvain==0.16
+scikit-learn==1.8.0
+numpy==2.2.4

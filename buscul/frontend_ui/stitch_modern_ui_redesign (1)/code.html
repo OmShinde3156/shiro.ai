@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Shiro.ai | Flashcard Study</title><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#fe7d5e",
+                        "on-tertiary-fixed-variant": "#711601",
+                        "error-dim": "#d7383b",
+                        "on-tertiary": "#621100",
+                        "on-surface": "#ecedf6",
+                        "surface-dim": "#0b0e14",
+                        "primary": "#72dcff",
+                        "primary-fixed-dim": "#00c3ed",
+                        "background": "#0b0e14",
+                        "outline": "#73757d",
+                        "secondary-fixed": "#f2c1ff",
+                        "surface": "#0b0e14",
+                        "on-surface-variant": "#a9abb3",
+                        "inverse-surface": "#f9f9ff",
+                        "on-primary": "#004c5e",
+                        "on-primary-container": "#004253",
+                        "surface-variant": "#22262f",
+                        "inverse-on-surface": "#52555c",
+                        "outline-variant": "#45484f",
+                        "on-secondary-fixed-variant": "#792c97",
+                        "secondary": "#dd8bfb",
+                        "surface-container-low": "#10131a",
+                        "secondary-fixed-dim": "#ebadff",
+                        "primary-dim": "#00c3ed",
+                        "tertiary-dim": "#f7785a",
+                        "on-tertiary-container": "#4e0b00",
+                        "on-primary-fixed": "#002c38",
+                        "surface-container-lowest": "#000000",
+                        "primary-container": "#00d2ff",
+                        "surface-bright": "#282c36",
+                        "on-background": "#ecedf6",
+                        "on-tertiary-fixed": "#360500",
+                        "tertiary-fixed-dim": "#fe7d5e",
+                        "on-error-container": "#ffa8a3",
+                        "secondary-dim": "#ce7eec",
+                        "surface-container": "#161a21",
+                        "surface-container-highest": "#22262f",
+                        "error": "#ff716c",
+                        "on-secondary-container": "#f1bfff",
+                        "on-secondary": "#4c0068",
+                        "on-primary-fixed-variant": "#004c5e",
+                        "surface-container-high": "#1c2028",
+                        "surface-tint": "#72dcff",
+                        "tertiary": "#ff937a",
+                        "secondary-container": "#6e208c",
+                        "tertiary-fixed": "#ff937a",
+                        "primary-fixed": "#00d2ff",
+                        "on-secondary-fixed": "#580078",
+                        "inverse-primary": "#00687f",
+                        "on-error": "#490006",
+                        "error-container": "#9f0519"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(34, 38, 47, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .flashcard-inner {
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary/30">
+<!-- SideNavBar (Left) -->
+<aside class="h-screen w-64 fixed left-0 top-0 z-50 bg-[#0b0e14] flex flex-col p-6 border-r border-[#ecedf6]/10 shadow-[4px_0_24px_rgba(114,220,255,0.08)]">
+<div class="mb-10 flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">psychology</span>
+</div>
+<div>
+<h1 class="text-xl font-bold text-[#72dcff] font-headline tracking-tight">Shiro.ai</h1><p class="text-[10px] uppercase tracking-widest text-[#ecedf6]/40 font-label">The Neon Curator</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2 flex-grow">
+<a class="flex items-center gap-3 px-4 py-3 text-[#ecedf6]/60 hover:text-[#ecedf6] hover:bg-[#ecedf6]/5 rounded-xl transition-colors font-['Inter'] font-medium text-sm tracking-wide group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">chat</span>
+                Chats
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#ecedf6]/60 hover:text-[#ecedf6] hover:bg-[#ecedf6]/5 rounded-xl transition-colors font-['Inter'] font-medium text-sm tracking-wide group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">description</span>
+                Documents
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#ecedf6]/60 hover:text-[#ecedf6] hover:bg-[#ecedf6]/5 rounded-xl transition-colors font-['Inter'] font-medium text-sm tracking-wide group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">help</span>
+                Help Desk
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#ecedf6]/60 hover:text-[#ecedf6] hover:bg-[#ecedf6]/5 rounded-xl transition-colors font-['Inter'] font-medium text-sm tracking-wide group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">settings</span>
+                Settings
+            </a>
+</nav>
+<div class="mt-auto border-t border-outline-variant/20 pt-4">
+<a class="flex items-center gap-3 px-4 py-3 text-[#ecedf6]/60 hover:text-[#ff716c] hover:bg-error/5 rounded-xl transition-colors font-['Inter'] font-medium text-sm tracking-wide group" href="#">
+<span class="material-symbols-outlined group-hover:rotate-12 transition-transform">logout</span>
+                Logout
+            </a>
+</div>
+</aside>
+<!-- SideNavBar (Right - Learning Tools) -->
+<aside class="h-screen w-20 fixed right-0 top-0 z-50 bg-[#0b0e14]/60 backdrop-blur-2xl flex flex-col items-center py-10 gap-8 border-l border-[#ecedf6]/5 shadow-[-4px_0_24px_rgba(114,220,255,0.05)]">
+<p class="text-[0.6875rem] font-bold text-[#dd8bfb] font-headline uppercase tracking-[0.15em] [writing-mode:vertical-lr] rotate-180">Learning Tools</p>
+<div class="flex flex-col gap-10">
+<button class="flex flex-col items-center justify-center gap-1 text-[#ecedf6]/40 hover:text-[#dd8bfb] hover:scale-110 duration-300 group">
+<span class="material-symbols-outlined">account_tree</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 text-[#72dcff] hover:scale-110 duration-300 group">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">style</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 text-[#ecedf6]/40 hover:text-[#dd8bfb] hover:scale-110 duration-300 group">
+<span class="material-symbols-outlined">leaderboard</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 text-[#ecedf6]/40 hover:text-[#dd8bfb] hover:scale-110 duration-300 group">
+<span class="material-symbols-outlined">graphic_eq</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 mr-20 min-h-screen p-12 flex flex-col">
+<!-- Top Header -->
+<header class="w-full mb-12 flex justify-between items-center">
+<div>
+<h2 class="text-4xl font-extrabold font-headline text-on-surface tracking-tight leading-tight">
+                    Flashcard <span class="text-primary">Studio</span>
+</h2>
+<p class="text-on-surface-variant font-body mt-2">Transform your documents into active recall sessions.</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="glass-card px-4 py-2 rounded-full border border-outline-variant/10 flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="text-xs font-label uppercase tracking-widest text-on-surface/70">Session: Active</span>
+</div>
+</div>
+</header>
+<!-- Dynamic Grid Layout -->
+<div class="grid grid-cols-12 gap-8 flex-grow items-start">
+<!-- Left Controls: Configuration -->
+<section class="col-span-4 space-y-6 sticky top-12">
+<div class="surface-container-high rounded-[2rem] p-8 shadow-xl relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-6xl text-primary">tune</span>
+</div>
+<h3 class="text-lg font-bold font-headline mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">settings_suggest</span>
+                        Configuration
+                    </h3>
+<div class="space-y-6">
+<div class="space-y-2">
+<label class="text-xs font-label uppercase tracking-wider text-on-surface-variant">Document ID</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary text-xl">description</span>
+<input class="w-full bg-surface-container-lowest border-none rounded-xl py-4 pl-12 pr-4 text-on-surface font-body focus:ring-2 focus:ring-primary/50 transition-all" type="text" value="DOC-7742-ALPHA"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-label uppercase tracking-wider text-on-surface-variant">Number of Cards</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-secondary text-xl">filter_none</span>
+<input class="w-full bg-surface-container-lowest border-none rounded-xl py-4 pl-12 pr-4 text-on-surface font-body focus:ring-2 focus:ring-secondary/50 transition-all" type="number" value="12"/>
+</div>
+</div>
+<button class="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary-container font-bold py-5 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all mt-8 group">
+                            Generate Flashcards
+                            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">bolt</span>
+</button>
+</div>
+</div>
+<!-- Session Stats -->
+<div class="surface-container-low rounded-3xl p-6 border border-outline-variant/10">
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">Mastery Progress</span>
+<span class="text-secondary font-bold">64%</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-highest rounded-full mt-3 overflow-hidden">
+<div class="h-full bg-secondary w-[64%]"></div>
+</div>
+</div>
+</section>
+<!-- Center/Right: The Flashcard Canvas -->
+<section class="col-span-8 flex flex-col gap-8 h-full">
+<!-- The Main Interactive Card -->
+<div class="relative group h-[500px] w-full">
+<!-- Subtle Ambient Glow Behind Card -->
+<div class="absolute -inset-4 bg-primary/10 blur-[60px] rounded-full opacity-50 group-hover:opacity-80 transition-opacity"></div>
+<div class="relative h-full w-full surface-container-highest rounded-[3rem] p-12 flex flex-col items-center justify-center text-center shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-outline-variant/5">
+<!-- Card Corner Accents -->
+<div class="absolute top-8 left-8">
+<span class="text-[10px] font-label uppercase tracking-[0.2em] text-on-surface-variant bg-surface-container-low px-3 py-1 rounded-full border border-outline-variant/10">Card 04/12</span>
+</div>
+<div class="absolute top-8 right-8">
+<span class="material-symbols-outlined text-primary/40">auto_awesome</span>
+</div>
+<!-- Card Content (Front Side) -->
+<div class="max-w-xl">
+<h4 class="text-xs font-label uppercase tracking-[0.2em] text-secondary mb-6">Quantum Computing Foundations</h4>
+<p class="text-3xl font-headline font-bold text-on-surface leading-snug">
+                                Explain the phenomenon of "Quantum Entanglement" and its implication for instant data transfer.
+                            </p>
+</div>
+<div class="mt-16 flex flex-col items-center gap-4">
+<button class="bg-surface-container-lowest text-on-surface-variant hover:text-primary hover:bg-surface-container-high px-8 py-3 rounded-full border border-outline-variant/20 transition-all flex items-center gap-3 group">
+<span class="material-symbols-outlined group-hover:rotate-180 transition-transform">touch_app</span>
+                                Click to reveal answer
+                            </button>
+</div>
+<!-- Card Metadata Bottom -->
+<div class="absolute bottom-8 flex gap-6">
+<div class="flex items-center gap-2 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">schedule</span>
+                                Last reviewed: 2h ago
+                            </div>
+<div class="flex items-center gap-2 text-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+                                Difficulty: Medium
+                            </div>
+</div>
+</div>
+</div>
+<!-- Navigation Controls -->
+<div class="flex items-center justify-between w-full px-4">
+<button class="flex items-center gap-2 text-on-surface/60 hover:text-primary transition-colors group">
+<div class="w-12 h-12 rounded-full surface-container-high flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</div>
+<span class="font-label text-sm uppercase tracking-widest font-bold">Previous</span>
+</button>
+<div class="flex items-center gap-4">
+<button class="w-14 h-14 rounded-full surface-container-high flex items-center justify-center text-on-surface-variant hover:text-tertiary hover:bg-tertiary/10 transition-all" title="Reset Session">
+<span class="material-symbols-outlined">replay</span>
+</button>
+<button class="w-14 h-14 rounded-full surface-container-high flex items-center justify-center text-on-surface-variant hover:text-secondary hover:bg-secondary/10 transition-all" title="Save to Deck">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</button>
+</div>
+<button class="flex items-center gap-2 text-on-surface/60 hover:text-primary transition-colors group">
+<span class="font-label text-sm uppercase tracking-widest font-bold">Next Card</span>
+<div class="w-12 h-12 rounded-full surface-container-high flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined">arrow_forward</span>
+</div>
+</button>
+</div>
+</section>
+</div>
+<!-- Decorative Floating Element -->
+<div class="fixed bottom-12 left-72 z-10 pointer-events-none opacity-40">
+<div class="w-64 h-64 bg-secondary/20 blur-[100px] rounded-full"></div>
+</div>
+</main>
+<!-- Contextual Quick-Action FAB (Only shown on Learning Dashboards) -->
+<div class="fixed bottom-8 right-28 flex flex-col gap-4 items-end group">
+<button class="w-16 h-16 rounded-[2rem] bg-gradient-to-tr from-secondary to-secondary-container text-on-secondary shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+</body></html>

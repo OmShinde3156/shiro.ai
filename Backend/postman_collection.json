@@ -1,0 +1,672 @@
+
+{
+  "info": {
+    "name": "Personalized Study Guide Generator",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Upload Document",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "files",
+              "type": "file",
+              "src": []
+            },
+            {
+              "key": "user_id",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "subject",
+              "value": "Math",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/upload-document",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "upload-document"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get User Documents",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/documents/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "documents",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Generate Quiz",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"document_id\": 1,\n  \"num_questions\": 10,\n  \"difficulty\": \"medium\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/generate-quiz",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "generate-quiz"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Submit Quiz",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quiz_id\": 1,\n  \"user_id\": 1,\n  \"answers\": {\"1\": \"A\", \"2\": \"B\"},\n  \"document_id\": 1\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/submit-quiz",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "submit-quiz"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Quiz History",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/quiz-history/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "quiz-history",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Generate Flashcards",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"document_id\": 1,\n  \"num_cards\": 10\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/generate-flashcards",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "generate-flashcards"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Study Flashcard",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"flashcard_id\": 1,\n  \"user_id\": 1,\n  \"quality\": 5\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/study-flashcard",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "study-flashcard"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Flashcards for Review",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/flashcards/review/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "flashcards",
+            "review",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Chat with Tutor",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_id\": 1,\n  \"message\": \"Hello, can you explain this concept?\",\n  \"document_ids\": [1],\n  \"language\": \"en\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/chat",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "chat"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Chat History",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/chat-history/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "chat-history",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Summarize Document",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"document_id\": 1,\n  \"summary_type\": \"key_points\",\n  \"language\": \"en\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/summarize",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "summarize"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get User Summaries",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/summaries/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "summaries",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Generate Podcast",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": {
+  "user_id": 1,
+  "document_ids": [1],
+  "episodes": 3,
+  "language": "en",
+  "topic": "A custom topic for the podcast"
+}
+        },
+        "url": {
+          "raw": "{{base_url}}/generate-podcast",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "generate-podcast"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Podcast Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/podcast-status/some_task_id",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "podcast-status",
+            "some_task_id"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Save Podcast",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"podcast_id\": 1,\n  \"user_id\": 1\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/save-podcast",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "save-podcast"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get User Podcasts",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/podcasts/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "podcasts",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Generate Mind Map",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"document_id\": 1,\n  \"topic\": \"Central Limit Theorem\",\n  \"depth\": 2\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/generate-mindmap",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "generate-mindmap"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get User Mind Maps",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/mindmaps/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "mindmaps",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get User Progress",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/progress/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "progress",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Dashboard Data",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/dashboard/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "dashboard",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Important Questions",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            },
+            {
+              "key": "user_id",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "document_id",
+              "value": "1",
+              "type": "text"
+            },
+            {
+              "key": "num_questions",
+              "value": "15",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/important-questions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "important-questions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Study Timetable",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_id\": 1,\n  \"subjects\": [\"Math\", \"Science\"],\n  \"exam_date\": \"2025-12-31T23:59:59Z\",\n  \"study_preferences\": {\"preferred_start_time\": \"09:00\", \"study_duration_minutes\": 60, \"break_duration_minutes\": 15}\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/create-timetable",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "create-timetable"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get User Timetable",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/timetable/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "timetable",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Timetable Progress",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"task_id\": 1,\n  \"status\": \"completed\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/update-timetable-progress",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "update-timetable-progress"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/users",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get User",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/users/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "users",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Translate Content",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"content\": \"Hello, world!\",\n  \"target_language\": \"es\",\n  \"content_type\": \"text\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/translate",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "translate"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    }
+  ]
+}
