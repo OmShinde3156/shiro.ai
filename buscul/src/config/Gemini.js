@@ -10,7 +10,7 @@ const CHAT_API_URL = `${API_BASE_URL}/chat`; // FastAPI URL
  * @param {number[]} documentIds - IDs of the selected documents
  * @returns {Promise<string>} - AI response in improved phrasing & format
  */
-async function runChat(prompt, language = "en", userId = 1, documentIds = []) {
+async function runChat(prompt, language = "en", userId = 1, documentIds = [], mode = "human") {
   try {
     // 🔥 We send the RAW prompt to let the backend's "Shiro" personality handle it naturally
     const payload = {
@@ -18,6 +18,7 @@ async function runChat(prompt, language = "en", userId = 1, documentIds = []) {
       message: prompt,
       document_ids: documentIds,
       language: language,
+      mode: mode
     };
 
     const response = await fetch(CHAT_API_URL, {
@@ -36,7 +37,7 @@ async function runChat(prompt, language = "en", userId = 1, documentIds = []) {
       throw new Error("Invalid response format from FastAPI");
     }
 
-    return data.response;
+    return data;
   } catch (error) {
     console.error("Error while running chat:", error);
     throw error;

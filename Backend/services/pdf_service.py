@@ -1,9 +1,10 @@
-from fastapi import UploadFile
+from fastapi import UploadFile, BackgroundTasks
 from sqlalchemy.orm import Session
 from models.database import Document, User
 from database.vector_db import VectorDB
 from utils.document_processor import DocumentProcessor
 from utils.text_splitter import TextSplitter
+from services.graph_service import GraphService
 import uuid
 from typing import List
 
@@ -12,27 +13,24 @@ class PDFService:
         self.vector_db = VectorDB()
         self.text_splitter = TextSplitter()
         self.doc_processor = DocumentProcessor()
+        self.graph_service = GraphService()
     
-    async def process_document(self, file: UploadFile, user_id: int, subject: str, db: Session) -> Document:
-        """Process uploaded document and store in database"""
+    async def process_document(self, file: UploadFile, user_id: int, subject: str, db: Session, background_tasks: BackgroundTasks) -> Document:
+        """Process uploaded document and store in database. Returns quickly, processes in background."""
         
         # Read file content
         content = await file.read()
         
-        # Extract text based on file type
+        # Extract text based on file type (do this synchronously to get filename/type, and ensure it's not empty)
         text_content, file_type = await self.doc_processor.process_document(content, file.filename)
         
         if not text_content.strip():
             raise Exception("No text content could be extracted from the document")
         
-        # Create vector database collection
+        # Create vector database collection name
         collection_name = f"doc_{uuid.uuid4().hex}"
-        collection = self.vector_db.create_collection(collection_name)
         
-        # Split text into chunks
-        chunks = self.text_splitter.split_text(text_content)
-        
-        # Save document to database
+        # Save document to database immediately so it shows up in UI
         document = Document(
             filename=file.filename,
             file_type=file_type,
@@ -45,12 +43,31 @@ class PDFService:
         db.add(document)
         db.commit()
         db.refresh(document)
-
-        # Store chunks in vector database
-        metadatas = [{"chunk_index": i, "document_id": document.id} for i in range(len(chunks))]
-        self.vector_db.add_documents(collection_name, chunks, metadatas)
+        
+        # Move heavy lifting to background
+        background_tasks.add_task(self._background_process, collection_name, text_content, document.id, user_id)
         
         return document
+
+    def _background_process(self, collection_name: str, text_content: str, document_id: int, user_id: int):
+        try:
+            # Create collection and add embeddings
+            collection = self.vector_db.create_collection(collection_name)
+            chunks = self.text_splitter.split_text(text_content)
+            metadatas = [{"chunk_index": i, "document_id": document_id} for i in range(len(chunks))]
+            self.vector_db.add_documents(collection_name, chunks, metadatas)
+            print(f"DEBUG: Successfully embedded background task for {collection_name}")
+            
+            # Shiro v3.1: Move SLOW knowledge graph extraction to background tasks
+            # Disabled temporarily to save LLM tokens
+            # from database.database import SessionLocal
+            # db = SessionLocal()
+            # try:
+            #     self.graph_service.extract_and_store_graph(document_id, text_content, user_id, db)
+            # finally:
+            #     db.close()
+        except Exception as e:
+            print(f"DEBUG: Background embedding failed: {e}")
     
     def get_user_documents(self, user_id: int, db: Session) -> List[Document]:
         """Get all documents for a user"""

@@ -1,29 +1,80 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
 
-:root {
+/* --- THEME SYSTEM --- */
+
+/* 1. Neon Shiro (Default Gen Z) */
+body.theme-neon, :root {
   --bg-main: #0b0f1a;
-  --bg-card: rgba(20, 26, 46, 0.6);
+  --bg-card: rgba(20, 26, 46, 0.8);
   --bg-card-light: #1c2540;
   --primary: #72dcff;
   --secondary: #dd8bfb;
+  --tertiary: #5eead4;
   --text-main: #ecedf6;
-  --text-muted: rgba(236, 237, 246, 0.6);
-  --border: rgba(255, 255, 255, 0.08);
+  --text-muted: rgba(236, 237, 246, 0.85); /* Increased contrast */
+  --border: rgba(255, 255, 255, 0.15);
   --sidebar-bg: #0b0e14;
   --app-gradient: radial-gradient(circle at top, #0f172a, #020617);
 }
 
-.light-mode {
-  --bg-main: #faf9f6; /* Softer, highly readable off-white */
-  --bg-card: rgba(255, 255, 255, 0.85);
+/* 2. Midnight Slate (Focus/Night Mode) */
+body.theme-midnight {
+  --bg-main: #020617;
+  --bg-card: rgba(15, 23, 42, 0.9);
+  --bg-card-light: #1e293b;
+  --primary: #38bdf8;
+  --secondary: #c084fc;
+  --tertiary: #fb923c;
+  --text-main: #f8fafc;
+  --text-muted: #cbd5e1; /* Higher contrast */
+  --border: rgba(255, 255, 255, 0.1);
+  --sidebar-bg: #020617;
+  --app-gradient: linear-gradient(to bottom, #020617, #0f172a);
+}
+
+/* 3. Nordic Frost (Calm/Lofi) */
+body.theme-nordic {
+  --bg-main: #f0f4f8;
+  --bg-card: rgba(255, 255, 255, 0.8);
   --bg-card-light: #ffffff;
-  --primary: #0ea5e9; /* Vibrant Sky Blue */
-  --secondary: #8b5cf6; /* Vibrant Violet */
-  --text-main: #1e293b; /* Slate 800 - crisp text */
-  --text-muted: #64748b; /* Slate 500 */
-  --border: rgba(15, 23, 42, 0.08); /* Subtle dark border */
-  --sidebar-bg: #f1f0ea; /* Slightly distinct from main background */
-  --app-gradient: radial-gradient(circle at top, #ffffff, #faf9f6);
+  --primary: #5c7f67;
+  --secondary: #a3b18a;
+  --tertiary: #344e41;
+  --text-main: #354f52;
+  --text-muted: #84a59d;
+  --border: rgba(53, 79, 82, 0.1);
+  --sidebar-bg: #e5e9ec;
+  --app-gradient: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+}
+
+/* 4. Solar Flare (High Energy/Day) */
+body.theme-solar {
+  --bg-main: #fffdfa;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-card-light: #ffffff;
+  --primary: #f59e0b;
+  --secondary: #ef4444;
+  --tertiary: #10b981;
+  --text-main: #451a03;
+  --text-muted: #92400e;
+  --border: rgba(245, 158, 11, 0.15);
+  --sidebar-bg: #fff7ed;
+  --app-gradient: radial-gradient(circle at top, #fff7ed, #fffdfa);
+}
+
+/* 5. Shiro Light (Premium Modern Light) */
+body.theme-light {
+  --bg-main: #f8fafc;
+  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-card-light: #ffffff;
+  --primary: #0ea5e9;
+  --secondary: #8b5cf6;
+  --tertiary: #10b981;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border: rgba(0, 0, 0, 0.05);
+  --sidebar-bg: #ffffff;
+  --app-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
 }
 
 * {
@@ -31,7 +82,8 @@
   margin: 0;
   box-sizing: border-box;
   font-family: 'Outfit', sans-serif;
-  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+  transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+              background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
               color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
               border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -40,34 +92,44 @@
   min-height: 100vh;
 }
 
-/* 🌌 BACKGROUND */
 body {
   background: var(--app-gradient);
   color: var(--text-main);
   background-attachment: fixed;
+  min-height: 100vh;
 }
 
 /* ✨ SMOOTH FADE */
 @keyframes fadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+.material-symbols-outlined.fill {
+    font-variation-settings: 'FILL' 1;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
 /* 🧊 GLASS CARD */
 .glass-card {
-  background: rgba(20, 26, 46, 0.6);
-  backdrop-filter: blur(16px);
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 20px;
-  transition: 0.3s;
-  animation: fadeIn 0.4s ease-in-out;
+  border-radius: 24px;
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.4s ease-out;
 }
 
 .glass-card:hover {
@@ -76,18 +138,18 @@ body {
 
 /* 🔘 NEON BUTTON */
 .neon-btn {
-  background: linear-gradient(135deg, #5eead4, #a78bfa);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
   border: none;
   padding: 12px 20px;
   border-radius: 12px;
-  color: black;
+  color: white;
   font-weight: 600;
   transition: 0.3s;
 }
 
 .neon-btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 0 20px rgba(167, 139, 250, 0.6);
+  box-shadow: 0 0 20px var(--primary);
 }
 
 /* 🧭 SCROLLBAR */
@@ -96,6 +158,6 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2a2f45;
+  background: var(--border);
   border-radius: 10px;
 }

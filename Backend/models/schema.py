@@ -41,6 +41,8 @@ class UserResponse(BaseModel):
     name: str
     email: str
     preferred_language: str
+    xp: int = 0
+    level: int = 1
     created_at: datetime
     
     class Config:
@@ -55,6 +57,9 @@ class DocumentResponse(BaseModel):
     text_content: str
     upload_date: datetime
     user_id: int
+    summary: Optional[Any] = None
+    mindmap: Optional[Any] = None
+    quiz: Optional[Any] = None
     
     class Config:
         from_attributes = True
@@ -125,9 +130,11 @@ class ChatRequest(BaseModel):
     message: str
     document_ids: List[int]
     language: Language = Language.ENGLISH
+    mode: str = "human" # "human" or "surgical"
 
 class ChatResponse(BaseModel):
     response: str
+    internal_thought: Optional[str] = None
     sources: List[Dict[str, Any]]
     language: str
 
@@ -165,6 +172,7 @@ class MindMapNode(BaseModel):
     x: float
     y: float
     level: int
+    score: Optional[float] = 0.8
 
 class MindMapEdge(BaseModel):
     source: str
@@ -187,10 +195,15 @@ class UserProgressResponse(BaseModel):
     average_score: float
     flashcards_studied: int
     study_streak: int
+    xp: int = 0
+    level: int = 1
     weak_subjects: List[str]
     strong_subjects: List[str]
     weekly_activity: Dict[str, int]
     knowledge_heatmap: Dict[str, float]
+
+class AddXPRequest(BaseModel):
+    xp_amount: int
 
 # Important Questions Schema
 class ImportantQuestionsRequest(BaseModel):

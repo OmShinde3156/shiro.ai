@@ -243,3 +243,67 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Added missing styles for Flashcards */
+.type-badge {
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: rgba(114, 220, 255, 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(114, 220, 255, 0.2);
+}
+
+.type-badge.secondary {
+  background: rgba(221, 139, 251, 0.1);
+  color: var(--secondary);
+  border-color: rgba(221, 139, 251, 0.2);
+}
+
+.ease-controls {
+  justify-content: center;
+  width: 100%;
+}
+
+.ease-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.8rem 1.5rem;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 90px;
+}
+
+.ease-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.ease-btn .label {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.ease-btn .time {
+  font-size: 0.65rem;
+  opacity: 0.6;
+}
+
+.ease-btn.again:hover { border-color: #ef4444; color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+.ease-btn.hard:hover { border-color: #f59e0b; color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+.ease-btn.good:hover { border-color: var(--primary); color: var(--primary); background: rgba(114, 220, 255, 0.1); }
+.ease-btn.easy:hover { border-color: var(--secondary); color: var(--secondary); background: rgba(221, 139, 251, 0.1); }
+

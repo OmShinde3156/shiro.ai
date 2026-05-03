@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Shiro.AI - Document Details</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#00677f",
+                    "surface-variant": "#32353c",
+                    "on-secondary-fixed": "#320046",
+                    "secondary-fixed-dim": "#edb1ff",
+                    "secondary": "#edb1ff",
+                    "on-surface": "#e1e2eb",
+                    "on-primary-container": "#006076",
+                    "primary-fixed-dim": "#69d4f7",
+                    "primary": "#cdf0ff",
+                    "surface": "#10131a",
+                    "on-primary": "#003543",
+                    "on-primary-fixed-variant": "#004e60",
+                    "on-error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#5e4100",
+                    "outline-variant": "#3e484d",
+                    "tertiary-container": "#ffc559",
+                    "on-error": "#690005",
+                    "on-tertiary-container": "#745100",
+                    "primary-container": "#72dcff",
+                    "on-secondary-fixed-variant": "#6e208c",
+                    "on-secondary": "#520070",
+                    "inverse-surface": "#e1e2eb",
+                    "surface-container-low": "#191c22",
+                    "inverse-on-surface": "#2e3037",
+                    "surface-container": "#1d2026",
+                    "error": "#ffb4ab",
+                    "surface-dim": "#10131a",
+                    "surface-container-lowest": "#0b0e14",
+                    "tertiary-fixed": "#ffdea9",
+                    "on-tertiary-fixed": "#271900",
+                    "on-background": "#e1e2eb",
+                    "surface-container-high": "#272a31",
+                    "surface-container-highest": "#32353c",
+                    "secondary-container": "#70238f",
+                    "on-surface-variant": "#bdc8ce",
+                    "error-container": "#93000a",
+                    "secondary-fixed": "#f9d8ff",
+                    "tertiary-fixed-dim": "#f6bd52",
+                    "on-secondary-container": "#e69dff",
+                    "surface-tint": "#69d4f7",
+                    "primary-fixed": "#b6ebff",
+                    "on-tertiary": "#422c00",
+                    "tertiary": "#ffe7c5",
+                    "outline": "#879297",
+                    "surface-bright": "#363940",
+                    "on-primary-fixed": "#001f28",
+                    "background": "#10131a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {},
+            "fontFamily": {
+                    "headline": [
+                            "Manrope"
+                    ],
+                    "body": [
+                            "Inter"
+                    ],
+                    "label": [
+                            "Inter"
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="antialiased min-h-screen flex flex-col font-body">
+<!-- TopAppBar -->
+<header class="bg-slate-950/80 backdrop-blur-xl fixed top-0 w-full z-50 flex items-center justify-between px-6 py-4 w-full shadow-[0_0_20px_rgba(114,220,255,0.05)] bg-slate-900/40">
+<div class="flex items-center gap-4">
+<button class="text-cyan-400 hover:text-cyan-300 transition-colors opacity-80 scale-95 transition-all p-2 rounded-full hover:bg-surface-container-low focus:outline-none">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-manrope tracking-tight font-bold text-xl text-on-surface">Neural Networks Chapter 4</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-cyan-400 hover:text-cyan-300 transition-colors p-2 rounded-full hover:bg-surface-container-low focus:outline-none">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</header>
+<main class="flex-grow pt-24 pb-20 md:pb-6 px-4 md:px-8 max-w-7xl mx-auto w-full flex flex-col md:flex-row gap-6">
+<!-- Document Content Canvas -->
+<section class="flex-grow bg-surface-container-lowest rounded-xl md:rounded-2xl p-6 md:p-10 shadow-[0_0_40px_rgba(114,220,255,0.02)] overflow-y-auto" style="height: calc(100vh - 12rem);">
+<div class="max-w-3xl mx-auto space-y-6">
+<h2 class="font-headline font-bold text-3xl md:text-4xl tracking-tight text-on-surface mb-8">4. Understanding Backpropagation</h2>
+<p class="text-on-surface-variant leading-relaxed text-lg font-body">
+                    Backpropagation is the fundamental algorithm behind learning in artificial neural networks. It is a method used to calculate the gradient of the error function with respect to the neural network's weights.
+                </p>
+<div class="bg-surface-container-low border border-outline-variant/15 rounded-xl p-6 my-8 backdrop-blur-md">
+<p class="text-on-surface leading-relaxed font-body">
+                        The process consists of two main phases: the forward pass and the backward pass. In the <span class="bg-secondary-container/30 text-secondary font-medium px-1 rounded">forward pass</span>, input data is passed through the network to generate an output. The error is then calculated by comparing this output to the expected result.
+                     </p>
+</div>
+<p class="text-on-surface-variant leading-relaxed text-lg font-body">
+                    During the backward pass, this error is propagated backwards through the network, layer by layer. The chain rule of calculus is applied to compute the partial derivatives of the error with respect to each weight. These gradients are then used by an optimization algorithm, such as gradient descent, to update the weights, minimizing the overall error.
+                </p>
+<div class="relative w-full h-64 md:h-96 rounded-xl overflow-hidden mt-8 mb-4 border border-outline-variant/15 shadow-[0_0_30px_rgba(114,220,255,0.05)]">
+<img alt="AI Diagram" class="w-full h-full object-cover opacity-80" data-alt="abstract glowing nodes and connections representing a neural network in a dark atmospheric cyberspace setting with cyan and magenta accents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9GCvboaCODEvBeUfxPetJg1P6zRyUJr5PNBTAcH-tlxt7Sj-0dNkU8u9ZRFB0RNJSW738PDuNUnWnUuizZQGqUusRJKtGQWKvBO_qlnXIO7VKrVM7wttiT5nzOhqazfMZFDT3N5DYTjAox__pGvzqvtfEUTm8TsSf3TKrTXbm-XKwB5XAd1Q4S4R880O-iy4TLn0yzPVtv963BYAI3PyyNkIEQcu7anvM7gc8zDljz0xkKm6U0BJpYF1mnDdD2281LdvV-7aiBBE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dim to-transparent opacity-60"></div>
+</div>
+<p class="text-sm text-on-surface-variant font-label tracking-wide uppercase text-center mt-2">Figure 4.1: Error propagation through hidden layers</p>
+</div>
+</section>
+<!-- Sidebar / AI Tools -->
+<aside class="w-full md:w-96 flex flex-col gap-6 shrink-0">
+<!-- Quick Actions -->
+<div class="bg-surface-container rounded-xl p-5 border border-outline-variant/15 backdrop-blur-xl">
+<h3 class="font-headline font-semibold text-lg text-on-surface mb-4">Study Tools</h3>
+<div class="flex flex-col gap-3">
+<button class="flex items-center gap-3 w-full p-3 rounded-lg bg-surface-container-high/60 hover:bg-surface-container-highest transition-colors border border-outline-variant/15 text-left group">
+<div class="w-10 h-10 rounded-full bg-primary-container/10 flex items-center justify-center text-primary group-hover:bg-primary-container/20 transition-colors">
+<span class="material-symbols-outlined" data-icon="quiz">quiz</span>
+</div>
+<div>
+<div class="font-medium text-on-surface font-body">Generate Quiz</div>
+<div class="text-xs text-on-surface-variant font-label uppercase tracking-wider mt-0.5">Test your knowledge</div>
+</div>
+</button>
+<button class="flex items-center gap-3 w-full p-3 rounded-lg bg-surface-container-high/60 hover:bg-surface-container-highest transition-colors border border-outline-variant/15 text-left group">
+<div class="w-10 h-10 rounded-full bg-secondary-container/10 flex items-center justify-center text-secondary group-hover:bg-secondary-container/20 transition-colors">
+<span class="material-symbols-outlined" data-icon="style">style</span>
+</div>
+<div>
+<div class="font-medium text-on-surface font-body">Flashcards</div>
+<div class="text-xs text-on-surface-variant font-label uppercase tracking-wider mt-0.5">Key concepts</div>
+</div>
+</button>
+<button class="flex items-center gap-3 w-full p-3 rounded-lg bg-surface-container-high/60 hover:bg-surface-container-highest transition-colors border border-outline-variant/15 text-left group">
+<div class="w-10 h-10 rounded-full bg-tertiary-container/10 flex items-center justify-center text-tertiary group-hover:bg-tertiary-container/20 transition-colors">
+<span class="material-symbols-outlined" data-icon="graphic_eq">graphic_eq</span>
+</div>
+<div>
+<div class="font-medium text-on-surface font-body">Audio Summary</div>
+<div class="text-xs text-on-surface-variant font-label uppercase tracking-wider mt-0.5">Listen on the go</div>
+</div>
+</button>
+</div>
+</div>
+<!-- AI Chat / Curator -->
+<div class="bg-surface-container-low rounded-xl border border-outline-variant/15 flex-grow flex flex-col overflow-hidden backdrop-blur-xl" style="min-height: 400px;">
+<div class="p-4 border-b border-outline-variant/15 bg-surface-container-highest/50 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-on-primary-fixed shadow-[0_0_15px_rgba(114,220,255,0.3)]">
+<span class="material-symbols-outlined text-sm" data-icon="smart_toy">smart_toy</span>
+</div>
+<div>
+<h3 class="font-headline font-semibold text-sm text-on-surface">AI Curator</h3>
+<p class="text-xs text-primary font-label uppercase tracking-wider">Online</p>
+</div>
+</div>
+<div class="flex-grow p-4 overflow-y-auto flex flex-col gap-4">
+<!-- AI Message -->
+<div class="flex gap-3">
+<div class="w-6 h-6 rounded-full bg-surface-container-highest shrink-0 flex items-center justify-center mt-1">
+<span class="material-symbols-outlined text-[12px] text-primary" data-icon="smart_toy">smart_toy</span>
+</div>
+<div class="bg-surface-container rounded-2xl rounded-tl-sm p-3 text-sm text-on-surface-variant font-body">
+                            I noticed you highlighted "forward pass". Would you like me to explain how it differs from the backward pass in simpler terms?
+                        </div>
+</div>
+<!-- User Message -->
+<div class="flex gap-3 flex-row-reverse">
+<div class="w-6 h-6 rounded-full bg-primary-container shrink-0 flex items-center justify-center mt-1">
+<span class="material-symbols-outlined text-[12px] text-on-primary-container" data-icon="person">person</span>
+</div>
+<div class="bg-primary/10 border border-primary/20 rounded-2xl rounded-tr-sm p-3 text-sm text-on-surface font-body">
+                            Yes, please give me a real-world analogy.
+                        </div>
+</div>
+</div>
+<div class="p-4 bg-surface-container border-t border-outline-variant/15">
+<div class="relative flex items-center">
+<input class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-full py-3 pl-4 pr-12 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary placeholder-on-surface-variant/50 transition-all font-body" placeholder="Ask about this document..." type="text"/>
+<button class="absolute right-2 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-on-primary-fixed hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm" data-icon="arrow_upward">arrow_upward</span>
+</button>
+</div>
+</div>
+</div>
+</aside>
+</main>
+</body></html>

@@ -1,63 +1,82 @@
-# SHIRO.AI - PROJECT KNOWLEDGE BASE
+# SHIRO.AI - PROJECT KNOWLEDGE BASE & EVOLUTION LOG
 
 ## 1. PROJECT OVERVIEW
 **Project Name:** Shiro.ai (formerly Rexy.AI)
 **Tagline:** The Neon Curator / AI-Powered Personalized Study Guide
-**Domain:** EdTech / AI-Assisted Learning
-**Architecture:** RAG (Retrieval-Augmented Generation) Architecture
+**Architecture:** RAG (Retrieval-Augmented Generation)
 
-## 2. ARCHITECTURE & TECH STACK
-### Frontend (buscul/)
-- **Framework:** React (Vite)
-- **Styling:** Tailwind CSS + Vanilla CSS (Neon Dark Theme)
-- **Visualization:** React Flow (Mind Maps), CSS Bento Grids
-- **Icons:** Material Symbols (Google)
-- **State Management:** React Context API (AuthContext, PodcastContext, Context)
+---
 
-### Backend (Backend/)
-- **Framework:** FastAPI (Python)
-- **Server:** Uvicorn
-- **Database:** SQLAlchemy (SQLite default)
-- **Vector DB:** ChromaDB (for RAG/Semantic Search)
-- **AI Models:** Groq (Llama 3.3 70B), OpenAI (GPT-4o-mini)
-- **Embeddings:** SentenceTransformers (all-MiniLM-L6-v2)
-- **Processing:** PyMuPDF (PDF), python-docx (DOCX), OCR for images
+## 2. PROJECT EVOLUTION LOG (CHRONOLOGICAL HISTORY)
 
-## 3. CORE FEATURES
-1. **RAG-based AI Tutor (Shiro):** Chat with uploaded documents using semantic retrieval.
-2. **Document Management:** Multi-format upload (PDF, DOCX, Images) with automatic subject categorization.
-3. **AI Quiz Generator:** Dynamic MCQ generation from content with difficulty settings and automated scoring.
-4. **Flashcard System:** AI-generated flashcards using SM-2 Spaced Repetition algorithm for long-term retention.
-5. **Mind Map Generator:** Hierarchical visualization of document concepts with "Knowledge Score" overlays.
-6. **Audio Summaries (Podcasts):** Text-to-Speech (TTS) conversion of document summaries into episodic audio content.
-7. **PYQ Prediction:** Analysis of Previous Year Questions alongside study material to predict important topics.
-8. **Study Timetable:** Automated study plan generator based on exam dates and subject priorities.
-9. **Progress Analytics:** Activity history tracking, study streaks, knowledge heatmaps, and subject performance analysis.
-10. **Multilingual Support:** Support for English, Hindi, and Marathi.
+### **Phase 1: Foundations (Feb 2026)**
+*   **2026-02-27:** Initial Commit. Repository established with core RAG logic and basic FastAPI structure.
+*   **2026-03-03:** Documentation update. Refinement of project goals and initial README setup.
 
-## 4. DIRECTORY STRUCTURE
-- `/Backend`
-    - `/database`: DB connection and Vector DB (Chroma) logic.
-    - `/models`: SQLAlchemy models and Pydantic schemas.
-    - `/services`: Core business logic (Quiz, Flashcard, MindMap, PDF, Podcast, etc.).
-    - `/utils`: LLM client, Text splitters, Document processors, TTS client.
-    - `/static`: Generated audio files and temporary assets.
-    - `main.py`: FastAPI entry point and route definitions.
-- `/buscul`
-    - `/src/components`: UI components split into Main, Sidebar, RightSidebar, and Pages.
-    - `/src/context`: React Context providers for global state.
-    - `/src/api`: API configuration (Base URL).
-    - `index.html`: Main entry point with Shiro.ai branding.
+### **Phase 2: Feature Expansion (March - April 2026)**
+*   **2026-04-15:** Integrated Audio Summaries (Podcast Service) and basic Progress tracking.
+*   **2026-04-16:** Implemented Auth system (Password/OTP) and basic Flashcard generation.
+*   **2026-04-17:** **MAJOR RELEASE (v3.0):** Comprehensive UI overhaul. Neon Dark Theme applied across all pages. Introduction of the Bento Grid dashboard and dual-mode Shiro AI Tutor.
 
-## 5. API ENDPOINTS (KEY)
-- **Auth:** `/login`, `/users`, `/request-otp`, `/verify-otp`
-- **Docs:** `POST /upload-document`, `GET /documents/{user_id}`, `DELETE /documents/{id}`
-- **Quiz:** `POST /generate-quiz`, `POST /submit-quiz`, `POST /important-questions`
-- **Study:** `POST /generate-flashcards`, `POST /generate-mindmap`, `POST /summarize`
-- **Analytics:** `GET /progress/{user_id}`, `GET /activity/{user_id}`, `GET /dashboard/{user_id}`
-- **Plan:** `POST /create-timetable`, `GET /timetable/{user_id}`
+### **Phase 3: Deep Integration & Optimization (April 18-19, 2026)**
+*   **2026-04-18 [14:30]:** **IMPLEMENTED:** AI Study Plan (Timetable). Added generation form and daily task tracking.
+*   **2026-04-18 [16:00]:** **UPGRADED:** Advanced Analytics. Moved from localStorage to real-time backend data for streaks and mastery radar.
+*   **2026-04-18 [18:45]:** **IMPLEMENTED:** Document Library. Enabled subject editing and deletion functionality.
+*   **2026-04-18 [21:15]:** **UPGRADED:** Flashcard SRS. Replaced static cards with SM-2 algorithm-backed review system.
+*   **2026-04-19 [00:10]:** **REFACTORED:** Collapsible Sidebar UI. Reduced permanent width from 64 units to 20 units to maximize workspace.
+*   **2026-04-19 [01:00]:** **REFACTORED:** Settings & Auth. Centralized Logout inside Settings for a more focused user experience.
+*   **2026-04-19 [01:30]:** **IMPLEMENTED:** Dynamic Profile Hub. Replaced static header icon with an interactive dropdown featuring real-time Level/XP, Accuracy stats, and Daily Goal progress rings.
+*   **2026-04-19 [02:00]:** **UPGRADED:** PYQ Prediction. Overhauled basic question list into a predictive engine UI with document selection, probability scoring, and category tagging.
+*   **2026-04-19 [02:45]:** **IMPLEMENTED:** 4-Theme System (Neon, Midnight, Nordic, Solar) and Theme Hub selection in Settings.
+*   2026-04-19 [03:15]: **ADDED:** Home Navigation, Multi-language support (18+), and Dynamic Bot-Avatars (DiceBear API).
+*   2026-04-20 [10:00]: **MAJOR UPGRADE (v3.1):** Graph-Augmented RAG. Implemented `GraphService` for background triplet extraction from documents and context enrichment.
+*   2026-04-20 [13:00]: **MASTER-BRAIN INTEGRATION (v3.2):** Synchronized `ChatService` with `ProgressService` and `TimetableService`. Shiro now proactively analyzes weak subjects, streaks, and daily tasks to provide context-aware mentoring and Generative UI action prompts.
+*   2026-04-20 [14:30]: **VOICE & FEYNMAN UPDATE (v3.3):** Integrated OpenAI Whisper for STT, Auto-TTS, and the interactive "User-as-Teacher" Feynman Challenge mode.
+*   2026-04-20 [16:00]: **SHIRO LIVE (v3.4):**
+    - **Live Mentor:** Implemented WebSocket-based real-time bidirectional voice chat using Gemini 2.0 Flash Live.
+    - **Multimodal Engine:** Added `google-generativeai` support to `LLMClient`.
+    - **UX:** Introduced "Live" mode toggle with a streaming-specific UI and real-time audio processing.
 
-## 6. STORAGE STRATEGY
-- **Relational:** User profiles, document metadata, quiz results, and activity logs in SQLite.
-- **Vector:** Text chunks and embeddings stored in ChromaDB collections mapped to Document IDs.
-- **Filesystem:** Original uploads and generated audio files stored in local directories.
+
+---
+
+## 3. TECHNICAL DEBT & FAILURES LOG (DIAGNOSTICS)
+
+| Feature | Incident Date | Issue | Resolution |
+| :--- | :--- | :--- | :--- |
+| **Sidebar UI** | 2026-04-18 | Collapsible logic failed to trigger correctly due to CSS/JS conflicts in standard edit. | Replaced `Sidebar.jsx` with a complete rewrite using `group-hover` Tailwind utilities and transitioned width properties. |
+| **Theme System** | 2026-04-19 | "Black Screen" runtime error caused by undefined `theme` variable after refactor. | Fixed destructuring in `Sidebar.jsx` to correctly extract `theme` from `useTheme` hook. |
+| **Flashcard SRS** | 2026-04-18 | Cards were lost on browser refresh because they only existed in localStorage. | Migrated state to PostgreSQL-backed `FlashcardProgress` model with backend persistence. |
+| **Analytics** | 2026-04-18 | Radar charts crashed when subjects had zero quiz attempts. | Implemented data normalization and "Empty State" checks in `ProgressReport.jsx`. |
+| **Timetable** | 2026-04-18 | Exam dates in the past caused backend server error (500). | Added frontend validation and backend exception handling for future-date verification. |
+
+---
+
+## 4. CURRENT ARCHITECTURE (STABLE)
+### Frontend (React/Vite)
+- **Visualization:** Recharts (Analytics), CSS Bento Grids
+- **State:** Context API (Auth, Podcast, Global)
+- **Layout:** Collapsible Neon Sidebar (20px -> 64px)
+
+### Backend (FastAPI/Python)
+- **Database:** SQLite (Relational) + ChromaDB (Vector)
+- **AI Models:** Groq (Llama 3.3) & OpenAI
+- **Logic:** SM-2 (Flashcards), Graph-Augmented RAG (Triplets), Master-Brain Orchestration (Progress/Timetable context)
+
+---
+
+## 5. FUTURE ROADMAP (PRIORITY)
+1. **Migration:** SQLite → PostgreSQL (Concurrency support).
+2. **Workers:** Implementation of Celery/Redis for background Audio/PDF processing.
+3. **Storage:** Local Storage → MinIO/S3 for scalable asset hosting.
+4. **UX:** Global search and real-time WebSocket notifications.
+
+---
+
+## 6. KEY ENDPOINTS & DIRECTORY MAP
+- `/documents`: Library management.
+- `/study-plan`: AI Schedule.
+- `/flashcards`: Spaced Repetition interface.
+- `/progress-report`: Analytical dashboard.
+- `/Backend/services`: Core algorithm logic.
+- `/buscul/src/components/pages`: Feature interfaces.

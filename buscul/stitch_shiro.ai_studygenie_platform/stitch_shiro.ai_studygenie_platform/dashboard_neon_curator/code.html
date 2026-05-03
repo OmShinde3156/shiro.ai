@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>StudyGenie - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed-variant": "#711227",
+                    "outline-variant": "#444854",
+                    "surface-container-high": "#1a1f2d",
+                    "primary-fixed-dim": "#b971ff",
+                    "secondary": "#3adffa",
+                    "error-dim": "#d73357",
+                    "on-surface": "#e5e7f6",
+                    "surface-container": "#151926",
+                    "surface-container-low": "#0f131e",
+                    "secondary-dim": "#1ad0eb",
+                    "on-primary-fixed": "#000000",
+                    "on-tertiary": "#680921",
+                    "inverse-surface": "#faf8ff",
+                    "on-tertiary-fixed": "#39000d",
+                    "tertiary-fixed": "#ff909c",
+                    "error-container": "#a70138",
+                    "on-error-container": "#ffb2b9",
+                    "on-secondary-fixed": "#003a43",
+                    "on-primary": "#47007c",
+                    "on-background": "#e5e7f6",
+                    "on-surface-variant": "#a7aab9",
+                    "on-tertiary-container": "#570018",
+                    "inverse-on-surface": "#515561",
+                    "surface-dim": "#0a0e18",
+                    "tertiary-container": "#fe7e8e",
+                    "secondary-fixed-dim": "#29d6f1",
+                    "on-secondary-fixed-variant": "#005966",
+                    "inverse-primary": "#842cd3",
+                    "primary-fixed": "#c284ff",
+                    "outline": "#727582",
+                    "primary-dim": "#9c48ea",
+                    "secondary-container": "#006877",
+                    "on-secondary": "#004b56",
+                    "on-secondary-container": "#eafbff",
+                    "on-primary-fixed-variant": "#430076",
+                    "surface-bright": "#262c3c",
+                    "background": "#0a0e18",
+                    "error": "#ff6e84",
+                    "tertiary-fixed-dim": "#fa7c8b",
+                    "on-primary-container": "#360061",
+                    "tertiary-dim": "#f47786",
+                    "primary-container": "#c284ff",
+                    "surface-tint": "#cc97ff",
+                    "surface": "#0a0e18",
+                    "tertiary": "#ff95a0",
+                    "on-error": "#490013",
+                    "surface-container-highest": "#202534",
+                    "surface-container-lowest": "#000000",
+                    "surface-variant": "#202534",
+                    "primary": "#cc97ff",
+                    "secondary-fixed": "#48e4ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {},
+            "fontFamily": {
+                    "headline": [
+                            "Manrope"
+                    ],
+                    "body": [
+                            "Inter"
+                    ],
+                    "label": [
+                            "Inter"
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        /* Custom Neon Curator Styles not covered by Tailwind config */
+        .neon-gradient-text {
+            background: linear-gradient(135deg, #cc97ff 0%, #3adffa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+        }
+        .neon-glow-primary {
+            box-shadow: 0px 0px 15px rgba(168, 85, 247, 0.15);
+        }
+        .ambient-void-shadow {
+            box-shadow: 0px 20px 40px rgba(0, 0, 0, 0.4), 0px 0px 15px rgba(168, 85, 247, 0.05);
+        }
+        .glass-panel {
+            background: rgba(21, 25, 38, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .light-leak {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: rgba(168, 85, 247, 0.05);
+            filter: blur(100px);
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body overflow-x-hidden min-h-screen flex flex-col md:flex-row">
+<!-- Ambient Light Leaks -->
+<div class="light-leak top-[-10%] left-[-5%]"></div>
+<div class="light-leak bottom-[-10%] right-[-5%] bg-[rgba(58,223,250,0.03)]"></div>
+<!-- Mobile Top AppBar -->
+<header class="md:hidden w-full h-16 sticky top-0 z-40 bg-surface/80 backdrop-blur-md flex justify-between items-center px-4">
+<div class="text-xl font-headline font-black text-primary">StudyGenie</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant">account_circle</span>
+</div>
+</header>
+<!-- SideNavBar - Left Navigation Drawer (Hidden on Mobile) -->
+<nav class="hidden md:flex h-full w-72 flex-col fixed left-0 bg-[#0a0e18] z-30 transition-all">
+<div class="flex flex-col h-screen p-6 gap-8">
+<!-- Header -->
+<div class="flex items-center gap-4 mb-4">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-dim flex items-center justify-center neon-glow-primary">
+<span class="font-headline font-bold text-white">SG</span>
+</div>
+<div>
+<h1 class="font-headline font-bold tracking-tight text-white text-lg leading-tight">StudyGenie</h1>
+<p class="font-body text-xs text-on-surface-variant">Digital Alchemist</p>
+</div>
+</div>
+<!-- Upload CTA -->
+<button class="w-full py-3 px-4 rounded-xl bg-gradient-to-br from-primary to-primary-dim text-white font-body text-sm font-medium neon-glow-primary hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">add</span>
+                Upload Source Material
+            </button>
+<!-- Main Nav -->
+<div class="flex flex-col gap-2 flex-grow mt-4">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-[#cc97ff] font-bold bg-[#cc97ff]/10 scale-98 active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">chat_bubble</span>
+                    Chats
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-white/60 hover:text-white transition-colors hover:bg-white/5 hover:backdrop-blur-md scale-98 active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined">description</span>
+                    Documents
+                </a>
+</div>
+<!-- Footer Nav -->
+<div class="flex flex-col gap-2 mt-auto border-t border-white/5 pt-6">
+<a class="flex items-center gap-3 px-4 py-2 rounded-xl text-white/60 hover:text-white transition-colors text-sm hover:bg-white/5" href="#">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+                    Settings
+                </a>
+<a class="flex items-center gap-3 px-4 py-2 rounded-xl text-white/60 hover:text-white transition-colors text-sm hover:bg-white/5" href="#">
+<span class="material-symbols-outlined text-[18px]">help</span>
+                    Support
+                </a>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-72 md:mr-64 relative min-h-screen flex flex-col p-6 md:p-12 z-10 pt-8">
+<!-- Top App Bar equivalent for Web Content Area -->
+<div class="hidden md:flex justify-end items-center mb-12 gap-6 w-full h-16 top-0 z-40 bg-transparent text-[#3adffa] font-['Inter'] text-sm font-medium">
+<div class="flex gap-4">
+<button class="p-2 rounded-full hover:text-[#3adffa] text-white/70 transition-colors backdrop-blur-md"><span class="material-symbols-outlined">language</span></button>
+<button class="p-2 rounded-full hover:text-[#3adffa] text-white/70 transition-colors backdrop-blur-md relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-secondary rounded-full"></span>
+</button>
+<button class="p-2 rounded-full hover:text-[#3adffa] text-white/70 transition-colors backdrop-blur-md"><span class="material-symbols-outlined">account_circle</span></button>
+</div>
+</div>
+<!-- Hero Section -->
+<div class="max-w-4xl mx-auto w-full mb-16 mt-4 md:mt-0 relative z-10">
+<h2 class="font-headline text-3xl md:text-5xl text-on-surface font-bold tracking-tight mb-2">Hey, Learner</h2>
+<h3 class="font-headline text-4xl md:text-6xl font-extrabold neon-gradient-text tracking-tighter leading-tight">Let's Improve Your Score</h3>
+</div>
+<!-- Dynamic Grid -->
+<div class="max-w-4xl mx-auto w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-32 z-10">
+<!-- Card 1 -->
+<button class="bg-surface-container rounded-xl p-5 flex flex-col items-start gap-4 hover:bg-surface-container-high transition-colors border border-outline-variant/10 group ambient-void-shadow text-left">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">short_text</span>
+</div>
+<div>
+<h4 class="font-body font-medium text-on-surface text-sm">Summarize this Topic</h4>
+</div>
+</button>
+<!-- Card 2 -->
+<button class="bg-surface-container rounded-xl p-5 flex flex-col items-start gap-4 hover:bg-surface-container-high transition-colors border border-outline-variant/10 group ambient-void-shadow text-left">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">quiz</span>
+</div>
+<div>
+<h4 class="font-body font-medium text-on-surface text-sm">Take Quiz</h4>
+</div>
+</button>
+<!-- Card 3 -->
+<button class="bg-surface-container rounded-xl p-5 flex flex-col items-start gap-4 hover:bg-surface-container-high transition-colors border border-outline-variant/10 group ambient-void-shadow text-left">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-tertiary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">style</span>
+</div>
+<div>
+<h4 class="font-body font-medium text-on-surface text-sm">Generate Flashcards</h4>
+</div>
+</button>
+<!-- Card 4 -->
+<button class="bg-surface-container rounded-xl p-5 flex flex-col items-start gap-4 hover:bg-surface-container-high transition-colors border border-outline-variant/10 group ambient-void-shadow text-left">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">hub</span>
+</div>
+<div>
+<h4 class="font-body font-medium text-on-surface text-sm">Create Mind Maps</h4>
+</div>
+</button>
+<!-- Card 5 -->
+<button class="bg-surface-container rounded-xl p-5 flex flex-col items-start gap-4 hover:bg-surface-container-high transition-colors border border-outline-variant/10 group ambient-void-shadow text-left col-span-1 sm:col-span-2 bg-gradient-to-br from-surface-container to-surface-container-high relative overflow-hidden">
+<div class="absolute right-[-20%] top-[-20%] w-32 h-32 bg-secondary/10 blur-3xl rounded-full"></div>
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-secondary group-hover:scale-110 transition-transform relative z-10">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<div class="relative z-10">
+<h4 class="font-headline font-bold text-secondary text-sm mb-1 uppercase tracking-wider">Predictive Mode</h4>
+<h4 class="font-body font-medium text-on-surface text-lg">PYQS (IMP Prediction)</h4>
+</div>
+</button>
+<!-- Card 6 -->
+<button class="bg-surface-container rounded-xl p-5 flex flex-col items-start gap-4 hover:bg-surface-container-high transition-colors border border-outline-variant/10 group ambient-void-shadow text-left">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">calendar_month</span>
+</div>
+<div>
+<h4 class="font-body font-medium text-on-surface text-sm">Create a Study plan</h4>
+</div>
+</button>
+<!-- Card 7 -->
+<button class="bg-surface-container rounded-xl p-5 flex flex-col items-start gap-4 hover:bg-surface-container-high transition-colors border border-outline-variant/10 group ambient-void-shadow text-left">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">mic_external_on</span>
+</div>
+<div>
+<h4 class="font-body font-medium text-on-surface text-sm">Audio Summary</h4>
+</div>
+</button>
+<!-- Card 8 -->
+<button class="bg-surface-container rounded-xl p-5 flex flex-col items-start gap-4 hover:bg-surface-container-high transition-colors border border-outline-variant/10 group ambient-void-shadow text-left">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-tertiary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">insights</span>
+</div>
+<div>
+<h4 class="font-body font-medium text-on-surface text-sm">User Progress</h4>
+</div>
+</button>
+</div>
+<!-- Sticky Chat Input Area -->
+<div class="mt-auto sticky bottom-6 max-w-4xl mx-auto w-full z-40">
+<div class="glass-panel rounded-full p-2 flex items-center gap-3 ambient-void-shadow relative group">
+<div class="absolute inset-0 rounded-full border border-primary/20 opacity-0 group-focus-within:opacity-100 transition-opacity neon-glow-primary pointer-events-none"></div>
+<button class="p-3 text-on-surface-variant hover:text-white transition-colors rounded-full hover:bg-white/5">
+<span class="material-symbols-outlined">attach_file</span>
+</button>
+<input class="flex-1 bg-transparent border-none outline-none text-on-surface font-body text-sm placeholder:text-on-surface-variant/50 focus:ring-0" placeholder="Enter the Prompt Here..." type="text"/>
+<button class="p-3 bg-gradient-to-br from-primary to-primary-dim rounded-full text-white flex items-center justify-center hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">arrow_upward</span>
+</button>
+</div>
+</div>
+</main>
+<!-- SideNavBar - Right Tools Drawer (Hidden on Mobile) -->
+<aside class="hidden xl:flex h-full w-64 fixed right-0 bg-[#0f131e] z-30 transition-all shadow-[-20px_0px_40px_rgba(0,0,0,0.4)]">
+<div class="flex flex-col h-screen py-10 px-4 w-full">
+<div class="mb-10 px-2">
+<h4 class="font-['Manrope'] uppercase tracking-widest text-[10px] text-[#3adffa] mb-1">AI Synthesis</h4>
+<h3 class="font-headline text-lg font-bold text-white">Tools</h3>
+</div>
+<div class="flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-all duration-300 ease-in-out text-sm font-medium group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">hub</span>
+                    Mind Maps
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-all duration-300 ease-in-out text-sm font-medium group" href="#">
+<span class="material-symbols-outlined group-hover:text-tertiary transition-colors">style</span>
+                    Flash Cards
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-all duration-300 ease-in-out text-sm font-medium group" href="#">
+<span class="material-symbols-outlined group-hover:text-secondary transition-colors">insights</span>
+                    Progress Report
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-all duration-300 ease-in-out text-sm font-medium group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-fixed transition-colors">mic_external_on</span>
+                    Audio Summary
+                </a>
+</div>
+<!-- Mini Processing Indicator Area -->
+<div class="mt-auto bg-surface-container rounded-xl p-4 border border-outline-variant/10 relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container to-transparent z-0"></div>
+<div class="relative z-10 flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-secondary relative">
+<div class="absolute inset-0 rounded-full bg-secondary animate-ping opacity-75"></div>
+</div>
+<span class="font-body text-xs text-on-surface-variant">Shiro AI Idle</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Mobile Bottom Navigation Shell Placeholder -->
+<div class="md:hidden fixed bottom-0 w-full h-16 bg-surface-container-highest/90 backdrop-blur-md z-40 border-t border-white/5 flex justify-around items-center px-4">
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-[10px] font-body font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">chat_bubble</span>
+<span class="text-[10px] font-body font-medium">Chats</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="text-[10px] font-body font-medium">Docs</span>
+</a>
+</div>
+</body></html>

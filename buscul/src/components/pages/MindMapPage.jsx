@@ -15,11 +15,6 @@ const MindMapPage = () => {
   const [activeTab, setActiveTab] = useState('create');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchDocuments();
-    fetchUserMindMaps();
-  }, []);
-
   const fetchDocuments = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/documents/${user.id}`);
@@ -33,6 +28,7 @@ const MindMapPage = () => {
   };
 
   const fetchUserMindMaps = async () => {
+    if (!user?.id) return;
     try {
       const response = await fetch(`${API_BASE_URL}/mindmaps/${user.id}`);
       if (response.ok) {
@@ -43,6 +39,13 @@ const MindMapPage = () => {
       console.error('Error fetching mind maps:', error);
     }
   };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchDocuments();
+      fetchUserMindMaps();
+    }
+  }, [user]);
 
   const generateMindMap = async () => {
     if (!selectedDocumentId) {
@@ -334,7 +337,7 @@ const MindMapPage = () => {
                     className="view-button"
                     onClick={async () => {
                       try {
-                        const response = await fetch(`${API_BASE_URL}/mindmaps/${mindmap.mindmap_id}`);
+                        const response = await fetch(`${API_BASE_URL}/mindmap-details/${mindmap.mindmap_id}`);
                         if (response.ok) {
                           const data = await response.json();
                           setMindMapData(data);
@@ -358,4 +361,3 @@ const MindMapPage = () => {
 };
 
 export default MindMapPage;
-

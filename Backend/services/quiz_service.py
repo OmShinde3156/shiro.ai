@@ -4,7 +4,7 @@ from utils.llm_client import LLMClient
 from models.schema import QuizSubmissionRequest, QuizResultResponse
 import uuid
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 class QuizService:
     def __init__(self):
@@ -20,7 +20,7 @@ class QuizService:
         
         # Generate questions using LLM
         questions = await self.llm_client.generate_quiz_questions(
-            document.text_content[:4000],  # Limit content size
+            document.text_content,  # Limit content size
             num_questions,
             difficulty
         )
@@ -118,7 +118,67 @@ class QuizService:
             }
             for result in results
         ]
+
+    def get_latest_quiz_for_document(self, document_id: int, db: Session) -> Optional[Dict[str, Any]]:
+        """Get latest quiz for a specific document"""
+        quiz = db.query(Quiz).filter(Quiz.document_id == document_id).order_by(Quiz.created_at.desc()).first()
+        if not quiz:
+            return None
+        return {
+            "quiz_id": quiz.id,
+            "document_id": quiz.document_id,
+            "questions": quiz.questions,
+            "difficulty": quiz.difficulty,
+            "created_at": quiz.created_at
+        }
     
+    async def generate_optimized_important_questions(self, document_id: int, pyq_document_id: Optional[int], num_questions: int, db: Session):
+        """
+        Generates highly optimized important questions by identifying high-yield concepts
+        through cross-referencing main document content with Previous Year Questions (PYQs).
+        """
+        document = db.query(Document).filter(Document.id == document_id).first()
+        if not document:
+            raise Exception("Main document not found")
+        
+        pyq_content = ""
+        if pyq_document_id:
+            pyq_doc = db.query(Document).filter(Document.id == pyq_document_id).first()
+            if pyq_doc:
+                pyq_content = pyq_doc.text_content
+
+        # Specialized prompt for optimization
+        prompt = f"""
+        You are Shiro v2.5, an expert academic analyst. 
+        Your task is to identify the MOST IMPORTANT and HIGH-YIELD questions for a student based on their study material and previous year exam patterns.
+
+        MAIN DOCUMENT CONTENT:
+        {document.text_content[:8000]}
+
+        PREVIOUS YEAR QUESTIONS (PYQs) FOR PATTERN ANALYSIS:
+        {pyq_content[:4000] if pyq_content else "No PYQs provided. Focus on core concepts in the main document."}
+
+        INSTRUCTIONS:
+        1. Analyze the PYQs to identify recurring themes, topics, and question formats (if provided).
+        2. Scan the MAIN DOCUMENT for these high-yield topics.
+        3. Generate {num_questions} Multiple Choice Questions (MCQs) that are most likely to appear in future exams.
+        4. Focus on conceptual clarity and critical application.
+
+        The response MUST be a valid JSON list of objects, each with exactly these fields:
+        - "question": string
+        - "options": a dictionary with keys "A", "B", "C", "D" and their string values
+        - "correct_answer": string (exactly "A", "B", "C", or "D")
+        - "explanation": string
+        """
+
+        questions = await self.llm_client.generate_quiz_questions_optimized(prompt)
+        
+        # Add unique IDs
+        for i, q in enumerate(questions):
+            q['id'] = f"iq_{uuid.uuid4().hex[:6]}_{i}"
+
+        return {"questions": questions}
+
     async def generate_important_questions(self, document_id: int, pyq_document_id: int, num_questions: int, db: Session):
         """Generate important questions based on content and PYQs"""
         

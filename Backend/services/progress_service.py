@@ -9,6 +9,11 @@ class ProgressService:
     async def get_user_progress(self, user_id: int, db: Session) -> Dict[str, Any]:
         """Get comprehensive user progress"""
         
+        # Get user XP and Level
+        user = db.query(User).filter(User.id == user_id).first()
+        xp = user.xp if user else 0
+        level = user.level if user else 1
+        
         # Basic stats
         total_docs = db.query(Document).filter(Document.user_id == user_id).count()
         total_quizzes = db.query(QuizResult).filter(QuizResult.user_id == user_id).count()
@@ -43,10 +48,40 @@ class ProgressService:
             "average_score": round(avg_score, 2),
             "flashcards_studied": flashcard_count,
             "study_streak": study_streak,
+            "xp": xp,
+            "level": level,
             "weak_subjects": weak_subjects,
             "strong_subjects": strong_subjects,
             "weekly_activity": weekly_activity,
             "knowledge_heatmap": knowledge_heatmap
+        }
+        
+    async def add_xp(self, user_id: int, xp_amount: int, db: Session) -> Dict[str, Any]:
+        """Award XP to a user and handle level ups"""
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise ValueError("User not found")
+            
+        user.xp = (user.xp or 0) + xp_amount
+        
+        # Calculate level based on simple curve (e.g., Level 1 = 0, Level 2 = 100, Level 3 = 300, Level 4 = 600)
+        # Level = floor(sqrt(xp / 100)) + 1
+        import math
+        new_level = math.floor(math.sqrt(user.xp / 100)) + 1
+        
+        level_up = False
+        if new_level > (user.level or 1):
+            user.level = new_level
+            level_up = True
+            
+        db.commit()
+        db.refresh(user)
+        
+        return {
+            "xp": user.xp,
+            "level": user.level,
+            "level_up": level_up,
+            "xp_added": xp_amount
         }
     
     async def get_dashboard_data(self, user_id: int, db: Session) -> Dict[str, Any]:

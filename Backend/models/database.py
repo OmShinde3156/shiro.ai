@@ -12,7 +12,10 @@ class User(Base):
     name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False, default="password123")
+    avatar_url = Column(String, nullable=True) # Custom profile picture path
     preferred_language = Column(String, default="en")
+    xp = Column(Integer, default=0)
+    level = Column(Integer, default=1)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -144,7 +147,6 @@ class StudyTimetable(Base):
 
 class TimetableProgress(Base):
     __tablename__ = "timetable_progress"
-    
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     timetable_id = Column(String, ForeignKey("study_timetables.id"))
@@ -152,3 +154,26 @@ class TimetableProgress(Base):
     completed = Column(Boolean, default=False)
     hours_studied = Column(Float, default=0.0)
     completion_date = Column(DateTime)
+
+# Shiro v2.5: Graph-Augmented RAG Models
+class KnowledgeNode(Base):
+    __tablename__ = "knowledge_nodes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("documents.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    label = Column(String, nullable=False, index=True) # Concept Name (e.g. "Mitochondria")
+    description = Column(Text, nullable=True)
+    importance_score = Column(Float, default=0.5)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class KnowledgeEdge(Base):
+    __tablename__ = "knowledge_edges"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("documents.id"))
+    source_node_id = Column(Integer, ForeignKey("knowledge_nodes.id"))
+    target_node_id = Column(Integer, ForeignKey("knowledge_nodes.id"))
+    relation = Column(String, nullable=False) # e.g. "contains", "results_in", "instance_of"
+    weight = Column(Float, default=1.0)
+    created_at = Column(DateTime, default=datetime.utcnow)

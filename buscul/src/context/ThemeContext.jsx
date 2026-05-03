@@ -3,26 +3,30 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem('theme');
-    return savedTheme ? savedTheme === 'dark' : true;
+  const [theme, setTheme] = useState(() => {
+    const savedTheme = localStorage.getItem('shiro-theme');
+    return savedTheme || 'neon'; // Default Gen Z Neon
   });
 
   useEffect(() => {
     const root = window.document.body;
-    if (isDarkMode) {
-      root.classList.remove('light-mode');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      root.classList.add('light-mode');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
+    // Remove all possible theme classes
+    root.classList.remove('theme-neon', 'theme-solar', 'theme-midnight', 'theme-nordic', 'theme-light');
+    // Add current theme class
+    root.classList.add(`theme-${theme}`);
+    localStorage.setItem('shiro-theme', theme);
+  }, [theme]);
 
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
+  const toggleTheme = () => {
+    // Legacy support for the sidebar button (cycles through themes)
+    const themes = ['neon', 'light', 'midnight', 'nordic', 'solar'];
+    const currentIndex = themes.indexOf(theme);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    setTheme(themes[nextIndex]);
+  };
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

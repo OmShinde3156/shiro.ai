@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Shiro.AI - Auth</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#191c22",
+                        "on-secondary": "#520070",
+                        "on-secondary-fixed": "#320046",
+                        "tertiary": "#ffe7c5",
+                        "primary": "#cdf0ff",
+                        "inverse-on-surface": "#2e3037",
+                        "tertiary-container": "#ffc559",
+                        "on-secondary-container": "#e69dff",
+                        "error-container": "#93000a",
+                        "on-error": "#690005",
+                        "outline-variant": "#3e484d",
+                        "on-primary": "#003543",
+                        "inverse-primary": "#00677f",
+                        "tertiary-fixed": "#ffdea9",
+                        "surface-bright": "#363940",
+                        "surface": "#10131a",
+                        "on-background": "#e1e2eb",
+                        "surface-tint": "#69d4f7",
+                        "surface-container-high": "#272a31",
+                        "on-surface-variant": "#bdc8ce",
+                        "on-secondary-fixed-variant": "#6e208c",
+                        "on-primary-fixed": "#001f28",
+                        "secondary-container": "#70238f",
+                        "on-primary-fixed-variant": "#004e60",
+                        "primary-fixed-dim": "#69d4f7",
+                        "surface-variant": "#32353c",
+                        "on-tertiary": "#422c00",
+                        "secondary": "#edb1ff",
+                        "surface-container-highest": "#32353c",
+                        "on-tertiary-fixed-variant": "#5e4100",
+                        "on-primary-container": "#006076",
+                        "background": "#10131a",
+                        "secondary-fixed": "#f9d8ff",
+                        "outline": "#879297",
+                        "on-tertiary-container": "#745100",
+                        "inverse-surface": "#e1e2eb",
+                        "tertiary-fixed-dim": "#f6bd52",
+                        "surface-container": "#1d2026",
+                        "surface-dim": "#10131a",
+                        "error": "#ffb4ab",
+                        "primary-fixed": "#b6ebff",
+                        "secondary-fixed-dim": "#edb1ff",
+                        "on-tertiary-fixed": "#271900",
+                        "on-surface": "#e1e2eb",
+                        "surface-container-lowest": "#0b0e14",
+                        "on-error-container": "#ffdad6",
+                        "primary-container": "#72dcff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Manrope", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(29, 32, 38, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .neon-gradient-text {
+            background: linear-gradient(135deg, #cdf0ff, #72dcff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .neon-button {
+            background: linear-gradient(135deg, #cdf0ff, #72dcff);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body min-h-screen flex items-center justify-center relative overflow-hidden">
+<!-- Ambient Glow Background -->
+<div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+<div class="w-[800px] h-[800px] rounded-full bg-primary/5 blur-[120px] mix-blend-screen opacity-50 absolute -top-[400px] -left-[400px]"></div>
+<div class="w-[600px] h-[600px] rounded-full bg-secondary/5 blur-[100px] mix-blend-screen opacity-40 absolute -bottom-[300px] -right-[300px]"></div>
+</div>
+<!-- Auth Container -->
+<main class="w-full max-w-md p-8 sm:p-12 z-10">
+<!-- Brand Header -->
+<div class="mb-12 text-center">
+<h1 class="font-headline font-black text-4xl tracking-tighter text-on-surface mb-2">Shiro.AI</h1>
+<p class="font-label text-sm text-on-surface-variant tracking-widest uppercase">System Access</p>
+</div>
+<!-- Glass Panel Form -->
+<div class="glass-panel rounded-2xl p-8 border border-outline-variant/15 shadow-[0_8px_32px_rgba(114,220,255,0.05)] relative overflow-hidden">
+<!-- Subtle top accent line -->
+<div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary-container to-transparent opacity-50"></div>
+<form action="#" class="space-y-6" method="POST">
+<!-- Email Input -->
+<div class="space-y-2">
+<label class="font-label text-xs uppercase tracking-widest text-on-surface-variant block" for="email">Identification</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 text-xl pointer-events-none">fingerprint</span>
+<input class="w-full bg-surface-container-lowest border-none rounded-full py-4 pl-12 pr-4 text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:ring-1 focus:ring-primary-container focus:bg-surface-bright transition-all duration-300" id="email" name="email" placeholder="User Email" required="" type="email"/>
+</div>
+</div>
+<!-- Password Input -->
+<div class="space-y-2">
+<label class="font-label text-xs uppercase tracking-widest text-on-surface-variant block flex justify-between items-center" for="password">
+<span>Security Key</span>
+<a class="text-primary hover:text-primary-container transition-colors lowercase tracking-normal" href="#">Recover?</a>
+</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 text-xl pointer-events-none">lock</span>
+<input class="w-full bg-surface-container-lowest border-none rounded-full py-4 pl-12 pr-4 text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:ring-1 focus:ring-primary-container focus:bg-surface-bright transition-all duration-300" id="password" name="password" placeholder="••••••••" required="" type="password"/>
+</div>
+</div>
+<!-- Submit Button -->
+<div class="pt-4">
+<button class="w-full neon-button text-on-primary-fixed font-headline font-bold rounded-xl py-4 flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-[0_0_20px_rgba(114,220,255,0.2)]" type="submit">
+<span>Initiate Link</span>
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">arrow_forward</span>
+</button>
+</div>
+</form>
+</div>
+<!-- Footer Action -->
+<div class="mt-8 text-center">
+<p class="font-body text-sm text-on-surface-variant">
+                Unregistered entity? 
+                <a class="text-primary hover:text-primary-container font-semibold transition-colors ml-1" href="#">Request Access</a>
+</p>
+</div>
+</main>
+</body></html>

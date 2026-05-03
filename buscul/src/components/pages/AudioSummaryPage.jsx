@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import "./audiosummarypage.css";
 import { useAuth } from "../../context/AuthContext";
 import { usePodcasts } from "../../context/PodcastContext";
 import API_BASE_URL from "../../api/config.js";
@@ -23,23 +22,17 @@ const AudioSummaryPage = () => {
   const [playingEpisode, setPlayingEpisode] = useState(null);
   const audioRefs = useRef({});
 
-  const AUDIO_FILES_URL = `${API_BASE_URL}/static/podcasts`;
-
-  // Function to fetch available documents for the user
+  // Function to fetch available documents
   const fetchDocuments = async () => {
     if (!user || !user.id) return;
-    console.log("Fetching documents for user:", user);
     try {
       const response = await fetch(`${API_BASE_URL}/documents/${user.id}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch documents");
+      if (response.ok) {
+        const data = await response.json();
+        setDocuments(data);
       }
-      const data = await response.json();
-      console.log("Fetched documents:", data);
-      setDocuments(data);
     } catch (err) {
-      console.error("Error fetching documents:", err);
-      setError(err.message);
+      console.error(err);
     }
   };
 
@@ -48,17 +41,15 @@ const AudioSummaryPage = () => {
     if (!user || !user.id) return;
     try {
       const response = await fetch(`${API_BASE_URL}/podcasts/${user.id}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch podcasts");
+      if (response.ok) {
+        const data = await response.json();
+        setPodcasts(data);
       }
-      const data = await response.json();
-      setPodcasts(data);
     } catch (err) {
-      setError(err.message);
+      console.error(err);
     }
   };
 
-  // Fetch documents and podcasts on component mount
   useEffect(() => {
     if (user && user.id) {
       fetchDocuments();
@@ -66,24 +57,22 @@ const AudioSummaryPage = () => {
     }
   }, [user]);
 
-  // Function to poll task status
+  // Poll task status
   useEffect(() => {
     if (taskId) {
       const interval = setInterval(async () => {
         try {
           const response = await fetch(`${API_BASE_URL}/podcast-status/${taskId}`);
-          if (!response.ok) {
-            throw new Error("Failed to get task status");
-          }
-          const data = await response.json();
-          setStatus(data.status);
-          if (data.status === "completed" || data.status.startsWith("failed")) {
-            clearInterval(interval);
-            setLoading(false);
-            fetchPodcasts();
+          if (response.ok) {
+            const data = await response.json();
+            setStatus(data.status);
+            if (data.status === "completed" || data.status.startsWith("failed")) {
+              clearInterval(interval);
+              setLoading(false);
+              fetchPodcasts();
+            }
           }
         } catch (err) {
-          setError(err.message);
           clearInterval(interval);
           setLoading(false);
         }
@@ -92,54 +81,28 @@ const AudioSummaryPage = () => {
     }
   }, [taskId]);
 
-  // Handle multiple select change
-  const handleDocumentSelectChange = (e) => {
-    const options = e.target.options;
-    const value = [];
-    for (let i = 0, l = options.length; i < l; i++) {
-      if (options[i].selected) {
-        value.push(parseInt(options[i].value, 10));
-      }
-    }
-    setSelectedDocumentIds(value);
-  };
-
-  // Function to handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user) {
-      setError("You must be logged in to generate a podcast.");
-      return;
-    }
-    if (selectedDocumentIds.length === 0) {
-      setError("Please select at least one document.");
-      return;
-    }
+    if (!user || selectedDocumentIds.length === 0) return;
     setLoading(true);
     setError(null);
     setStatus(null);
     setTaskId(null);
-    try {
-      const payload = {
-        user_id: user.id,
-        document_ids: selectedDocumentIds,
-        topic: topic || null,
-        episodes: Number.isInteger(episodes) ? episodes : 1,
-        language: language || "en",
-      };
-      console.log("Sending request:", payload);
 
+    try {
       const response = await fetch(`${API_BASE_URL}/generate-podcast`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          user_id: user.id,
+          document_ids: selectedDocumentIds.map(Number),
+          topic: topic || null,
+          episodes: Number.isInteger(episodes) ? episodes : 1,
+          language: language || "en",
+        }),
       });
 
-      if (!response.ok) {
-        const errMsg = await response.text();
-        throw new Error(`Failed to start podcast generation: ${errMsg}`);
-      }
-
+      if (!response.ok) throw new Error("Failed to start podcast generation.");
       const data = await response.json();
       setTaskId(data.task_id);
       setStatus("processing");
@@ -149,33 +112,17 @@ const AudioSummaryPage = () => {
     }
   };
 
-  
-
-  // Enhanced audio control functions
-  const playEpisode = (podcastId, episodeIndex, episodePath) => {
+  const playEpisode = (podcastId, episodeIndex) => {
     const audioKey = `${podcastId}-${episodeIndex}`;
-
-    // Stop any currently playing audio
     if (currentlyPlaying && audioRefs.current[currentlyPlaying]) {
       audioRefs.current[currentlyPlaying].pause();
-      audioRefs.current[currentlyPlaying].currentTime = 0;
     }
-
-    // Play the selected episode
     const audioEl = audioRefs.current[audioKey];
     if (audioEl) {
-      audioEl
-        .play()
-        .then(() => {
-          setCurrentlyPlaying(audioKey);
-          setPlayingEpisode({ podcastId, episodeIndex });
-        })
-        .catch((error) => {
-          console.error("Error playing audio:", error);
-          setError("Failed to play audio. Please check if the file exists.");
-        });
-    } else {
-      console.error("Audio element not found for key:", audioKey);
+      audioEl.play().then(() => {
+        setCurrentlyPlaying(audioKey);
+        setPlayingEpisode({ podcastId, episodeIndex });
+      });
     }
   };
 
@@ -189,239 +136,225 @@ const AudioSummaryPage = () => {
   };
 
   const isPlaying = (podcastId, episodeIndex) => {
-    return (
-      playingEpisode?.podcastId === podcastId &&
-      playingEpisode?.episodeIndex === episodeIndex
-    );
+    return playingEpisode?.podcastId === podcastId && playingEpisode?.episodeIndex === episodeIndex;
   };
 
   return (
-    <div className="audio-summary-page">
-      <div className="header-section">
-        <h1 className="page-title">Generate Audio Summary</h1>
-        <p className="page-subtitle">
-          Transform your documents into engaging podcasts
-        </p>
-      </div>
+    <div className="min-h-screen p-8 max-w-7xl mx-auto flex flex-col gap-10 font-body">
+      {/* Header */}
+      <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-6">
+        <div>
+          <h1 className="font-headline text-4xl md:text-5xl font-black tracking-tight text-white mb-2 flex items-center gap-4">
+            AI Audio Cast <span className="material-symbols-outlined text-primary text-5xl">headphones</span>
+          </h1>
+          <p className="text-white/70 font-body text-sm md:text-base max-w-2xl">
+            Transform your long study documents into an engaging, multi-episode podcast. Perfect for learning on the go.
+          </p>
+        </div>
+      </section>
 
-      <div className="form-section">
-        <form onSubmit={handleSubmit} className="summary-form">
-          <div className="form-group">
-            <label>Select Document(s)</label>
-            <select
-              multiple
-              value={selectedDocumentIds.map(String)}
-              onChange={handleDocumentSelectChange}
-              required
-              className="document-select"
-            >
-              {documents.length === 0 && (
-                <option value="" disabled>
-                  No documents available
-                </option>
-              )}
-              {documents.map((doc) => (
-                <option key={doc.id} value={doc.id}>
-                  {doc.filename}
-                </option>
-              ))}
-            </select>
-            <small className="form-hint">
-              Hold Ctrl/Cmd to select multiple documents
-            </small>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Column: Generator Form */}
+        <section className="lg:col-span-4 flex flex-col gap-6">
+          <div className="glass-card p-8 rounded-3xl border border-white/10 bg-white/5 relative overflow-hidden shadow-2xl">
+            <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none"></div>
+            
+            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">mic</span>
+              New Audio Cast
+            </h2>
 
-          <div className="form-group">
-            <label>Customize Topic</label>
-            <input
-              type="text"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g., Explain the main concepts for a beginner"
-              className="topic-input"
-            />
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label>Episodes</label>
-              <input
-                type="number"
-                value={episodes}
-                onChange={(e) =>
-                  setEpisodes(parseInt(e.target.value, 10) || 1)
-                }
-                min="1"
-                max="10"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Language</label>
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                required
-              >
-                <option value="en">English</option>
-                <option value="es">Spanish</option>
-                <option value="fr">French</option>
-                <option value="de">German</option>
-                <option value="it">Italian</option>
-              </select>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={
-              loading || documents.length === 0 || selectedDocumentIds.length === 0
-            }
-            className="generate-button"
-          >
-            {loading ? (
-              <>
-                <div className="spinner"></div> Generating...
-              </>
-            ) : (
-              "Generate Podcast"
-            )}
-          </button>
-        </form>
-
-        {error && (
-          <div className="error-message">
-            <div className="error-icon">⚠️</div>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {status && (
-          <div className="status-message">
-            <div className="status-icon">
-              {status === "completed" ? "✅" : "⏳"}
-            </div>
-            <span>Status: {status}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="podcasts-section">
-        <h2 className="section-title">Your Podcasts</h2>
-        {podcasts.length > 0 ? (
-          <div className="podcasts-grid">
-            {podcasts.map((podcast) => (
-              <div key={podcast.id} className="podcast-card">
-                <div className="podcast-header">
-                  <div className="podcast-info">
-                    <h3>Podcast #{podcast.id}</h3>
-                    <div className="podcast-meta">
-                      <span>📄 Doc ID: {podcast.document_id}</span>
-                      <span>🎧 {podcast.episodes.length} Episodes</span>
-                      <span className={`status-badge ${podcast.status}`}>
-                        {podcast.status}
-                      </span>
-                    </div>
-                  </div>
+            <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-primary/80">Select Source Documents</label>
+                <div className="relative">
+                  <select
+                    multiple
+                    value={selectedDocumentIds.map(String)}
+                    onChange={(e) => setSelectedDocumentIds(Array.from(e.target.selectedOptions, option => option.value))}
+                    required
+                    className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary/50 outline-none min-h-[120px] custom-scrollbar"
+                  >
+                    {documents.map((doc) => (
+                      <option key={doc.id} value={doc.id} className="py-2 px-2 rounded-lg hover:bg-primary/20 cursor-pointer">📄 {doc.filename}</option>
+                    ))}
+                  </select>
                 </div>
-
-                {podcast.status === "completed" && (
-                  <div className="episodes-container">
-                    <h4>Episodes</h4>
-                    {podcast.episodes.map((ep, idx) => {
-                      const audioKey = `${podcast.id}-${idx}`;
-                      const audioSrc = ep.startsWith("http")
-                        ? ep
-                        : `${API_BASE_URL}/static/${ep}`;
-
-                      return (
-                        <div key={idx} className="episode-item">
-                          <div className="episode-header">
-                            <span className="episode-title">
-                              Episode {idx + 1}
-                            </span>
-                            <div className="episode-controls">
-                              <button
-                                onClick={() => {
-                                  if (isPlaying(podcast.id, idx)) {
-                                    pauseEpisode(podcast.id, idx);
-                                  } else {
-                                    playEpisode(podcast.id, idx, ep);
-                                  }
-                                }}
-                                className="play-button"
-                              >
-                                {isPlaying(podcast.id, idx) ? "⏸️" : "▶️"}
-                              </button>
-                            </div>
-                          </div>
-
-                          <audio
-                            ref={(ref) => {
-                              if (ref) audioRefs.current[audioKey] = ref;
-                            }}
-                            src={audioSrc}
-                            controls
-                            className="episode-audio"
-                            onPlay={() => {
-                              setCurrentlyPlaying(audioKey);
-                              setPlayingEpisode({
-                                podcastId: podcast.id,
-                                episodeIndex: idx,
-                              });
-                            }}
-                            onPause={() => {
-                              if (currentlyPlaying === audioKey) {
-                                setCurrentlyPlaying(null);
-                                setPlayingEpisode(null);
-                              }
-                            }}
-                            onError={() => {
-                              setError(`Failed to load episode ${idx + 1}`);
-                            }}
-                          >
-                            Your browser does not support the audio element.
-                          </audio>
-                        </div>
-                      );
-                    })}
-
-                    <button
-                      onClick={() => savePodcast(podcast)}
-                      className="save-button"
-                    >
-                      💾 Save Podcast
-                    </button>
-                  </div>
-                )}
-
-                {podcast.status === "processing" && (
-                  <div className="processing-message">
-                    <div className="spinner"></div>
-                    <span>Generating your podcast...</span>
-                  </div>
-                )}
-
-                {podcast.status === "failed" && (
-                  <div className="failed-message">
-                    <span>❌ Failed to generate podcast</span>
-                  </div>
-                )}
+                <span className="text-[10px] text-white/40 italic">Hold Ctrl/Cmd to select multiple files.</span>
               </div>
-            ))}
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-primary/80">Custom Focus (Optional)</label>
+                <input
+                  type="text"
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  placeholder="e.g. Focus only on the history of Rome..."
+                  className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary/50 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-primary/80">Episodes</label>
+                  <input
+                    type="number"
+                    value={episodes}
+                    onChange={(e) => setEpisodes(e.target.value)}
+                    min="1" max="5" required
+                    className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary/50 outline-none text-center"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-primary/80">Voice Language</label>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-primary/50 outline-none"
+                  >
+                    <option value="en">English (US)</option>
+                    <option value="hi">Hindi</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || documents.length === 0}
+                className="w-full py-4 bg-gradient-to-br from-primary to-primary-container text-[#001f27] font-bold rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(114,220,255,0.3)] disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <><span className="material-symbols-outlined animate-spin">sync</span> Mixing Audio...</>
+                ) : (
+                  <><span className="material-symbols-outlined fill">play_arrow</span> Generate Podcast</>
+                )}
+              </button>
+              
+              {status && status !== "completed" && (
+                <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-center gap-3 text-primary text-xs font-bold uppercase tracking-widest">
+                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                  Status: {status}
+                </div>
+              )}
+              {error && (
+                <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-bold text-center">
+                  {error}
+                </div>
+              )}
+            </form>
           </div>
-        ) : (
-          <div className="no-podcasts">
-            <div className="no-podcasts-icon">🎙️</div>
-            <h3>No podcasts yet</h3>
-            <p>Generate your first podcast by selecting documents above</p>
-          </div>
-        )}
+        </section>
+
+        {/* Right Column: Library of Generated Podcasts */}
+        <section className="lg:col-span-8 flex flex-col gap-6">
+           <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+             <span className="material-symbols-outlined text-secondary">library_music</span>
+             Your Audio Library
+           </h2>
+
+           {podcasts.length === 0 ? (
+             <div className="glass-card p-12 rounded-3xl border border-white/5 border-dashed flex flex-col items-center justify-center text-center opacity-50">
+               <span className="material-symbols-outlined text-6xl mb-4">podcasts</span>
+               <h3 className="text-xl font-bold text-white mb-2">No Casts Yet</h3>
+               <p className="text-white/60 max-w-sm">Select some documents and click generate to create your first AI-narrated study session.</p>
+             </div>
+           ) : (
+             <div className="grid grid-cols-1 gap-6">
+                {podcasts.map((podcast) => (
+                  <div key={podcast.id} className="glass-card rounded-3xl border border-white/10 bg-black/20 overflow-hidden shadow-lg transition-all hover:border-white/20">
+                    {/* Podcast Header Area */}
+                    <div className="p-6 border-b border-white/5 bg-gradient-to-r from-primary/10 to-transparent flex flex-col md:flex-row justify-between md:items-center gap-4">
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                           <span className="px-3 py-1 bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-widest rounded-full border border-primary/20">
+                             Audio Cast
+                           </span>
+                           <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest">ID: {podcast.id.split('-')[0]}</span>
+                        </div>
+                        <h3 className="text-xl font-bold text-white">Study Session based on Doc #{podcast.document_id}</h3>
+                      </div>
+                      
+                      {podcast.status === "completed" && (
+                         <div className="flex items-center gap-3">
+                           <div className="flex -space-x-2">
+                             {podcast.episodes.map((_, i) => (
+                               <div key={i} className="w-8 h-8 rounded-full bg-surface-container-high border-2 border-primary flex items-center justify-center text-[10px] font-bold text-white shadow-lg z-10 relative">
+                                 Ep.{i+1}
+                               </div>
+                             ))}
+                           </div>
+                           <button onClick={() => savePodcast(podcast)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-all border border-white/10" title="Save Podcast">
+                             <span className="material-symbols-outlined text-sm">bookmark</span>
+                           </button>
+                         </div>
+                      )}
+                    </div>
+
+                    {/* Podcast Body / Player Area */}
+                    <div className="p-6">
+                      {podcast.status === "processing" ? (
+                        <div className="flex flex-col items-center justify-center py-8 gap-4 opacity-70">
+                          <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                          <p className="text-sm font-bold text-primary animate-pulse tracking-widest uppercase">Synthesizing Voice...</p>
+                        </div>
+                      ) : podcast.status.startsWith("failed") ? (
+                        <div className="p-4 bg-red-500/10 text-red-400 rounded-xl text-sm border border-red-500/20 text-center">
+                           ⚠️ Failed to generate audio. Please try again.
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {podcast.episodes.map((ep, idx) => {
+                            const audioKey = `${podcast.id}-${idx}`;
+                            // Ensure the URL is correctly formatted for the frontend
+                            const audioSrc = ep.startsWith("http") ? ep : `${API_BASE_URL}/static/${ep.split('/').pop()}`;
+                            const isEpPlaying = isPlaying(podcast.id, idx);
+
+                            return (
+                              <div key={idx} className={`p-4 rounded-2xl border transition-all flex flex-col md:flex-row items-center gap-6 ${isEpPlaying ? 'bg-primary/5 border-primary/30 shadow-[0_0_20px_rgba(114,220,255,0.1)]' : 'bg-white/5 border-white/5 hover:border-white/20'}`}>
+                                
+                                <button 
+                                  onClick={() => isEpPlaying ? pauseEpisode(podcast.id, idx) : playEpisode(podcast.id, idx)}
+                                  className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${isEpPlaying ? 'bg-primary text-[#001f27] shadow-[0_0_15px_var(--primary)]' : 'bg-surface-container-high text-white hover:bg-primary/20 hover:text-primary border border-white/10'}`}
+                                >
+                                  <span className="material-symbols-outlined text-2xl fill">{isEpPlaying ? 'pause' : 'play_arrow'}</span>
+                                </button>
+                                
+                                <div className="flex-1 w-full flex flex-col gap-2">
+                                  <div className="flex justify-between items-center">
+                                    <h4 className={`font-bold ${isEpPlaying ? 'text-primary' : 'text-white'}`}>Part {idx + 1}: Deep Dive</h4>
+                                    {isEpPlaying && <div className="flex items-center gap-1 h-4">
+                                      <div className="w-1 bg-primary animate-pulse h-full"></div>
+                                      <div className="w-1 bg-primary animate-pulse h-2/3 delay-75"></div>
+                                      <div className="w-1 bg-primary animate-pulse h-full delay-150"></div>
+                                    </div>}
+                                  </div>
+                                  
+                                  {/* Hidden native audio player used for logic */}
+                                  <audio
+                                    ref={(ref) => { if (ref) audioRefs.current[audioKey] = ref; }}
+                                    src={audioSrc}
+                                    onPlay={() => { setCurrentlyPlaying(audioKey); setPlayingEpisode({ podcastId: podcast.id, episodeIndex: idx }); }}
+                                    onPause={() => { if (currentlyPlaying === audioKey) { setCurrentlyPlaying(null); setPlayingEpisode(null); } }}
+                                    className="w-full h-8 filter opacity-50 grayscale hover:grayscale-0 transition-all"
+                                    controls
+                                    controlsList="nodownload noplaybackrate"
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                ))}
+             </div>
+           )}
+        </section>
       </div>
     </div>
   );
 };
 
 export default AudioSummaryPage;
-
-

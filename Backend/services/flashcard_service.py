@@ -20,7 +20,7 @@ class FlashcardService:
         
         # Generate flashcards using LLM
         cards_data = await self.llm_client.generate_flashcards(
-            document.text_content[:4000],
+            document.text_content,
             num_cards
         )
         

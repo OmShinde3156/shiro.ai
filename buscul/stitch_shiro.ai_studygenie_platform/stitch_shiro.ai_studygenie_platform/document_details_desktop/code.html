@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Shiro.AI - Document Details</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-bright": "#363940",
+                      "on-secondary-fixed-variant": "#6e208c",
+                      "surface-dim": "#10131a",
+                      "on-error": "#690005",
+                      "on-secondary": "#520070",
+                      "error-container": "#93000a",
+                      "surface-container-highest": "#32353c",
+                      "primary-fixed-dim": "#69d4f7",
+                      "on-surface-variant": "#bdc8ce",
+                      "secondary-container": "#70238f",
+                      "tertiary-container": "#ffc559",
+                      "tertiary": "#ffe7c5",
+                      "surface-container-low": "#191c22",
+                      "primary-fixed": "#b6ebff",
+                      "on-surface": "#e1e2eb",
+                      "on-primary": "#003543",
+                      "surface": "#10131a",
+                      "on-primary-fixed-variant": "#004e60",
+                      "surface-tint": "#69d4f7",
+                      "secondary-fixed-dim": "#edb1ff",
+                      "surface-container-high": "#272a31",
+                      "inverse-primary": "#00677f",
+                      "outline-variant": "#3e484d",
+                      "secondary-fixed": "#f9d8ff",
+                      "on-secondary-fixed": "#320046",
+                      "inverse-surface": "#e1e2eb",
+                      "tertiary-fixed-dim": "#f6bd52",
+                      "error": "#ffb4ab",
+                      "on-tertiary-container": "#745100",
+                      "on-primary-fixed": "#001f28",
+                      "primary-container": "#72dcff",
+                      "on-primary-container": "#006076",
+                      "secondary": "#edb1ff",
+                      "tertiary-fixed": "#ffdea9",
+                      "surface-container-lowest": "#0b0e14",
+                      "on-tertiary-fixed-variant": "#5e4100",
+                      "inverse-on-surface": "#2e3037",
+                      "on-tertiary-fixed": "#271900",
+                      "on-secondary-container": "#e69dff",
+                      "on-background": "#e1e2eb",
+                      "on-error-container": "#ffdad6",
+                      "primary": "#cdf0ff",
+                      "outline": "#879297",
+                      "surface-variant": "#32353c",
+                      "on-tertiary": "#422c00",
+                      "background": "#10131a",
+                      "surface-container": "#1d2026"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {},
+              "fontFamily": {
+                      "headline": [
+                              "Manrope", "sans-serif"
+                      ],
+                      "body": [
+                              "Inter", "sans-serif"
+                      ],
+                      "label": [
+                              "Inter", "sans-serif"
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #32353c;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3e484d;
+        }
+    </style>
+</head>
+<body class="bg-surface-dim text-on-surface font-body h-screen w-full overflow-hidden flex selection:bg-primary-container/30 selection:text-primary">
+<!-- SideNavBar (Shared Component) -->
+<!-- Applying style_ separation logic: tonal-shift bg-surface-container-low -->
+<nav class="bg-[#191c22]/80 backdrop-blur-2xl font-['Manrope'] tracking-tight font-semibold h-screen w-64 fixed left-0 top-0 border-r border-[#72dcff]/10 shadow-[20px_0_40px_rgba(114,220,255,0.02)] flex flex-col h-full py-8 px-4 z-50">
+<!-- Header -->
+<div class="mb-10 px-4">
+<h1 class="text-2xl font-black tracking-tighter text-[#72dcff] italic">Shiro.AI</h1>
+<p class="text-xs text-on-surface-variant mt-1 uppercase tracking-wider font-label">The Neon Scholar</p>
+</div>
+<!-- Main Nav -->
+<div class="flex-1 space-y-2">
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 transition-colors hover:bg-[#32353c] transition-all duration-300 scale-98 active:scale-95 duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">grid_view</span>
+<span>Dashboard</span>
+</a>
+<!-- Active (Library intent matches viewing a document) -->
+<a class="flex items-center gap-3 px-4 py-3 text-[#72dcff] bg-[#72dcff]/10 rounded-xl relative before:absolute before:left-0 before:w-1 before:h-6 before:bg-[#72dcff] before:rounded-full scale-98 active:scale-95 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_stories</span>
+<span>Library</span>
+</a>
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 transition-colors hover:bg-[#32353c] transition-all duration-300 scale-98 active:scale-95 duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">biotech</span>
+<span>Analysis Lab</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 transition-colors hover:bg-[#32353c] transition-all duration-300 scale-98 active:scale-95 duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">style</span>
+<span>Study Sets</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 transition-colors hover:bg-[#32353c] transition-all duration-300 scale-98 active:scale-95 duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span>Progress</span>
+</a>
+</div>
+<!-- CTA -->
+<div class="mt-8 mb-6 px-2">
+<button class="w-full py-3 px-4 bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed font-bold rounded-xl shadow-[0_0_20px_rgba(114,220,255,0.2)] hover:shadow-[0_0_30px_rgba(114,220,255,0.4)] transition-all scale-98 active:scale-95 duration-200 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Analysis
+            </button>
+</div>
+<!-- Footer Nav -->
+<div class="space-y-2 border-t border-white/5 pt-4">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 transition-colors hover:bg-[#32353c] transition-all duration-300 scale-98 active:scale-95 duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 transition-colors hover:bg-[#32353c] transition-all duration-300 scale-98 active:scale-95 duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span>Support</span>
+</a>
+</div>
+</nav>
+<!-- Main Application Area -->
+<main class="ml-64 flex-1 flex flex-col h-screen relative bg-surface-dim">
+<!-- TopAppBar (Shared Component) -->
+<header class="bg-[#10131a]/60 backdrop-blur-md font-['Manrope'] font-medium text-sm fixed top-0 right-0 left-64 h-20 z-40 flex items-center justify-between px-8 gap-12">
+<!-- Search Focus Style -->
+<div class="flex-1 max-w-xl">
+<div class="relative flex items-center w-full focus-within:ring-1 focus-within:ring-[#72dcff]/30 rounded-full bg-surface-container-lowest overflow-hidden transition-all duration-300 outline outline-1 outline-outline-variant/15">
+<span class="material-symbols-outlined absolute left-4 text-slate-400">search</span>
+<input class="w-full bg-transparent border-none py-3 pl-12 pr-4 text-on-surface placeholder:text-slate-500 focus:ring-0 text-sm font-body" placeholder="Search across documents, analyses..." type="text"/>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex items-center gap-6 text-slate-400">
+<button class="hover:text-[#dd8bfb] transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-secondary rounded-full shadow-[0_0_8px_rgba(237,177,255,0.6)]"></span>
+</button>
+<button class="hover:text-[#dd8bfb] transition-colors">
+<span class="material-symbols-outlined">history_edu</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/30 hover:border-primary-container/50 transition-colors cursor-pointer">
+<img alt="Academic Profile" class="w-full h-full object-cover" data-alt="close up portrait of a young professional wearing glasses in soft studio lighting against a dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeK0t2irzmuPi9fxtqDUoUiSjZvYLbtrB4U25YdajtuiGNu9aQ-_QzjV_cboZh3f92ltwzL0R2Vy5MyqPKCYrJMkZCY8UgddpPWBQwHbf1dDvLi_aIAFWcK7GcjWFUl3DQNdCsFX2XZDW99jAxVi4Yba86cLfGun4-b5G33yfXaCZqpMnZKyETsCch457QReaq5TMwdwIA9FtDEFa_YKW7A_mBxhYoeT9eFcKU7JIbTWxzYJXeM4eE0vVtayGJdTUAxPOFGihKHWw"/>
+</div>
+</div>
+</header>
+<!-- Split Screen Content Layout -->
+<div class="pt-24 pb-6 px-6 flex-1 flex gap-6 overflow-hidden">
+<!-- Left/Center: Document Preview Area -->
+<section class="flex-1 flex flex-col bg-surface-container-low rounded-2xl relative overflow-hidden ring-1 ring-white/5">
+<!-- Document Toolbar -->
+<div class="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-surface-container-low/50 backdrop-blur-sm z-10 shrink-0">
+<div class="flex items-center gap-4">
+<div class="p-2 bg-surface-container-highest rounded-lg text-primary-container">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div>
+<h2 class="font-headline font-bold text-lg tracking-tight text-on-surface">Understanding Backpropagation</h2>
+<p class="text-xs text-on-surface-variant font-label uppercase tracking-widest mt-0.5">Neural Networks · PDF</p>
+</div>
+</div>
+<!-- Study Tools -->
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary-container/20 text-secondary hover:bg-secondary-container/40 transition-colors text-sm font-medium">
+<span class="material-symbols-outlined text-[18px]">quiz</span>
+                            Generate Quiz
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-highest text-on-surface hover:bg-surface-bright transition-colors text-sm font-medium">
+<span class="material-symbols-outlined text-[18px]">style</span>
+                            Flashcards
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-highest text-on-surface hover:bg-surface-bright transition-colors text-sm font-medium">
+<span class="material-symbols-outlined text-[18px]">graphic_eq</span>
+                            Audio Summary
+                        </button>
+</div>
+</div>
+<!-- Document Content (Simulated PDF view) -->
+<div class="flex-1 overflow-y-auto p-8 lg:p-12 bg-[#12151c] flex justify-center">
+<article class="max-w-3xl w-full text-on-surface/90 space-y-8 font-body leading-relaxed text-base">
+<h1 class="font-headline text-4xl font-extrabold tracking-tight text-white mb-8">Understanding Backpropagation</h1>
+<p class="text-lg text-on-surface-variant border-l-4 border-primary-container/50 pl-4 py-1 italic">
+                            Backpropagation, short for "backward propagation of errors," is an algorithm for supervised learning of artificial neural networks using gradient descent. Given an artificial neural network and an error function, the method calculates the gradient of the error function with respect to the neural network's weights.
+                        </p>
+<h3 class="font-headline text-2xl font-bold text-primary-fixed mt-12 mb-4">1. The Forward Pass</h3>
+<p>
+                            Before we can calculate the error and propagate it backwards, we must first perform a forward pass. This involves passing input data through the network's layers, applying weights, biases, and activation functions until a prediction is generated at the output layer.
+                        </p>
+<div class="bg-surface-container p-6 rounded-xl font-mono text-sm text-secondary-fixed mt-4 mb-8 border border-outline-variant/10">
+                            z^(L) = W^(L) * a^(L-1) + b^(L)<br/>
+                            a^(L) = σ(z^(L))
+                        </div>
+<h3 class="font-headline text-2xl font-bold text-primary-fixed mt-8 mb-4">2. Calculating the Loss</h3>
+<p>
+                            Once the forward pass is complete, the network's prediction is compared to the actual target value using a loss function (e.g., Mean Squared Error or Cross-Entropy). This loss value quantifies how far off the prediction was.
+                        </p>
+<h3 class="font-headline text-2xl font-bold text-primary-fixed mt-8 mb-4">3. The Backward Pass</h3>
+<p>
+                            This is the core of the algorithm. We use the chain rule from calculus to compute the partial derivative of the loss function with respect to each weight and bias in the network. This tells us how much a small change in a specific weight would affect the overall error.
+                        </p>
+<!-- Decorative element breaking the grid slightly -->
+<div class="my-12 p-8 rounded-2xl bg-gradient-to-r from-surface-container-high to-surface-container relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-secondary/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+<h4 class="font-headline font-bold text-lg mb-2 text-white">Crucial Concept: The Chain Rule</h4>
+<p class="text-sm text-on-surface-variant">The chain rule allows us to decompose the complex derivative of the loss with respect to a weight deep in the network into a product of simpler derivatives from the layers above it.</p>
+</div>
+</article>
+</div>
+</section>
+<!-- Right: Interactive AI Chat Panel -->
+<section class="w-[400px] shrink-0 flex flex-col bg-surface-container-low rounded-2xl ring-1 ring-white/5 overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+<!-- Chat Header -->
+<div class="h-16 px-6 flex items-center justify-between border-b border-white/5 bg-surface-container-high/50 shrink-0">
+<div class="flex items-center gap-3">
+<div class="relative">
+<span class="material-symbols-outlined text-secondary">psychology</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full shadow-[0_0_8px_rgba(205,240,255,0.8)]"></span>
+</div>
+<h3 class="font-headline font-bold text-on-surface">Analysis Assistant</h3>
+</div>
+<button class="text-slate-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</div>
+<!-- Chat History -->
+<div class="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col">
+<!-- System/AI Greeting -->
+<div class="flex flex-col gap-2 max-w-[90%]">
+<div class="bg-surface-container p-4 rounded-2xl rounded-tl-sm text-sm text-on-surface leading-relaxed relative">
+<div class="absolute -left-2 -top-2 w-4 h-4 bg-primary-container/20 blur-sm rounded-full"></div>
+                            I've analyzed "Understanding Backpropagation". The text primarily covers the mathematical foundation of neural network training. How can I help you study this material?
+                        </div>
+<span class="text-xs text-slate-500 font-label ml-1">AI Assistant · Just now</span>
+</div>
+<!-- User Message -->
+<div class="flex flex-col gap-2 max-w-[90%] self-end">
+<div class="bg-surface-container-highest p-4 rounded-2xl rounded-tr-sm text-sm text-white leading-relaxed">
+                            Can you explain the chain rule part again, but simpler? Like I'm five.
+                        </div>
+<span class="text-xs text-slate-500 font-label mr-1 self-end">You</span>
+</div>
+<!-- AI Response with Neon Accent -->
+<div class="flex flex-col gap-2 max-w-[90%]">
+<div class="bg-surface-container p-4 rounded-2xl rounded-tl-sm text-sm text-on-surface leading-relaxed border border-primary-container/20 shadow-[0_0_20px_rgba(114,220,255,0.05)]">
+<p class="mb-3">Imagine a row of dominoes.</p>
+<p>The last domino falling over is the <strong>Loss</strong> (the final error). To figure out how much the first domino contributed to that fall, you have to trace back through every domino in between.</p>
+<div class="mt-3 p-3 bg-surface-dim rounded-lg text-primary-fixed/90 font-mono text-xs">
+                                Rate of change = (Domino 3 to 4) * (Domino 2 to 3) * (Domino 1 to 2)
+                            </div>
+</div>
+</div>
+</div>
+<!-- Chat Input Area -->
+<div class="p-4 bg-surface-container shrink-0 border-t border-white/5 relative">
+<!-- Subtle glow behind input -->
+<div class="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent pointer-events-none"></div>
+<div class="relative flex items-end gap-2 bg-surface-container-highest rounded-2xl p-2 outline outline-1 outline-outline-variant/20 focus-within:outline-primary-container/50 focus-within:bg-surface-bright transition-all">
+<button class="p-2 text-slate-400 hover:text-secondary transition-colors shrink-0">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+</button>
+<textarea class="w-full bg-transparent border-none p-2 text-sm text-on-surface focus:ring-0 resize-none font-body max-h-32 min-h-[40px]" placeholder="Ask about this document..." rows="1"></textarea>
+<button class="p-2 text-primary-container hover:text-primary transition-colors shrink-0 bg-primary-container/10 rounded-xl">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body></html>

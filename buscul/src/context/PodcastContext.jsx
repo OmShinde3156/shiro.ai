@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 const PodcastContext = createContext();
 
@@ -24,7 +25,7 @@ export const PodcastProvider = ({ children }) => {
     const updatedPodcasts = [...savedPodcasts, newPodcast];
     setSavedPodcasts(updatedPodcasts);
     localStorage.setItem('savedPodcasts', JSON.stringify(updatedPodcasts));
-    alert("Podcast saved!");
+    toast.success("Audio Cast saved!");
   };
 
   const deletePodcast = (podcastId) => {

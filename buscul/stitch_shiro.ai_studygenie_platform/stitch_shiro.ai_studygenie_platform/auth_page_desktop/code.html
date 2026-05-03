@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Shiro.AI - Auth</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#363940",
+                        "on-secondary-fixed-variant": "#6e208c",
+                        "surface-dim": "#10131a",
+                        "on-error": "#690005",
+                        "on-secondary": "#520070",
+                        "error-container": "#93000a",
+                        "surface-container-highest": "#32353c",
+                        "primary-fixed-dim": "#69d4f7",
+                        "on-surface-variant": "#bdc8ce",
+                        "secondary-container": "#70238f",
+                        "tertiary-container": "#ffc559",
+                        "tertiary": "#ffe7c5",
+                        "surface-container-low": "#191c22",
+                        "primary-fixed": "#b6ebff",
+                        "on-surface": "#e1e2eb",
+                        "on-primary": "#003543",
+                        "surface": "#10131a",
+                        "on-primary-fixed-variant": "#004e60",
+                        "surface-tint": "#69d4f7",
+                        "secondary-fixed-dim": "#edb1ff",
+                        "surface-container-high": "#272a31",
+                        "inverse-primary": "#00677f",
+                        "outline-variant": "#3e484d",
+                        "secondary-fixed": "#f9d8ff",
+                        "on-secondary-fixed": "#320046",
+                        "inverse-surface": "#e1e2eb",
+                        "tertiary-fixed-dim": "#f6bd52",
+                        "error": "#ffb4ab",
+                        "on-tertiary-container": "#745100",
+                        "on-primary-fixed": "#001f28",
+                        "primary-container": "#72dcff",
+                        "on-primary-container": "#006076",
+                        "secondary": "#edb1ff",
+                        "tertiary-fixed": "#ffdea9",
+                        "surface-container-lowest": "#0b0e14",
+                        "on-tertiary-fixed-variant": "#5e4100",
+                        "inverse-on-surface": "#2e3037",
+                        "on-tertiary-fixed": "#271900",
+                        "on-secondary-container": "#e69dff",
+                        "on-background": "#e1e2eb",
+                        "on-error-container": "#ffdad6",
+                        "primary": "#cdf0ff",
+                        "outline": "#879297",
+                        "surface-variant": "#32353c",
+                        "on-tertiary": "#422c00",
+                        "background": "#10131a",
+                        "surface-container": "#1d2026"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .cyber-grid {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(114, 220, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(114, 220, 255, 0.05) 1px, transparent 1px);
+        }
+        .glass-card {
+            background: rgba(29, 32, 38, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 0 80px rgba(114, 220, 255, 0.05);
+        }
+        .neon-glow {
+            text-shadow: 0 0 20px rgba(114, 220, 255, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-surface-dim min-h-screen flex items-center justify-center font-body text-on-surface relative overflow-hidden">
+<!-- Ambient Background Lighting -->
+<div class="absolute inset-0 pointer-events-none cyber-grid z-0"></div>
+<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] -z-10 mix-blend-screen"></div>
+<div class="absolute bottom-1/4 right-1/4 w-[30rem] h-[30rem] bg-secondary/10 rounded-full blur-[150px] -z-10 mix-blend-screen"></div>
+<!-- Main Auth Container -->
+<div class="relative z-10 w-full max-w-md px-6">
+<!-- Logo Area -->
+<div class="text-center mb-10">
+<h1 class="font-headline text-4xl font-black tracking-tighter text-primary italic neon-glow mb-2">Shiro.AI</h1>
+<p class="font-headline text-on-surface-variant text-sm tracking-widest uppercase">The Neon Scholar</p>
+</div>
+<!-- Glass Auth Card -->
+<div class="glass-card rounded-[2rem] p-10 border border-outline-variant/15 relative overflow-hidden group">
+<!-- Subtle internal glow -->
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-primary rounded-full blur-md opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
+<div class="mb-10">
+<h2 class="font-headline text-2xl font-bold tracking-tight text-on-surface mb-2">Welcome back, Scholar</h2>
+<p class="text-sm text-on-surface-variant leading-relaxed">Enter your credentials to access the Analysis Lab.</p>
+</div>
+<form class="space-y-6">
+<!-- Email Field -->
+<div class="space-y-2">
+<label class="font-label text-xs uppercase tracking-widest text-on-surface-variant ml-1" for="email">Email</label>
+<div class="relative group/input">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within/input:text-primary transition-colors text-[20px]">mail</span>
+<input class="w-full bg-surface-container-lowest border-none rounded-full py-4 pl-12 pr-4 text-sm text-on-surface focus:ring-2 focus:ring-primary/30 focus:bg-surface-bright transition-all" id="email" placeholder="scholar@university.edu" required="" type="email"/>
+</div>
+</div>
+<!-- Cipher Field -->
+<div class="space-y-2">
+<div class="flex items-center justify-between ml-1">
+<label class="font-label text-xs uppercase tracking-widest text-on-surface-variant" for="password">Security Cipher</label>
+<a class="text-xs text-primary hover:text-primary-fixed transition-colors" href="#">Lost Cipher?</a>
+</div>
+<div class="relative group/input">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within/input:text-primary transition-colors text-[20px]">lock</span>
+<input class="w-full bg-surface-container-lowest border-none rounded-full py-4 pl-12 pr-4 text-sm text-on-surface focus:ring-2 focus:ring-primary/30 focus:bg-surface-bright transition-all" id="password" placeholder="••••••••••••" required="" type="password"/>
+</div>
+</div>
+<!-- Primary CTA -->
+<button class="w-full py-4 rounded-xl bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed font-headline font-bold text-sm tracking-wide hover:shadow-[0_0_30px_rgba(114,220,255,0.3)] transform transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2" type="submit">
+                    Initiate Link
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</form>
+<div class="mt-8 relative flex items-center justify-center">
+<div class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-outline-variant/20"></div>
+</div>
+<span class="relative bg-surface-container-high px-4 text-xs font-label uppercase tracking-widest text-on-surface-variant rounded-full">Neural Sync</span>
+</div>
+<!-- Social Logins -->
+<div class="mt-8 grid grid-cols-2 gap-4">
+<button class="flex items-center justify-center gap-3 py-3 rounded-xl bg-surface-container-high/60 border border-outline-variant/15 hover:bg-surface-container-highest transition-colors text-sm font-medium">
+<img alt="Google Logo" class="w-5 h-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtOcJuSKew4d8pwmGeSKFBeZ8JkQidGycN-msKY-x4cOk7haLnjAaUSWYqdkAiffOVKUx3fhZzVr5vE-yXbEMaoLK86TMeYhPvOAUh6LK_WkptnFYmBjdgDLvUY36twhn4pQStG5SToIvITbpZ7Celj0TdUoF7C45DMTS_9U4rXTbvp8zuh24USgCYMOrNmJC075kge3XuxwTo3zVzRYVtkMotsg7NAdgzX6-MvW5TodZ1mpFEsaMY8Gi7XlpQfZ1DlNE88bh-o9U"/>
+                    Google
+                </button>
+<button class="flex items-center justify-center gap-3 py-3 rounded-xl bg-surface-container-high/60 border border-outline-variant/15 hover:bg-surface-container-highest transition-colors text-sm font-medium">
+<span class="material-symbols-outlined text-[20px] text-on-surface">ios</span>
+                    Apple
+                </button>
+</div>
+<div class="mt-8 text-center">
+<p class="text-xs text-on-surface-variant">
+                    New to the Lab? <a class="text-primary hover:text-primary-fixed font-medium transition-colors" href="#">Request Access</a>
+</p>
+</div>
+</div>
+</div>
+</body></html>

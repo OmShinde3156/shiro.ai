@@ -43,7 +43,7 @@ const RightSidebar = () => {
   };
 
   return (
-    <aside className="h-screen w-20 fixed right-0 top-0 z-50 bg-[var(--sidebar-bg)] opacity-60 backdrop-blur-2xl flex flex-col items-center py-10 gap-8 border-l border-[var(--border)] shadow-[-4px_0_24px_rgba(114,220,255,0.05)]">
+    <aside className="hidden lg:flex h-screen w-20 fixed right-0 top-0 z-50 bg-[var(--sidebar-bg)] opacity-60 backdrop-blur-2xl flex-col items-center py-10 gap-8 border-l border-[var(--border)] shadow-[-4px_0_24px_rgba(114,220,255,0.05)]">
       <div className="mb-4">
         <span className="text-[0.6875rem] font-bold text-[#dd8bfb] uppercase tracking-[0.05em] [writing-mode:vertical-lr] rotate-180">
           Learning Tools

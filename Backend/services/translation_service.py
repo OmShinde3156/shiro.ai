@@ -16,8 +16,11 @@ class TranslationService:
         target_lang_name = language_names.get(target_language, target_language)
         
         prompt = f"""
-        Translate the following {content_type} content to {target_lang_name}.
-        Maintain the original meaning and context.
+        Act as a bilingual university professor. Translate the following {content_type} content to {target_lang_name}.
+        CRITICAL INSTRUCTIONS:
+        1. Maintain the precise academic meaning and context perfectly.
+        2. Keep highly technical terms (e.g. 'Velocity', 'Vectors', 'Equations') in English. Do NOT forcefully translate core scientific vocabulary if it degrades understanding.
+        3. Translate the grammatical structure and explanation naturally into {target_lang_name}.
         
         Content to translate:
         {content}

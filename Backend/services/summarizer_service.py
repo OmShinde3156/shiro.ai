@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from models.database import Document, Summary
 from utils.llm_client import LLMClient
 import uuid
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 class SummarizerService:
     def __init__(self):
@@ -62,4 +62,18 @@ class SummarizerService:
             }
             for s in summaries
         ]
+
+    def get_latest_summary_for_document(self, document_id: int, db: Session) -> Optional[Dict[str, Any]]:
+        """Get latest summary for a specific document"""
+        summary = db.query(Summary).filter(Summary.document_id == document_id).order_by(Summary.created_at.desc()).first()
+        if not summary:
+            return None
+        return {
+            "summary_id": summary.id,
+            "document_id": summary.document_id,
+            "summary_text": summary.summary_text,
+            "summary_type": summary.summary_type,
+            "language": summary.language,
+            "created_at": summary.created_at
+        }
 

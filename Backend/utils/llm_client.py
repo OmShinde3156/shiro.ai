@@ -1,11 +1,98 @@
 import os
 import json
+import logging
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 from pathlib import Path
 from openai import OpenAI
 from groq import Groq
+import google.generativeai as genai
 from sentence_transformers import SentenceTransformer
+from pydantic import BaseModel, Field, ValidationError
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
+logger = logging.getLogger(__name__)
+
+# --- Pydantic Models for Structured Output ---
+
+class QuizOption(BaseModel):
+    A: str
+    B: str
+    C: str
+    D: str
+
+class QuizQuestion(BaseModel):
+    question: str
+    options: QuizOption
+    correct_answer: str = Field(pattern="^[ABCD]$", description="The correct option key, e.g., 'A'")
+    explanation: str
+
+class QuizResponse(BaseModel):
+    questions: List[QuizQuestion]
+
+class Flashcard(BaseModel):
+    question: str
+    answer: str
+
+class FlashcardResponse(BaseModel):
+    flashcards: List[Flashcard]
+
+# --- Prompt Management ---
+
+class Prompts:
+    @staticmethod
+    def quiz_prompt(content: str, num_questions: int, difficulty: str) -> str:
+        return f"""
+Generate {num_questions} Multiple Choice Questions (MCQs) based on the following content.
+Difficulty: {difficulty}
+
+Content:
+{content}
+
+Respond EXACTLY with a JSON object containing a "questions" array.
+Schema:
+{{
+  "questions": [
+    {{
+      "question": "string",
+      "options": {{"A": "string", "B": "string", "C": "string", "D": "string"}},
+      "correct_answer": "A",
+      "explanation": "string"
+    }}
+  ]
+}}
+"""
+
+    @staticmethod
+    def flashcard_prompt(content: str, num_cards: int) -> str:
+        return f"""
+Create {num_cards} flashcards based on the following content.
+
+Content:
+{content}
+
+Respond EXACTLY with a JSON object containing a "flashcards" array.
+Schema:
+{{
+  "flashcards": [
+    {{
+      "question": "string",
+      "answer": "string"
+    }}
+  ]
+}}
+"""
+
+    @staticmethod
+    def summary_prompt(content: str, summary_type: str, language: str) -> str:
+        return f"""
+Summarize the following content in {language} language.
+Summary Type: {summary_type}
+
+Content:
+{content}
+"""
+
 
 class LLMClient:
     def __init__(self):
@@ -15,21 +102,22 @@ class LLMClient:
 
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
         self.groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
+        self.google_api_key = os.getenv("GOOGLE_API_KEY", "").strip()
+        
         self.openai_model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
         self.groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+        self.google_model = os.getenv("GOOGLE_MODEL", "gemini-2.0-flash-exp")
         
-        # Initialize clients ONLY if keys look valid (not placeholders or empty)
+        # Initialize clients ONLY if keys look valid
         self.openai_client = None
-        if self.openai_api_key and not self.openai_api_key.startswith("your-"):
-            try:
-                self.openai_client = OpenAI(api_key=self.openai_api_key)
-            except: pass
+        if self.openai_api_key and self.openai_api_key != "sk-dummy-key-replace-me":
+             try: self.openai_client = OpenAI(api_key=self.openai_api_key)
+             except: pass
 
         self.groq_client = None
-        if self.groq_api_key and not self.groq_api_key.startswith("your-"):
-            try:
-                self.groq_client = Groq(api_key=self.groq_api_key)
-            except: pass
+        if self.groq_api_key and self.groq_api_key != "gsk_dummy_key_replace_me": 
+             try: self.groq_client = Groq(api_key=self.groq_api_key)
+             except: pass
 
         # Initialize embeddings model
         try:
@@ -37,103 +125,119 @@ class LLMClient:
         except:
             self.embedding_model = None
 
-    async def generate_response(self, prompt: str, context: str = "") -> str:
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), retry=retry_if_exception_type(Exception))
+    async def generate_response(self, prompt: str, context: str = "", response_format: str = "text") -> str:
+        """
+        Generates a response from the LLM. 
+        Supports structured JSON output natively via `response_format="json_object"`.
+        """
         full_prompt = f"Context: {context}\n\nQuestion: {prompt}" if context else prompt
         
-        # 1. Try Groq First
+        # 1. Try Groq First (Fastest / Primary for Surgical)
         if self.groq_client:
             try:
-                response = self.groq_client.chat.completions.create(
-                    model=self.groq_model,
-                    messages=[{"role": "user", "content": full_prompt}],
-                    temperature=0.7,
-                )
+                kwargs = {
+                    "model": self.groq_model,
+                    "messages": [{"role": "user", "content": full_prompt}],
+                    "temperature": 0.7,
+                }
+                if response_format == "json_object":
+                    kwargs["response_format"] = {"type": "json_object"}
+                    
+                response = self.groq_client.chat.completions.create(**kwargs)
                 return response.choices[0].message.content
             except Exception as e:
-                print(f"DEBUG: Groq failed: {e}")
+                logger.warning(f"Groq failed: {e}")
 
         # 2. Try OpenAI Second
         if self.openai_client:
             try:
-                response = self.openai_client.chat.completions.create(
-                    model=self.openai_model,
-                    messages=[{"role": "user", "content": full_prompt}],
-                    temperature=0.7,
-                )
+                kwargs = {
+                    "model": self.openai_model,
+                    "messages": [{"role": "user", "content": full_prompt}],
+                    "temperature": 0.7,
+                }
+                if response_format == "json_object":
+                    kwargs["response_format"] = {"type": "json_object"}
+                    
+                response = self.openai_client.chat.completions.create(**kwargs)
                 return response.choices[0].message.content
             except Exception as e:
-                print(f"DEBUG: OpenAI failed: {e}")
+                logger.warning(f"OpenAI failed: {e}")
 
-        # 3. Final Fallback: Simulation Mode (Ensures UI works for testing)
+        if response_format == "json_object":
+            raise Exception("Both Groq and OpenAI failed to generate a JSON response. API keys might be missing or limits exceeded.")
+            
+        # Final Fallback
         return self._get_simulation_response(prompt)
 
     def _get_simulation_response(self, prompt: str) -> str:
         prompt_lower = prompt.lower()
+        if any(word in prompt_lower for word in ["hi", "hello", "hey"]):
+            return "Hey there! I'm Shiro. I'm currently running in Simulation Mode because I can't find valid API keys in the .env file. Once you add them, I can analyze your documents for real!"
         if "summarize" in prompt_lower:
-            return "Based on your study materials, the main concepts involve personalized learning and AI-driven task management. The material emphasizes efficiency and deep focus."
-        if "quiz" in prompt_lower:
-            return "I've analyzed your material. You should focus on chapters 2 and 4, as they contain the most critical information for your upcoming test."
-        return "I'm currently in Simulation Mode because your API keys are invalid or missing. To get real AI responses, please update your .env file with a valid OpenAI or Groq API key."
+            return "In Simulation Mode, I would provide a detailed summary here. Please add an API key to enable real AI processing."
+        return "I'm Shiro, your AI mentor. I'm currently in Simulation Mode. To unlock my full potential, please provide a valid OpenAI, Groq, or Google API key in the Backend/.env file."
 
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     async def generate_quiz_questions(self, content: str, num_questions: int, difficulty: str) -> List[Dict[str, Any]]:
         # If no real client, return sample quiz
         if not (self.openai_client or self.groq_client):
             return [{"question": "What is AI?", "options": {"A": "A robot", "B": "Artificial Intelligence", "C": "A movie", "D": "A fruit"}, "correct_answer": "B", "explanation": "AI stands for Artificial Intelligence."}] * num_questions
 
-        prompt = f"""
-        Generate {num_questions} Multiple Choice Questions (MCQs) in JSON format based on the following content:
-        {content[:4000]}
+        # We relaxed the arbitrary limit slightly, but true dynamic RAG handles size later.
+        prompt = Prompts.quiz_prompt(content[:10000], num_questions, difficulty)
+        resp = await self.generate_response(prompt, response_format="json_object")
         
-        Difficulty: {difficulty}
-        
-        The response MUST be a valid JSON list of objects, each with exactly these fields:
-        - "question": string
-        - "options": a dictionary with keys "A", "B", "C", "D" and their string values
-        - "correct_answer": string (exactly "A", "B", "C", or "D")
-        - "explanation": string
-        """
-        resp = await self.generate_response(prompt)
         try:
-            return self._extract_json(resp)
-        except Exception as e:
-            print(f"DEBUG: Quiz JSON extraction failed: {e}")
-            return [{"question": "Sample Question", "options": {"A":"1","B":"2","C":"3","D":"4"}, "correct_answer":"A", "explanation":"Fallback due to AI error"}] * num_questions
+            # Pydantic native schema validation guarantees correctness
+            validated_data = QuizResponse.model_validate_json(resp)
+            return [q.model_dump() for q in validated_data.questions]
+        except ValidationError as e:
+            logger.error(f"Pydantic Validation failed: {e}. Raw response: {resp}")
+            raise # Triggers Tenacity retry!
 
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     async def generate_flashcards(self, content: str, num_cards: int) -> List[Dict[str, str]]:
         if not (self.openai_client or self.groq_client):
             return [{"question": "Concept", "answer": "Explanation"}] * num_cards
-        prompt = f"""
-        Create {num_cards} flashcards as a JSON list based on the following content:
-        {content[:4000]}
+            
+        prompt = Prompts.flashcard_prompt(content[:10000], num_cards)
+        resp = await self.generate_response(prompt, response_format="json_object")
         
-        Each flashcard MUST be an object with exactly these fields:
-        - "question": string
-        - "answer": string
-        """
-        resp = await self.generate_response(prompt)
         try:
-            return self._extract_json(resp)
-        except Exception as e:
-            print(f"DEBUG: Flashcard JSON extraction failed: {e}")
-            return [{"question": "Error", "answer": "Check API keys or AI output format"}]
+            validated_data = FlashcardResponse.model_validate_json(resp)
+            return [f.model_dump() for f in validated_data.flashcards]
+        except ValidationError as e:
+            logger.error(f"Pydantic Validation failed: {e}. Raw response: {resp}")
+            raise # Triggers Tenacity retry!
 
     async def generate_summary(self, content: str, summary_type: str, language: str) -> str:
-        prompt = f"""
-        Summarize the following content in {language} language.
-        Summary Type: {summary_type}
-        
-        Content:
-        {content[:6000]}
-        """
+        prompt = Prompts.summary_prompt(content[:10000], summary_type, language)
         return await self.generate_response(prompt)
 
     async def generate_mindmap_data(self, content: str, topic: str) -> Dict[str, Any]:
+        # Minimal mock for now. Can be upgraded with Pydantic later.
         return {"nodes": [{"id": "1", "label": topic, "level": 0, "x": 0, "y": 0}], "edges": []}
 
-    def _extract_json(self, text: str) -> Any:
-        text = text.strip()
-        if "```json" in text: text = text.split("```json")[1].split("```")[0]
-        elif "```" in text: text = text.split("```")[1].split("```")[0]
-        return json.loads(text.strip())
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    async def generate_quiz_questions_optimized(self, prompt: str) -> List[Dict[str, Any]]:
+        """Specialized method for high-yield question generation"""
+        if not (self.openai_client or self.groq_client):
+            return [{"question": "Optimized Sample Question", "options": {"A":"1","B":"2","C":"3","D":"4"}, "correct_answer":"A", "explanation":"Simulated response"}]
+
+        schema_prompt = prompt + """
+        
+        Respond EXACTLY with a JSON object containing a "questions" array.
+        Schema: { "questions": [ { "question": "...", "options": {"A": "...", "B": "...", "C": "...", "D": "..."}, "correct_answer": "A", "explanation": "..." } ] }
+        """
+        
+        resp = await self.generate_response(schema_prompt, response_format="json_object")
+        try:
+            validated_data = QuizResponse.model_validate_json(resp)
+            return [q.model_dump() for q in validated_data.questions]
+        except ValidationError as e:
+            logger.error(f"Pydantic Validation failed: {e}. Raw response: {resp}")
+            raise
 
 llm_client = LLMClient()
