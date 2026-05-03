@@ -1,4 +1,4 @@
-# shiro.ai - Your Personalized AI Study Assistant
+# Shiro.ai - Your Personalized AI Study Assistant
 
 shiro.ai is an advanced, AI-powered study companion designed to transform how you learn. By leveraging Retrieval-Augmented Generation (RAG) and state-of-the-art LLMs, shiro.ai processes your study materials (PDFs, Documents, Images) to provide a personalized, interactive, and multimodal learning experience.
 
