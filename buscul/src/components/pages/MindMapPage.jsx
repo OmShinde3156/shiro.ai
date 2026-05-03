@@ -14,6 +14,7 @@ const MindMapPage = () => {
   const [userMindMaps, setUserMindMaps] = useState([]);
   const [activeTab, setActiveTab] = useState('create');
   const [error, setError] = useState('');
+  const [globalGraphData, setGlobalGraphData] = useState(null);
 
   const fetchDocuments = async () => {
     try {
@@ -40,12 +41,27 @@ const MindMapPage = () => {
     }
   };
 
+  const fetchGlobalGraph = async () => {
+    if (!user?.id) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/epistemic-graph/${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setGlobalGraphData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching global graph:', error);
+    }
+  };
+
   useEffect(() => {
     if (user?.id) {
       fetchDocuments();
       fetchUserMindMaps();
+      fetchGlobalGraph();
     }
   }, [user]);
+
 
   const generateMindMap = async () => {
     if (!selectedDocumentId) {
@@ -235,8 +251,60 @@ const MindMapPage = () => {
               Current Map
             </button>
           )}
+          <button
+            className={`tab-button ${activeTab === 'global' ? 'active' : ''}`}
+            onClick={() => setActiveTab('global')}
+          >
+            Epistemic Global Graph
+          </button>
         </div>
       </div>
+
+      {activeTab === 'global' && (
+        <div className="mindmap-display p-6">
+          <div className="mindmap-info mb-8">
+            <h3 className="text-2xl font-black text-primary tracking-tighter">Your Epistemic Galaxy</h3>
+            <p className="text-white/50 text-sm mt-2">These are the conceptual links Shiro has found across ALL your uploaded documents.</p>
+            <div className="flex gap-4 mt-4 text-xs font-bold uppercase tracking-widest">
+               <span className="bg-white/5 px-3 py-1 rounded-lg border border-white/10">Nodes: {globalGraphData?.nodes?.length || 0}</span>
+               <span className="bg-white/5 px-3 py-1 rounded-lg border border-white/10">Connections: {globalGraphData?.edges?.length || 0}</span>
+            </div>
+          </div>
+          
+          {!globalGraphData ? (
+             <div className="text-center p-12 text-white/40">Loading your knowledge universe...</div>
+          ) : globalGraphData.nodes?.length === 0 ? (
+             <div className="text-center p-12 text-white/40">No cross-document connections found yet. Upload more documents and interact with Shiro to build your graph!</div>
+          ) : (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {globalGraphData.nodes.map(node => {
+                   const connectedEdges = globalGraphData.edges.filter(e => e.source === node.id || e.target === node.id);
+                   if (connectedEdges.length === 0) return null; // Only show connected nodes
+                   return (
+                      <div key={node.id} className="bg-white/5 border border-white/10 p-5 rounded-2xl hover:border-primary/40 transition-all group">
+                         <h4 className="text-lg font-bold text-white mb-3 group-hover:text-primary transition-colors">{node.label}</h4>
+                         <div className="space-y-2">
+                            {connectedEdges.slice(0, 5).map(edge => {
+                               const isSource = edge.source === node.id;
+                               const otherNodeId = isSource ? edge.target : edge.source;
+                               const otherNode = globalGraphData.nodes.find(n => n.id === otherNodeId);
+                               if (!otherNode) return null;
+                               return (
+                                  <div key={edge.id} className="text-xs flex items-center gap-2">
+                                     <span className="text-white/40">{isSource ? '→' : '←'} {edge.relation}</span>
+                                     <span className="text-white/80 font-medium bg-black/40 px-2 py-0.5 rounded">{otherNode.label}</span>
+                                  </div>
+                               );
+                            })}
+                            {connectedEdges.length > 5 && <div className="text-[10px] text-primary/60 font-bold uppercase mt-2">+ {connectedEdges.length - 5} more connections</div>}
+                         </div>
+                      </div>
+                   )
+                })}
+             </div>
+          )}
+        </div>
+      )}
 
       {activeTab === 'create' && (
         <div className="mindmap-form">

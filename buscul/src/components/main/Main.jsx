@@ -287,6 +287,15 @@ const Main = () => {
           </>
         ) : (
           <div className="max-w-4xl mx-auto flex flex-col gap-8 pb-10">
+             {/* Back Button for Chat */}
+             <button 
+               onClick={() => { setShowResults(false); setInput(""); navigate("/"); }}
+               className="w-fit flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold text-[var(--text-muted)] hover:text-primary transition-all mb-4 group"
+             >
+               <span className="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_back</span>
+               Back to Dashboard
+             </button>
+
              {messages.map((msg, index) => (
                <div key={index} className={`flex items-start gap-4 ${msg.isUser ? 'flex-row-reverse' : ''}`}>
                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${msg.isUser ? 'bg-surface-container-high' : 'bg-primary/10'}`}>

@@ -6,7 +6,20 @@ import os
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./study_guide.db")
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {})
+# PostgreSQL specific tuning
+if DATABASE_URL.startswith("postgresql"):
+    engine = create_engine(
+        DATABASE_URL, 
+        pool_size=20, 
+        max_overflow=10, 
+        pool_pre_ping=True
+    )
+else:
+    engine = create_engine(
+        DATABASE_URL, 
+        connect_args={"check_same_thread": False}
+    )
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():

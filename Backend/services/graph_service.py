@@ -94,6 +94,39 @@ class GraphService:
         
         return graph_context
 
+    def get_global_graph(self, user_id: int, db: Session) -> Dict[str, Any]:
+        """Retrieve the entire cross-document knowledge graph for a user."""
+        nodes = db.query(KnowledgeNode).filter(KnowledgeNode.user_id == user_id).all()
+        edges = db.query(KnowledgeEdge).join(KnowledgeNode, KnowledgeEdge.source_node_id == KnowledgeNode.id)\
+                                     .filter(KnowledgeNode.user_id == user_id).all()
+
+        nodes_data = []
+        for node in nodes:
+            # Optionally count how many edges this node has to determine its importance/size
+            edge_count = sum(1 for e in edges if e.source_node_id == node.id or e.target_node_id == node.id)
+            nodes_data.append({
+                "id": str(node.id),
+                "label": node.label,
+                "document_id": node.document_id,
+                "importance_score": node.importance_score,
+                "size": max(10, 5 + (edge_count * 2)) # Dynamic size based on connections
+            })
+
+        edges_data = []
+        for edge in edges:
+            edges_data.append({
+                "id": str(edge.id),
+                "source": str(edge.source_node_id),
+                "target": str(edge.target_node_id),
+                "relation": edge.relation,
+                "document_id": edge.document_id
+            })
+
+        return {
+            "nodes": nodes_data,
+            "edges": edges_data
+        }
+
     def _extract_json(self, text: str) -> List[Dict[str, Any]]:
         try:
             # 1. Standard Extraction

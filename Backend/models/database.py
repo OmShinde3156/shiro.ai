@@ -68,23 +68,40 @@ class FlashcardSet(Base):
     
     id = Column(String, primary_key=True)
     document_id = Column(Integer, ForeignKey("documents.id"))
-    flashcards = Column(JSON)  # Store flashcards as JSON
+    user_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    flashcards = relationship("Flashcard", back_populates="set", cascade="all, delete-orphan")
+
+class Flashcard(Base):
+    __tablename__ = "flashcards"
+    
+    id = Column(String, primary_key=True)
+    set_id = Column(String, ForeignKey("flashcard_sets.id"))
+    question = Column(Text, nullable=False)
+    answer = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    set = relationship("FlashcardSet", back_populates="flashcards")
+    progress = relationship("FlashcardProgress", back_populates="flashcard", cascade="all, delete-orphan")
 
 class FlashcardProgress(Base):
     __tablename__ = "flashcard_progress"
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    flashcard_id = Column(String, nullable=False)
+    flashcard_id = Column(String, ForeignKey("flashcards.id"))
     ease_factor = Column(Float, default=2.5)
-    interval_days = Column(Integer, default=1)
-    next_review = Column(DateTime)
+    interval_days = Column(Integer, default=0) # 0 means new
+    next_review = Column(DateTime, default=datetime.utcnow)
     review_count = Column(Integer, default=0)
     last_reviewed = Column(DateTime)
     
     # Relationships
     user = relationship("User", back_populates="flashcard_progress")
+    flashcard = relationship("Flashcard", back_populates="progress")
 
 class ChatHistory(Base):
     __tablename__ = "chat_history"
@@ -109,6 +126,7 @@ class Summary(Base):
     summary_text = Column(Text, nullable=False)
     summary_type = Column(String, nullable=False)
     language = Column(String, default="en")
+    status = Column(String, default="processing") # processing, completed, failed
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Podcast(Base):

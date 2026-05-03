@@ -161,6 +161,15 @@ async def get_specific_mindmap(mindmap_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Mind map not found")
     return {"mindmap_id": mindmap.id, "document_id": mindmap.document_id, "nodes": mindmap.nodes or [], "edges": mindmap.edges or [], "topic": mindmap.topic, "created_at": mindmap.created_at}
 
+@router.get("/epistemic-graph/{user_id}", tags=["Graph"])
+async def get_epistemic_graph(user_id: int, db: Session = Depends(get_db)):
+    from services.graph_service import GraphService
+    graph_service = GraphService()
+    try:
+        return graph_service.get_global_graph(user_id, db)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ==============================================
 # PROGRESS ENDPOINTS
 # ==============================================

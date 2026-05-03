@@ -20,6 +20,7 @@ import { useAuth } from "./context/AuthContext";
 import { PodcastProvider } from "./context/PodcastContext";
 import StudyRoom from "./components/pages/StudyRoom";
 import BottomNavBar from "./components/navigation/BottomNavBar";
+import CommandPalette from "./components/navigation/CommandPalette";
 import './App.css';
 import { useLocation } from "react-router-dom";
 import { Toaster } from 'react-hot-toast';
@@ -79,6 +80,7 @@ function App() {
           error: { iconTheme: { primary: '#ef4444', secondary: '#151926' } },
         }}
       />
+      <CommandPalette />
       <div className="flex min-h-screen w-full bg-[var(--bg-main)] text-[var(--text-main)] font-body">
         {user && !isStudyRoom && (
           <>

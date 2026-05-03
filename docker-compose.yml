@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Database: PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: shiro_db
+    restart: always
+    environment:
+      - POSTGRES_USER=shiro
+      - POSTGRES_PASSWORD=shiro_pass
+      - POSTGRES_DB=shiro_study
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Cache & Message Broker: Redis
+  redis:
+    image: redis:7-alpine
+    container_name: shiro_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # Backend: FastAPI
+  backend:
+    build: 
+      context: ./Backend
+    container_name: shiro_backend
+    restart: always
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://shiro:shiro_pass@db:5432/shiro_study
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./Backend:/app
+      - ./Backend/static:/app/static
+
+  # Celery Worker
+  worker:
+    build:
+      context: ./Backend
+    container_name: shiro_worker
+    restart: always
+    command: celery -A celery_app.celery_app worker --loglevel=info
+    depends_on:
+      - redis
+      - db
+    environment:
+      - DATABASE_URL=postgresql://shiro:shiro_pass@db:5432/shiro_study
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./Backend:/app
+      - ./Backend/static:/app/static
+
+volumes:
+  postgres_data:

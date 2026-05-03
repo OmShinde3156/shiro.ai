@@ -9,38 +9,36 @@ class SummarizerService:
         self.llm_client = LLMClient()
     
     async def generate_summary(self, document_id: int, summary_type: str, language: str, db: Session):
-        """Generate summary from document"""
+        """Generate summary from document using Celery"""
         
         # Get document
         document = db.query(Document).filter(Document.id == document_id).first()
         if not document:
             raise Exception("Document not found")
         
-        # Generate summary
-        summary_text = await self.llm_client.generate_summary(
-            document.text_content[:40000],
-            summary_type,
-            language
-        )
-        
-        # Save summary
+        # Save placeholder summary
         summary_id = str(uuid.uuid4())
         summary = Summary(
             id=summary_id,
             document_id=document_id,
             user_id=document.user_id,
-            summary_text=summary_text,
+            summary_text="Generating summary...",
             summary_type=summary_type,
-            language=language
+            language=language,
+            status="processing"
         )
         
         db.add(summary)
         db.commit()
+
+        # Trigger Celery Task
+        from tasks import generate_summary_task
+        generate_summary_task.delay(summary_id, document_id, summary_type, language)
         
         return {
             "summary_id": summary_id,
             "document_id": document_id,
-            "summary_text": summary_text,
+            "status": "processing",
             "summary_type": summary_type,
             "language": language,
             "created_at": summary.created_at

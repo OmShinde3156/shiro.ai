@@ -48,55 +48,13 @@ class PodcastService:
         db.add(podcast)
         db.commit()
         
-        # Save IDs to use in the background task
-        document_id = document.id
-        
-        import asyncio
-        asyncio.create_task(self.generate_podcast_bg(podcast_id, document_id, episodes, topic))
+        # Trigger Celery Task
+        from tasks import generate_podcast_task
+        generate_podcast_task.delay(podcast_id, document.id, episodes, topic)
 
         return podcast.id
 
-    async def generate_podcast_bg(self, podcast_id: str, document_id: int, episodes: int, topic: str):
-        from database.database import SessionLocal
-        db = SessionLocal()
-        try:
-            podcast = db.query(Podcast).filter(Podcast.id == podcast_id).first()
-            document = db.query(Document).filter(Document.id == document_id).first()
-            if not podcast or not document:
-                return
-            
-            chunks = chunk_text(document.text_content, max_chars=3000)
-            chunks = chunks[:episodes]
-
-            all_scripts = []
-            episode_files = []
-
-            for i, chunk in enumerate(chunks, start=1):
-                focus_prompt = f"Focus on this topic: {topic}." if topic else ""
-                prompt = f"Summarize in under 200 words for podcast episode {i} (Language: {podcast.language}). {focus_prompt}\n\nContent:\n{chunk}"
-                resp = await llm_client.generate_response(prompt)
-                all_scripts.append(resp)
-
-                mp3_filename = f"{podcast.id}_ep{i}.mp3"
-                mp3_path = os.path.join(self.STATIC_DIR, mp3_filename)
-
-                tts_client.text_to_speech(resp, mp3_path, lang=podcast.language)
-
-                episode_files.append(f"{self.BASE_URL}/{mp3_filename}")
-
-            final_script = "\n\n".join(all_scripts)
-            podcast.script_content = final_script[:10000]
-            podcast.episodes = episode_files
-            podcast.status = "completed"
-            db.commit()
-
-        except Exception as e:
-            podcast = db.query(Podcast).filter(Podcast.id == podcast_id).first()
-            if podcast:
-                podcast.status = f"failed: {str(e)}"
-                db.commit()
-        finally:
-            db.close()
+    # The generate_podcast_bg method is no longer needed in the service as it's moved to tasks.py
 
     def get_task_status(self, task_id: str, db: Session):
         podcast = db.query(Podcast).filter(Podcast.id == task_id).first()
