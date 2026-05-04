@@ -27,22 +27,14 @@ import { Toaster } from 'react-hot-toast';
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const { user } = useAuth();
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-  return children;
-};
-
 function App() {
   const { user } = useAuth();
   const location = useLocation();
   const isStudyRoom = location.pathname === "/study-room";
 
   useEffect(() => {
-    if (user && !localStorage.getItem("shiro_tour_completed")) {
+    // Tour runs for both guest and logged-in users
+    if (!localStorage.getItem("shiro_tour_completed")) {
       const driverObj = driver({
         showProgress: true,
         steps: [
@@ -62,7 +54,7 @@ function App() {
         }
       }, 1500); // Wait for animations
     }
-  }, [user]);
+  }, []);
 
   return (
     <PodcastProvider>
@@ -82,7 +74,7 @@ function App() {
       />
       <CommandPalette />
       <div className="flex min-h-screen w-full bg-[var(--bg-main)] text-[var(--text-main)] font-body">
-        {user && !isStudyRoom && (
+        {!isStudyRoom && (
           <>
             <div className="hidden md:block">
               <Sidebar />
@@ -90,99 +82,27 @@ function App() {
             <BottomNavBar />
           </>
         )}
-        <div className={`flex-grow overflow-y-auto ${user && !isStudyRoom ? 'md:ml-20 lg:mr-20 pb-24 md:pb-0' : ''}`}>
+        <div className={`flex-grow overflow-y-auto ${!isStudyRoom ? 'md:ml-20 lg:mr-20 pb-24 md:pb-0' : ''}`}>
           <Routes>
             <Route path="/login" element={<AuthPage />} />
-            
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Main />
-              </ProtectedRoute>
-            } />
-
-            <Route path="/study-room" element={
-              <ProtectedRoute>
-                <StudyRoom />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/quiz" element={
-              <ProtectedRoute>
-                <QuizPage />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/progress-report" element={
-              <ProtectedRoute>
-                <ProgressReport />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/audio-summary" element={
-              <ProtectedRoute>
-                <AudioSummaryPage />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/flashcards" element={
-              <ProtectedRoute>
-                <FlashcardApp />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/mindmap" element={
-              <ProtectedRoute>
-                <MindMapPage />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/summary" element={
-              <ProtectedRoute>
-                <SummaryFetcher />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/pyqs" element={
-              <ProtectedRoute>
-                <PyqsPage />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/documents" element={
-              <ProtectedRoute>
-                <DocumentsPage />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/documents/:id" element={
-              <ProtectedRoute>
-                <DocumentDetailsPage />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/study-plan" element={
-              <ProtectedRoute>
-                <StudyPlanPage />
-              </ProtectedRoute>
-            } />
-
-            <Route path="/feynman" element={
-              <ProtectedRoute>
-                <FeynmanPage />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/settings" element={
-              <ProtectedRoute>
-                <SettingsPage />
-              </ProtectedRoute>
-            } />
-
-            {/* Catch-all route */}
+            <Route path="/" element={<Main />} />
+            <Route path="/study-room" element={<StudyRoom />} />
+            <Route path="/quiz" element={<QuizPage />} />
+            <Route path="/progress-report" element={<ProgressReport />} />
+            <Route path="/audio-summary" element={<AudioSummaryPage />} />
+            <Route path="/flashcards" element={<FlashcardApp />} />
+            <Route path="/mindmap" element={<MindMapPage />} />
+            <Route path="/summary" element={<SummaryFetcher />} />
+            <Route path="/pyqs" element={<PyqsPage />} />
+            <Route path="/documents" element={<DocumentsPage />} />
+            <Route path="/documents/:id" element={<DocumentDetailsPage />} />
+            <Route path="/study-plan" element={<StudyPlanPage />} />
+            <Route path="/feynman" element={<FeynmanPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
-        {user && !isStudyRoom && <RightSidebar />}
+        {!isStudyRoom && <RightSidebar />}
       </div>
     </PodcastProvider>
   );
