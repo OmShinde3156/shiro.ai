@@ -7,6 +7,7 @@ import FlashcardApp from "./components/pages/FlashcardApp";
 import MindMapPage from "./components/pages/MindMapPage";
 import Sidebar from "./components/sidebar/Sidebar";
 import RightSidebar from "./components/rightsidebar/RightSidebar";
+import Header from "./components/navigation/Header";
 import SummaryFetcher from "./components/pages/SummaryFetcher";
 import PyqsPage from "./components/pages/PyqsPage";
 import ProgressReport from "./components/pages/ProgressReport";
@@ -83,6 +84,7 @@ function App() {
           </>
         )}
         <div className={`flex-grow overflow-y-auto ${!isStudyRoom ? 'md:ml-20 lg:mr-20 pb-24 md:pb-0' : ''}`}>
+          {!isStudyRoom && <Header />}
           <Routes>
             <Route path="/login" element={<AuthPage />} />
             <Route path="/" element={<Main />} />

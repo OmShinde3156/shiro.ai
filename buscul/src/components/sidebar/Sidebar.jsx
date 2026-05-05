@@ -6,7 +6,7 @@ import { useTheme } from "../../context/ThemeContext";
 import API_BASE_URL from "../../api/config.js";
 
 const Sidebar = () => {
-  const { onSent, prevPrompts = [], setRecentPrompt, documents, fetchDocuments, setMessages, setShowResults } = useContext(Context);
+  const { onSent, prevPrompts = [], setRecentPrompt, documents, fetchDocuments, setMessages, setShowResults, setInput } = useContext(Context);
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -111,7 +111,7 @@ const Sidebar = () => {
   
   const getNavClass = (path) => {
     const active = isActive(path);
-    return `flex items-center gap-0 group-hover:gap-4 px-3 py-3 rounded-xl transition-all duration-300 cursor-pointer group/item ${
+    return `flex items-center gap-0 group-hover:gap-4 px-1 group-hover:px-3 py-3 rounded-xl transition-all duration-300 cursor-pointer group/item ${
       active 
         ? "bg-[#72dcff]/10 text-[#72dcff] font-semibold" 
         : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--primary)]/5"
@@ -119,6 +119,8 @@ const Sidebar = () => {
   };
 
   const handleHomeClick = () => {
+    setRecentPrompt("");
+    setMessages([]);
     setShowResults(false);
     setInput("");
     navigate("/");
@@ -168,7 +170,7 @@ const Sidebar = () => {
         <div className="mt-8 border-t border-[var(--border)] pt-6 relative">
           <div 
             onClick={handleDivClick}
-            className={`flex items-center gap-0 group-hover:gap-4 px-3 py-3 rounded-xl transition-all border border-dashed border-[var(--primary)]/30 cursor-pointer group/upload ${uploading ? 'bg-[var(--primary)]/10' : 'hover:bg-[var(--primary)]/5 hover:border-[var(--primary)]/60'}`}
+            className={`flex items-center gap-0 group-hover:gap-4 px-1 group-hover:px-3 py-3 rounded-xl transition-all border border-dashed border-[var(--primary)]/30 cursor-pointer group/upload ${uploading ? 'bg-[var(--primary)]/10' : 'hover:bg-[var(--primary)]/5 hover:border-[var(--primary)]/60'}`}
           >
             <div className="min-w-[48px] flex justify-center items-center">
               {uploading ? (
@@ -220,7 +222,7 @@ const Sidebar = () => {
           <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Settings</span>
         </div>
 
-        <div onClick={toggleTheme} className="flex items-center gap-0 group-hover:gap-4 px-3 py-3 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all group/theme duration-200 cursor-pointer">
+        <div onClick={toggleTheme} className="flex items-center gap-0 group-hover:gap-4 px-1 group-hover:px-3 py-3 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all group/theme duration-200 cursor-pointer">
           <div className="min-w-[48px] flex justify-center items-center">
             <span className="material-symbols-outlined">palette</span>
           </div>
