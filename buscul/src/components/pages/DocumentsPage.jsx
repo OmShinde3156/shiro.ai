@@ -79,9 +79,14 @@ const DocumentsPage = () => {
       {/* Header Section */}
       <section className="flex flex-col gap-6 pt-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <h1 className="font-headline text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-2">My Library 📚</h1>
-            <p className="text-white/80 font-body text-sm md:text-base max-w-2xl">All your study notes and AI helps in one place. Simple and fast.</p>
+          <div className="flex items-center gap-6">
+            <button onClick={() => navigate("/")} className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all text-[var(--text-muted)] hover:text-primary">
+              <span className="material-symbols-outlined">arrow_back</span>
+            </button>
+            <div>
+              <h1 className="font-headline text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-2">My Library 📚</h1>
+              <p className="text-white/80 font-body text-sm md:text-base max-w-2xl">All your study notes and AI helps in one place. Simple and fast.</p>
+            </div>
           </div>
           <button 
             onClick={() => document.querySelector('aside input[type="file"]')?.click()}

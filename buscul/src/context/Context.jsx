@@ -117,6 +117,7 @@ export const ContextProvider = ({ children }) => {
         newMessages[newMessages.length - 1] = { 
           text: data.response, 
           thought: data.internal_thought,
+          citations: data.citations || [],
           isUser: false, 
           isLoading: false 
         };

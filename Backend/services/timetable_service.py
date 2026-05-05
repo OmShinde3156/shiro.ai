@@ -8,13 +8,18 @@ from typing import Dict, Any, List
 class TimetableService:
     
     async def create_timetable(self, request: TimetableRequest, db: Session):
-        """Create personalized study timetable"""
+        """Create personalized study timetable with Cognitive Peak Optimization"""
         
         # Calculate days until exam
         days_until_exam = (request.exam_date - datetime.now(timezone.utc)).days
         
         if days_until_exam <= 0:
             raise Exception("Exam date must be in the future")
+
+        # Shiro v4.0: Get Cognitive Peaks
+        from services.progress_service import ProgressService
+        peaks = await ProgressService().get_cognitive_peaks(request.user_id, db)
+        peak_hour = peaks['peak_start']
         
         # Calculate total available hours
         total_hours_available = days_until_exam * request.study_hours_per_day
@@ -39,7 +44,8 @@ class TimetableService:
                 request.study_hours_per_day,
                 day_offset,
                 days_until_exam,
-                request.crash_course
+                request.crash_course,
+                peak_hour
             )
             
             daily_schedule[date_str] = daily_tasks
@@ -63,7 +69,8 @@ class TimetableService:
             "user_id": request.user_id,
             "exam_date": request.exam_date,
             "daily_schedule": daily_schedule,
-            "created_at": timetable.created_at
+            "created_at": timetable.created_at,
+            "peak_window": f"{peak_hour}:00 - {(peak_hour+3)%24}:00"
         }
     
     def get_user_timetable(self, user_id: int, db: Session):
@@ -137,8 +144,8 @@ class TimetableService:
             "hours_studied": progress.hours_studied
         }
     
-    def _generate_daily_tasks(self, subjects: List[Dict], hours_per_day: int, day_offset: int, total_days: int, crash_course: bool) -> List[Dict[str, Any]]:
-        """Generate tasks for a specific day"""
+    def _generate_daily_tasks(self, subjects: List[Dict], hours_per_day: int, day_offset: int, total_days: int, crash_course: bool, peak_hour: int = 9) -> List[Dict[str, Any]]:
+        """Generate tasks for a specific day optimized for cognitive peaks"""
         
         tasks = []
         
@@ -146,34 +153,33 @@ class TimetableService:
         sorted_subjects = sorted(subjects, key=lambda x: x.get('priority', 1))
         
         if crash_course:
-            # In crash course mode, focus on high-priority subjects
             subjects_for_day = sorted_subjects[:2]
         else:
-            # Normal mode - rotate subjects
             subjects_for_day = [sorted_subjects[day_offset % len(sorted_subjects)]]
         
         hours_allocated = 0
         
-        for subject in subjects_for_day:
+        for idx, subject in enumerate(subjects_for_day):
             if hours_allocated >= hours_per_day:
                 break
             
-            # Calculate hours for this subject today
             subject_hours = min(
                 hours_per_day - hours_allocated,
-                2 if crash_course else 3  # Max hours per subject per day
+                2 if crash_course else 3
             )
             
-            # Generate tasks for this subject
-            if day_offset < total_days * 0.7:  # First 70% of time - learning
-                task_type = "study"
-                task_description = f"Study {subject['name']} - New concepts"
-            elif day_offset < total_days * 0.9:  # Next 20% - practice
+            # Shiro v4.0: Cognitive Timing
+            scheduled_hour = (peak_hour + (idx * 2)) % 24
+            
+            if day_offset < total_days * 0.7:
+                task_type = "deep_work"
+                task_description = f"🔥 Deep Work: {subject['name']} (Peak Window)"
+            elif day_offset < total_days * 0.9:
                 task_type = "practice"
                 task_description = f"Practice {subject['name']} - Problems & Questions"
-            else:  # Last 10% - revision
+            else:
                 task_type = "revision"
-                task_description = f"Revise {subject['name']} - Quick review"
+                task_description = f"⚡ Quick Revise: {subject['name']}"
             
             tasks.append({
                 "task_id": f"{subject['name']}_{day_offset}_{task_type}",
@@ -181,6 +187,7 @@ class TimetableService:
                 "type": task_type,
                 "description": task_description,
                 "estimated_hours": subject_hours,
+                "scheduled_time": f"{scheduled_hour:02d}:00",
                 "priority": subject.get('priority', 1),
                 "completed": False,
                 "hours_studied": 0.0
@@ -189,4 +196,3 @@ class TimetableService:
             hours_allocated += subject_hours
         
         return tasks
-

@@ -171,8 +171,13 @@ const FlashcardApp = () => {
       <div className="flashcard-app p-8 max-w-4xl mx-auto min-h-screen">
         <header className="header flex justify-between items-center mb-10">
           <div>
-            <h1 className="app-title text-3xl font-bold font-headline text-[var(--text-main)]">Active Recall</h1>
-            <p className="text-[var(--text-muted)] text-sm">Generate custom spaced repetition flashcards from your library.</p>
+            <div className="flex items-center gap-4 mb-2">
+              <button onClick={() => navigate("/")} className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all text-[var(--text-muted)] hover:text-primary">
+                <ChevronLeft size={20} />
+              </button>
+              <h1 className="app-title text-3xl font-bold font-headline text-[var(--text-main)] leading-none">Active Recall</h1>
+            </div>
+            <p className="text-[var(--text-muted)] text-sm ml-12">Generate custom spaced repetition flashcards from your library.</p>
           </div>
           <div className="mode-toggle glass-card p-1 rounded-2xl flex border border-white/5">
             <button 
@@ -263,8 +268,13 @@ const FlashcardApp = () => {
       <div className="app-container max-w-4xl mx-auto pt-8">
         <header className="header flex justify-between items-center mb-10">
           <div>
-            <h1 className="app-title text-3xl font-bold font-headline text-[var(--text-main)]">Active Recall</h1>
-            <p className="card-counter text-[var(--text-muted)] text-sm">Concept {currentIndex + 1} of {flashcards.length}</p>
+            <div className="flex items-center gap-4 mb-2">
+              <button onClick={() => navigate("/")} className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all text-[var(--text-muted)] hover:text-primary">
+                <ChevronLeft size={20} />
+              </button>
+              <h1 className="app-title text-3xl font-bold font-headline text-[var(--text-main)] leading-none">Active Recall</h1>
+            </div>
+            <p className="card-counter text-[var(--text-muted)] text-sm ml-12">Concept {currentIndex + 1} of {flashcards.length}</p>
           </div>
           
           <div className="mode-toggle glass-card p-1 rounded-2xl flex border border-white/5">

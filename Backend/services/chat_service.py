@@ -27,9 +27,16 @@ class UIActionCard(BaseModel):
     type: str = "ActionCard"
     props: UIActionCardProps
 
+class Citation(BaseModel):
+    id: str = Field(description="Unique ID for the citation, e.g. cit-1")
+    document_id: int
+    filename: str
+    content: str = Field(description="The exact snippet from the source used for this citation.")
+
 class Stage2Response(BaseModel):
-    final_response: str = Field(description="The refined, final response to the user.")
-    ui_action_card: Optional[UIActionCard] = Field(default=None, description="Provide an ActionCard ONLY if the user seems stuck or needs a specific next action. Null otherwise.")
+    final_response: str = Field(description="The refined response. Use [cit-N] notation inline to cite sources.")
+    citations: List[Citation] = Field(default_factory=list, description="List of source snippets linked to the inline citations.")
+    ui_action_card: Optional[UIActionCard] = Field(default=None)
 
 class ChatService:
     def __init__(self):
@@ -48,7 +55,7 @@ class ChatService:
         mode: str = "human"
     ) -> Dict[str, Any]:
         """
-        Optimized Shiro Core v4.0: Structured Agentic Pipeline
+        Shiro Core v4.0 (InsightsLM Merge): Enhanced RAG with Citations
         """
         user = db.query(User).filter(User.id == user_id).first()
         user_name = user.name if user else "Learner"
@@ -57,33 +64,25 @@ class ChatService:
         recent_history = db.query(ChatHistory).filter(ChatHistory.user_id == user_id).order_by(ChatHistory.timestamp.desc()).limit(5).all()
         history_summary = "\n".join([f"User: {h.message}\nShiro: {h.response}" for h in reversed(recent_history)])
 
-        # Gather Progress & Timetable Context
         try:
             progress_data = await self.progress_service.get_user_progress(user_id, db)
             timetable_data = self.timetable_service.get_user_timetable(user_id, db)
-        except Exception as e:
-            logger.warning(f"Failed to fetch master-brain context: {e}")
+        except Exception:
             progress_data = {}
             timetable_data = {}
         
         agent_master_context = f"""
         ### USER KNOWLEDGE STATE:
-        - Weak Subjects: {', '.join(progress_data.get('weak_subjects', [])) or 'None identified'}
-        - Strong Subjects: {', '.join(progress_data.get('strong_subjects', [])) or 'None identified'}
-        - Average Score: {progress_data.get('average_score', 0)}%
+        - Weak Subjects: {', '.join(progress_data.get('weak_subjects', []))}
         - Study Streak: {progress_data.get('study_streak', 0)} days
-        
         ### CURRENT STUDY PLAN:
-        - Exam Date: {timetable_data.get('exam_date', 'Not set')}
-        - Days Remaining: {timetable_data.get('days_remaining', 'N/A')}
         - Today's Tasks: {json.dumps(timetable_data.get('today_schedule', []))}
         """
 
         graph_context = ""
         try:
             graph_context = self.graph_service.get_related_concepts(message, user_id, db)
-        except Exception as e:
-            logger.warning(f"Graph service failed: {e}")
+        except Exception: pass
             
         context_docs = graph_context + "\n"
         sources = []
@@ -97,100 +96,73 @@ class ChatService:
                         if results and results.get('documents') and results['documents']:
                             for content in results['documents'][0]:
                                 context_docs += f"[SOURCE: {doc.filename}] {content}\n"
-                                sources.append({"document_id": doc.id, "filename": doc.filename, "snippet": content[:200]})
-                    except Exception as e:
-                        logger.warning(f"Vector DB query failed for doc {doc.id}: {e}")
+                                sources.append({"document_id": doc.id, "filename": doc.filename, "snippet": content})
+                    except Exception: pass
 
-        # 2. STAGE 1: JOINT PLAN & DRAFT (Structured JSON)
-        mode_instruction = ""
-        if mode == "human":
-            mode_instruction = f"BEHAVIOR: You are a warm, empathetic human companion. Use {user_name}'s name, show interest, and be conversational. Use the KNOWLEDGE STATE to nudge {user_name} if they are struggling or congratulate their streak."
-        else:
-            mode_instruction = f"BEHAVIOR: You are a RIGID SURGICAL TUTOR. No pleasantries. Focus on TECHNICAL CONTEXT. Use the KNOWLEDGE STATE to provide high-density facts specifically targeting {user_name}'s weak areas."
+        # 2. STAGE 1: PLAN & DRAFT
+        mode_instruction = f"BEHAVIOR: {'WARM HUMAN' if mode=='human' else 'RIGID SURGICAL'}. Use context appropriately."
 
-        plan_gen_prompt = f"""As Shiro, analyze and respond to {user_name} in {mode.upper()} mode.
+        plan_gen_prompt = f"""As Shiro, respond to {user_name}.
         {mode_instruction}
-        
         STUDENT DATA: {agent_master_context}
         USER REQUEST: {message}
-        HISTORY: {history_summary}
         TECHNICAL CONTEXT: {context_docs}
-        
-        Respond EXACTLY with a JSON object.
-        Schema:
-        {{
-            "thought": "string (1-sentence internal analysis)",
-            "intent": "string (GENERAL or RESEARCH)",
-            "draft": "string (High-fidelity response in {language})"
-        }}
+        Respond EXACTLY with JSON: {{ "thought": "...", "intent": "...", "draft": "..." }}
         """
         
         stage1_draft = ""
-        internal_thought = "Analyzing request..."
-        intent = "RESEARCH"
+        internal_thought = "Analyzing..."
         
         try:
             stage1_resp = await llm_client.generate_response(plan_gen_prompt, response_format="json_object")
             stage1_data = Stage1Response.model_validate_json(stage1_resp)
             stage1_draft = stage1_data.draft
             internal_thought = stage1_data.thought
-            intent = stage1_data.intent
-        except Exception as e:
-            logger.error(f"Stage 1 Pipeline Failed: {e}")
-            stage1_draft = "I encountered an internal error analyzing your request. Let me try answering directly: " + message
+        except Exception:
+            stage1_draft = "I encountered an error. How can I help?"
 
-        # 3. STAGE 2: JOINT CRITIQUE, REFINE & UI (Structured JSON)
-        refine_ui_prompt = f"""Review and finalize this response for Shiro.ai.
+        # 3. STAGE 2: REFINE & CITE (InsightsLM logic)
+        source_mapping = [{"id": f"cit-{i+1}", "document_id": s['document_id'], "filename": s['filename'], "content": s['snippet'][:500]} for i, s in enumerate(sources)]
+
+        refine_ui_prompt = f"""Review this response.
         MODE: {mode.upper()}
         DRAFT: {stage1_draft}
-        SOURCE CONTEXT: {context_docs if "RESEARCH" in intent.upper() else "N/A"}
+        SOURCE MAPPING: {json.dumps(source_mapping)}
         STUDENT DATA: {agent_master_context}
         
         Task: 
-        1. If mode is SURGICAL, strip all 'human' filler. Ensure cold, precise technicality.
-        2. If mode is HUMAN, ensure natural, friendly, and supportive tone.
-        3. MANDATORY: Based on STUDENT DATA, provide a UI ActionCard ONLY if the user seems stuck or needs a specific next action. Otherwise, return null for the action card.
+        1. Refine the tone.
+        2. MANDATORY: Cite sources from MAPPING using [cit-N] inline.
+        3. Match every [cit-N] to the 'citations' field.
         
-        Respond EXACTLY with a JSON object.
-        Schema:
-        {{
-            "final_response": "string (Refined Response)",
-            "ui_action_card": {{
-                "type": "ActionCard",
-                "props": {{
-                    "title": "string",
-                    "action": "string"
-                }}
-            }} // Or null if not needed
-        }}
+        Respond EXACTLY with JSON:
+        {{ "final_response": "...", "citations": [...], "ui_action_card": null }}
         """
         
         final_response = stage1_draft
-        ui_json_str = ""
+        found_citations = []
         
         try:
             stage2_resp = await llm_client.generate_response(refine_ui_prompt, response_format="json_object")
             stage2_data = Stage2Response.model_validate_json(stage2_resp)
             final_response = stage2_data.final_response
+            found_citations = [c.model_dump() for c in stage2_data.citations]
             
             if stage2_data.ui_action_card:
-                ui_json_str = f"\n\n<shiro_ui>{stage2_data.ui_action_card.model_dump_json()}</shiro_ui>"
-                final_response += ui_json_str
-        except Exception as e:
-            logger.error(f"Stage 2 Pipeline Failed: {e}")
+                final_response += f"\n\n<shiro_ui>{stage2_data.ui_action_card.model_dump_json()}</shiro_ui>"
+        except Exception: pass
 
-        # 4. ASYNC PERSISTENCE
+        # 4. PERSIST
         try:
             chat_entry = ChatHistory(user_id=user_id, message=message, response=final_response, document_ids=document_ids, language=language)
             db.add(chat_entry)
             db.commit()
-        except Exception as e:
-            logger.error(f"Database commit failed in ChatService: {e}")
-            db.rollback()
+        except Exception: db.rollback()
         
         return {
             "response": final_response,
             "internal_thought": internal_thought,
             "sources": sources,
+            "citations": found_citations,
             "language": language
         }

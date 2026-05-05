@@ -75,9 +75,14 @@ const ProgressReport = () => {
   return (
     <div className="progress-container advanced-dashboard">
       <header className="dashboard-header">
-        <div>
-          <h1 className="text-3xl font-bold font-headline text-[var(--text-main)]">Learning Analytics</h1>
-          <p className="text-[var(--text-muted)]">Real-time insights into your knowledge retention and study habits.</p>
+        <div className="flex items-center gap-6">
+          <button onClick={() => navigate("/")} className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all text-[var(--text-muted)] hover:text-primary">
+            <span className="material-symbols-outlined">arrow_back</span>
+          </button>
+          <div>
+            <h1 className="text-3xl font-bold font-headline text-[var(--text-main)]">Learning Analytics</h1>
+            <p className="text-[var(--text-muted)]">Real-time insights into your knowledge retention and study habits.</p>
+          </div>
         </div>
         <div className="streak-badge glass-card">
           <span className="material-symbols-outlined text-orange-400">local_fire_department</span>

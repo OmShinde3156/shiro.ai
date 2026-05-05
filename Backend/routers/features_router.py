@@ -14,6 +14,7 @@ from services.mindmap_service import MindMapService
 from services.progress_service import ProgressService
 from services.timetable_service import TimetableService
 from services.feynman_service import FeynmanService
+from services.swarm_service import SwarmService
 from utils.tts_client import tts_client
 from utils.stt_client import stt_client
 from models.schema import (
@@ -41,6 +42,7 @@ def get_progress_service(): return ProgressService()
 def get_timetable_service(): return TimetableService()
 def get_feynman_service(): return FeynmanService()
 def get_quiz_service(): return QuizService()
+def get_swarm_service(): return SwarmService()
 
 # ==============================================
 # QUIZ ENDPOINTS
@@ -161,14 +163,25 @@ async def get_specific_mindmap(mindmap_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Mind map not found")
     return {"mindmap_id": mindmap.id, "document_id": mindmap.document_id, "nodes": mindmap.nodes or [], "edges": mindmap.edges or [], "topic": mindmap.topic, "created_at": mindmap.created_at}
 
-@router.get("/epistemic-graph/{user_id}", tags=["Graph"])
-async def get_epistemic_graph(user_id: int, db: Session = Depends(get_db)):
-    from services.graph_service import GraphService
-    graph_service = GraphService()
-    try:
-        return graph_service.get_global_graph(user_id, db)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# ==============================================
+# SWARM / INSIGHT ENDPOINTS
+# ==============================================
+
+@router.get("/insights/{user_id}", tags=["Swarm"])
+async def get_library_insights(user_id: int, db: Session = Depends(get_db), swarm_service: SwarmService = Depends(get_swarm_service)):
+    return swarm_service.get_user_insights(user_id, db)
+
+@router.post("/insights/analyze/{user_id}", tags=["Swarm"])
+async def trigger_swarm_analysis(user_id: int, db: Session = Depends(get_db)):
+    from tasks import run_swarm_analysis_task
+    run_swarm_analysis_task.delay(user_id)
+    return {"status": "analysis_triggered"}
+
+@router.post("/insights/read/{insight_id}", tags=["Swarm"])
+async def mark_insight_as_read(insight_id: int, db: Session = Depends(get_db), swarm_service: SwarmService = Depends(get_swarm_service)):
+    if swarm_service.mark_insight_read(insight_id, db):
+        return {"status": "success"}
+    raise HTTPException(status_code=404, detail="Insight not found")
 
 # ==============================================
 # PROGRESS ENDPOINTS

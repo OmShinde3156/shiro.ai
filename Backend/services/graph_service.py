@@ -56,41 +56,78 @@ class GraphService:
 
     def _get_or_create_node(self, label: str, document_id: int, user_id: int, db: Session):
         label = label.strip().title()
+        
+        # Shiro v4.5: Semantic Alias Mapping
+        aliases = {
+            "Ai": "Artificial Intelligence",
+            "Artificial Intelligence": "Artificial Intelligence",
+            "Ml": "Machine Learning",
+            "Machine Learning": "Machine Learning",
+            "Nlp": "Natural Language Processing",
+            "Cv": "Computer Vision"
+        }
+        canonical_label = aliases.get(label, label)
+
         node = db.query(KnowledgeNode).filter(
-            KnowledgeNode.label == label,
+            KnowledgeNode.label == canonical_label,
             KnowledgeNode.user_id == user_id
         ).first()
         
         if not node:
             node = KnowledgeNode(
-                label=label,
+                label=canonical_label,
                 document_id=document_id,
-                user_id=user_id
+                user_id=user_id,
+                importance_score=0.1
             )
             db.add(node)
-            db.flush() # Get ID before commit
+            db.flush() 
+        else:
+            # Multi-document reinforcement: Node grows as it appears in more files
+            if node.document_id != document_id:
+                node.importance_score = min(1.0, (node.importance_score or 0.1) + 0.15)
+                
         return node
 
-    def get_related_concepts(self, query: str, user_id: int, db: Session, depth: int = 1) -> str:
-        """Search the graph for concepts related to the query and return as context"""
-        # 1. Simple keyword match for nodes in the query
+    def get_related_concepts(self, query: str, user_id: int, db: Session, depth: int = 2) -> str:
+        """Search the graph for concepts related to the query and return as multi-hop context"""
         all_nodes = db.query(KnowledgeNode).filter(KnowledgeNode.user_id == user_id).all()
-        found_nodes = []
-        for node in all_nodes:
-            if node.label.lower() in query.lower():
-                found_nodes.append(node)
         
-        if not found_nodes:
+        # 1. Identity seed nodes in the query
+        seed_nodes = [n for n in all_nodes if n.label.lower() in query.lower()]
+        if not seed_nodes:
             return ""
         
-        graph_context = "### CONCEPTUAL RELATIONSHIPS (Graph Context):\n"
-        for node in found_nodes:
-            # Find outgoing edges
-            edges = db.query(KnowledgeEdge).filter(KnowledgeEdge.source_node_id == node.id).all()
+        visited_ids = set()
+        graph_context = "### MULTI-HOP KNOWLEDGE GRAPH CONTEXT:\n"
+        
+        # 2. Multi-hop traversal (Recursive/Iterative)
+        queue = [(node, 0) for node in seed_nodes]
+        while queue:
+            current_node, current_depth = queue.pop(0)
+            if current_node.id in visited_ids or current_depth >= depth:
+                continue
+                
+            visited_ids.add(current_node.id)
+            
+            # Find relationships
+            edges = db.query(KnowledgeEdge).filter(
+                (KnowledgeEdge.source_node_id == current_node.id) | 
+                (KnowledgeEdge.target_node_id == current_node.id)
+            ).all()
+            
             for edge in edges:
-                target = db.query(KnowledgeNode).filter(KnowledgeNode.id == edge.target_node_id).first()
-                if target:
-                    graph_context += f"- {node.label} [{edge.relation}] -> {target.label}\n"
+                is_source = edge.source_node_id == current_node.id
+                other_id = edge.target_node_id if is_source else edge.source_node_id
+                other_node = db.query(KnowledgeNode).filter(KnowledgeNode.id == other_id).first()
+                
+                if other_node:
+                    rel_str = f"- {current_node.label} [{edge.relation}] -> {other_node.label}" if is_source \
+                              else f"- {other_node.label} [{edge.relation}] -> {current_node.label}"
+                    
+                    if rel_str not in graph_context:
+                        graph_context += rel_str + "\n"
+                        queue.append((other_node, current_depth + 1))
         
         return graph_context
 

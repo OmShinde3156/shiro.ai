@@ -5,6 +5,7 @@ import { Context } from '../../context/Context';
 import API_BASE_URL from '../../api/config.js';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import MarkdownRenderer from '../chat/MarkdownRenderer';
 import './StudyRoom.css';
 
 const StudyRoom = () => {
@@ -42,6 +43,7 @@ const StudyRoom = () => {
     { text: "Flow mode initiated. I'm monitoring your progress—ask me anything as you study.", isUser: false }
   ]);
   const [aiLoading, setAiLoading] = useState(false);
+  const [selectedCitation, setSelectedCitation] = useState(null);
 
   // Notes State
   const [notes, setNotes] = useState("");
@@ -80,8 +82,55 @@ const StudyRoom = () => {
     setAiLoading(true);
 
     try {
+      // Logic from Context.jsx onSent adapted for StudyRoom specific state
       const response = await onSent("en", user?.id, [parseInt(selectedDocId)], "human", messageText);
-      setChatMessages(prev => [...prev, { text: response, isUser: false }]);
+      // Wait, onSent updates global messages. In StudyRoom we have local chatMessages.
+      // I should probably sync them or just use global messages.
+      // For now, I'll update local state from the returned response.
+      // But onSent returns a string. I need the full data for citations.
+      
+      // I'll update the local chatMessages after a small delay to let Context finish.
+      // Actually, let's just push a dummy AI message and it will be replaced by global state if needed?
+      // No, StudyRoom has its own message stream for "Clean Flow".
+      
+      // I'll fetch the last message from the context after onSent completes
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // Re-sync local chatMessages with global Context messages if needed,
+  // or better: just use onSent and then update local state.
+  // Actually, I'll modify handleChatSend to use runChat directly to keep it local and structured.
+  
+  const handleChatSendLocal = async (overrideInput = null) => {
+    const messageText = overrideInput || chatInput;
+    if (!messageText.trim()) return;
+    
+    setChatMessages(prev => [...prev, { text: messageText, isUser: true }]);
+    if (!overrideInput) setChatInput("");
+    setAiLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: user?.id,
+          message: messageText,
+          document_ids: [parseInt(selectedDocId)],
+          language: "en",
+          mode: "human"
+        }),
+      });
+      const data = await response.json();
+      setChatMessages(prev => [...prev, { 
+        text: data.response, 
+        isUser: false, 
+        citations: data.citations || [] 
+      }]);
     } catch (err) {
       console.error(err);
     } finally {
@@ -100,10 +149,9 @@ const StudyRoom = () => {
       prompt = `Generate a challenging multiple-choice question based specifically on this line: "${selection.text}"`;
     }
 
-    handleChatSend(prompt);
+    handleChatSendLocal(prompt);
   };
 
-  // Activity Tracking Helper
   const recordAction = () => {
     setLastActionTime(Date.now());
     setHasNudged(false);
@@ -137,7 +185,7 @@ const StudyRoom = () => {
     
     const prompt = `I have written these notes based on the document: "${notes}". Please review them for accuracy, identify any logic gaps, and tell me if I missed any key concepts from the source material.`;
     
-    await handleChatSend(prompt);
+    await handleChatSendLocal(prompt);
     setNotesReviewing(false);
   };
 
@@ -161,7 +209,6 @@ const StudyRoom = () => {
     if (selectedDocId) {
       const doc = documents.find(d => d.id === parseInt(selectedDocId));
       setCurrentDocument(doc);
-      console.log(`[Validation] StudyRoom synchronized with Document ID: ${selectedDocId}`);
     }
   }, [documents, selectedDocId]);
 
@@ -442,7 +489,11 @@ const StudyRoom = () => {
                    <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-hide">
                       {chatMessages.map((msg, i) => (
                         <div key={i} className={`max-w-[85%] p-4 rounded-2xl text-xs leading-relaxed ${msg.isUser ? 'ml-auto bg-primary/10 text-white border border-primary/20' : 'bg-white/5 text-white/70 border border-white/5'}`}>
-                          {msg.text}
+                          <MarkdownRenderer 
+                            content={msg.text} 
+                            citations={msg.citations || []} 
+                            onCitationClick={(cit) => setSelectedCitation(cit)} 
+                          />
                         </div>
                       ))}
                       {aiLoading && <div className="p-2 flex gap-1"><span className="w-1 h-1 bg-primary rounded-full animate-bounce"></span><span className="w-1 h-1 bg-primary rounded-full animate-bounce delay-100"></span><span className="w-1 h-1 bg-primary rounded-full animate-bounce delay-200"></span></div>}
@@ -451,11 +502,11 @@ const StudyRoom = () => {
                       <input 
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleChatSend()}
+                        onKeyDown={(e) => e.key === 'Enter' && handleChatSendLocal()}
                         className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-4 pr-12 text-xs text-white focus:border-primary/50 outline-none" 
                         placeholder="Ask Shiro about this passage..." 
                       />
-                      <button onClick={() => handleChatSend()} className="absolute right-2 top-2 w-8 h-8 rounded-lg bg-primary text-black flex items-center justify-center hover:scale-105 transition-transform">
+                      <button onClick={() => handleChatSendLocal()} className="absolute right-2 top-2 w-8 h-8 rounded-lg bg-primary text-black flex items-center justify-center hover:scale-105 transition-transform">
                         <span className="material-symbols-outlined text-sm">send</span>
                       </button>
                    </div>
@@ -493,6 +544,28 @@ const StudyRoom = () => {
            </div>
         </section>
       </main>
+
+      {/* Source Citation Preview Modal */}
+      {selectedCitation && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setSelectedCitation(null)}>
+           <div className="w-full max-w-2xl bg-[#151926] border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="p-6 border-b border-white/5 flex justify-between items-center bg-primary/5">
+                 <div>
+                    <h3 className="text-sm font-black text-white uppercase tracking-widest">{selectedCitation.filename}</h3>
+                    <p className="text-[10px] text-primary font-bold">VERIFIABLE SOURCE CITATION</p>
+                 </div>
+                 <button onClick={() => setSelectedCitation(null)} className="p-2 hover:bg-white/5 rounded-full text-white/40 hover:text-white transition-all">
+                    <span className="material-symbols-outlined">close</span>
+                 </button>
+              </div>
+              <div className="p-8 max-h-[60vh] overflow-y-auto scrollbar-hide">
+                 <div className="prose prose-invert max-w-none text-white/70 leading-relaxed text-sm italic">
+                    "{selectedCitation.content}"
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

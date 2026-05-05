@@ -58,14 +58,6 @@ class PDFService:
             self.vector_db.add_documents(collection_name, chunks, metadatas)
             print(f"DEBUG: Successfully embedded background task for {collection_name}")
             
-            # Shiro v3.1: Move SLOW knowledge graph extraction to background tasks
-            # Disabled temporarily to save LLM tokens
-            # from database.database import SessionLocal
-            # db = SessionLocal()
-            # try:
-            #     self.graph_service.extract_and_store_graph(document_id, text_content, user_id, db)
-            # finally:
-            #     db.close()
         except Exception as e:
             print(f"DEBUG: Background embedding failed: {e}")
     

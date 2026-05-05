@@ -195,3 +195,15 @@ class KnowledgeEdge(Base):
     relation = Column(String, nullable=False) # e.g. "contains", "results_in", "instance_of"
     weight = Column(Float, default=1.0)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class LibraryInsight(Base):
+    __tablename__ = "library_insights"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    type = Column(String, nullable=False) # "contradiction", "synergy", "suggestion"
+    title = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+    source_doc_ids = Column(JSON) # List of doc IDs involved
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)

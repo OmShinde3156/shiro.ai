@@ -158,6 +158,42 @@ class ProgressService:
         
         return activities
 
+    async def get_cognitive_peaks(self, user_id: int, db: Session) -> Dict[str, Any]:
+        """Analyze historical quiz performance to find peak cognitive hours"""
+        
+        # Get all quiz results for this user
+        results = db.query(QuizResult).filter(QuizResult.user_id == user_id).all()
+        
+        if not results:
+            return {"peak_start": 9, "peak_end": 12, "efficiency": "default", "data_points": 0} # Default to morning
+
+        # Group scores by hour
+        hour_stats = {}
+        for r in results:
+            hour = r.taken_at.hour
+            if hour not in hour_stats:
+                hour_stats[hour] = []
+            hour_stats[hour].append(r.score)
+
+        # Calculate average score per hour
+        hour_averages = {
+            hour: sum(scores) / len(scores)
+            for hour, scores in hour_stats.items()
+        }
+
+        # Find the hour with the highest average
+        if not hour_averages:
+            return {"peak_start": 9, "peak_end": 12, "efficiency": "default", "data_points": 0}
+
+        best_hour = max(hour_averages, key=hour_averages.get)
+        
+        return {
+            "peak_start": best_hour,
+            "peak_end": (best_hour + 3) % 24, # 3-hour window
+            "efficiency": round(hour_averages[best_hour], 2),
+            "data_points": len(results)
+        }
+
     async def _calculate_study_streak(self, user_id: int, db: Session) -> int:
         """Calculate current study streak"""
         

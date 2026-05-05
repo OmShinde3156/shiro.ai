@@ -6,7 +6,7 @@ import { useTheme } from "../../context/ThemeContext";
 import API_BASE_URL from "../../api/config.js";
 
 const Sidebar = () => {
-  const { onSent, prevPrompts = [], setRecentPrompt, documents, fetchDocuments, setMessages, setShowResults } = useContext(Context);
+  const { onSent, prevPrompts = [], setRecentPrompt, setInput, documents, fetchDocuments, setMessages, setShowResults } = useContext(Context);
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();

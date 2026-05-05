@@ -87,7 +87,10 @@ const StudyPlanPage = () => {
     <div className="study-plan-container px-6 md:px-12 py-10 max-w-5xl mx-auto">
       {!timetable ? (
         <div className="max-w-2xl mx-auto">
-          <header className="mb-10 text-center">
+          <header className="mb-10 text-center relative">
+             <button onClick={() => navigate("/")} className="absolute left-0 top-0 p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all text-[var(--text-muted)] hover:text-primary">
+               <span className="material-symbols-outlined">arrow_back</span>
+             </button>
              <h1 className="text-4xl font-black font-headline text-white mb-2">Master Plan</h1>
              <p className="text-[var(--text-muted)]">Configure your AI-powered cognitive pathway.</p>
           </header>
@@ -133,9 +136,15 @@ const StudyPlanPage = () => {
       ) : (
         <div className="space-y-12">
           {/* Header */}
-          <header>
-            <h1 className="text-4xl font-extrabold font-headline text-white mb-2">Master Plan</h1>
-            <p className="text-[var(--text-muted)]">Your optimized cognitive pathway for today.</p>
+          <header className="flex justify-between items-center">
+            <div>
+              <h1 className="text-4xl font-extrabold font-headline text-white mb-2">Master Plan</h1>
+              <p className="text-[var(--text-muted)]">Your optimized cognitive pathway for today.</p>
+            </div>
+            <button onClick={() => navigate("/")} className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-primary hover:border-primary/40 transition-all flex items-center gap-2">
+               <span className="material-symbols-outlined text-sm">arrow_back</span>
+               Back to Dashboard
+            </button>
           </header>
 
           {/* Date Picker (Horizontal) */}

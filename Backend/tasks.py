@@ -1,8 +1,9 @@
 from celery_app import celery_app
 from database.database import SessionLocal
-from models.database import Podcast, Document, Summary, KnowledgeNode, KnowledgeEdge
+from models.database import Podcast, Document, Summary, KnowledgeNode, KnowledgeEdge, LibraryInsight
 from utils.llm_client import llm_client
 from utils.tts_client import tts_client
+from services.swarm_service import SwarmService
 import os
 import asyncio
 import logging
@@ -95,5 +96,17 @@ def generate_summary_task(summary_id: str, document_id: int, summary_type: str, 
         if summary:
             summary.status = f"failed: {str(e)}"
             db.commit()
+    finally:
+        db.close()
+
+@celery_app.task(name="tasks.run_swarm_analysis")
+def run_swarm_analysis_task(user_id: int):
+    db = SessionLocal()
+    try:
+        swarm_service = SwarmService()
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(swarm_service.run_library_analysis(user_id, db))
+    except Exception as e:
+        logger.error(f"Swarm Task Failed: {e}")
     finally:
         db.close()
