@@ -6,7 +6,17 @@ import { useTheme } from "../../context/ThemeContext";
 import API_BASE_URL from "../../api/config.js";
 
 const Sidebar = () => {
-  const { onSent, prevPrompts = [], setRecentPrompt, setInput, documents, fetchDocuments, setMessages, setShowResults } = useContext(Context);
+  const { 
+    onSent, 
+    prevPrompts = [], 
+    setRecentPrompt, 
+    setInput, 
+    documents, 
+    fetchDocuments, 
+    setMessages, 
+    setShowResults 
+  } = useContext(Context);
+  
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -19,103 +29,57 @@ const Sidebar = () => {
   const [uploadError, setUploadError] = useState(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
 
-  useEffect(() => {
-    if (user && user.id) {
-      fetchDocuments(user.id);
-    }
-  }, [user]);
-
-  const uniquePrompts = [...new Set(prevPrompts)];
-
-  const handleDivClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  const handleFileChange = async (event) => {
-    if (event.target.files.length > 0) {
-      const files = Array.from(event.target.files);
-      if (files.length > 5) {
-        setUploadError("Max 5 files at once.");
-        return;
-      }
-      setSelectedFiles(files);
-      setUploadError(null);
-      setUploadSuccess(false);
-      await uploadDocuments(files);
-    }
-  };
-
-  const uploadDocuments = async (files) => {
-    if (!files || files.length === 0) return;
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    
+    setSelectedFiles(files);
     setUploading(true);
-    setUploadProgress(0);
+    setUploadProgress(10);
     setUploadError(null);
     setUploadSuccess(false);
 
-    if (!user || !user.id) {
-      setUploadError("You must be logged in.");
-      setUploading(false);
-      return;
-    }
-
-    const formData = new FormData();
-    files.forEach((file) => formData.append("files", file));
-    formData.append("user_id", user.id);
-
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const formData = new FormData();
+        formData.append("file", files[i]);
+        formData.append("user_id", user.id);
+        
+        await fetch(`${API_BASE_URL}/upload`, {
+          method: "POST",
+          body: formData,
+        });
+        
+        setUploadProgress(10 + Math.round(((i + 1) / files.length) * 80));
+      }
       
-      xhr.upload.addEventListener('progress', (event) => {
-        if (event.lengthComputable) {
-          const percentComplete = Math.round((event.loaded / event.total) * 100);
-          setUploadProgress(percentComplete);
-        }
-      });
-
-      xhr.addEventListener('load', () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          setUploadSuccess(true);
-          setTimeout(() => setUploadSuccess(false), 3000);
-          fetchDocuments(user.id);
-          resolve(xhr.response);
-        } else {
-          setUploadError(`Upload failed: ${xhr.responseText}`);
-          setSelectedFiles([]);
-          reject(new Error(xhr.responseText));
-        }
+      setUploadProgress(100);
+      setUploadSuccess(true);
+      fetchDocuments(user.id);
+      
+      setTimeout(() => {
         setUploading(false);
-      });
-
-      xhr.addEventListener('error', () => {
-        setUploadError('Upload failed due to a network error.');
         setSelectedFiles([]);
-        setUploading(false);
-        reject(new Error('Network error'));
-      });
+      }, 2000);
 
-      xhr.open('POST', `${API_BASE_URL}/upload-document`);
-      xhr.send(formData);
-    });
+    } catch (err) {
+      console.error("Upload failed:", err);
+      setUploadError("Failed to upload some files. Please try again.");
+      setUploading(false);
+    }
   };
 
-  const handleNewChat = () => {
-    setRecentPrompt("");
-    setMessages([]);
-    setShowResults(false);
-    navigate("/");
+  const loadPrompt = async (prompt) => {
+    setRecentPrompt(prompt);
+    await onSent(prompt);
   };
 
-  const isActive = (path) => location.pathname === path;
-  
   const getNavClass = (path) => {
-    const active = isActive(path);
-    return `flex items-center gap-0 group-hover:gap-4 px-3 py-3 rounded-xl transition-all duration-300 cursor-pointer group/item ${
-      active 
+    const active = location.pathname === path;
+    return `group relative flex items-center h-12 rounded-xl transition-all duration-300 mb-1 cursor-pointer
+      ${active 
         ? "bg-[#72dcff]/10 text-[#72dcff] font-semibold" 
-        : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--primary)]/5"
-    }`;
+        : "text-[var(--text-muted)] hover:bg-white/5 hover:text-white"}`;
   };
 
   const handleHomeClick = () => {
@@ -143,18 +107,11 @@ const Sidebar = () => {
           <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Home</span>
         </div>
 
-        <div onClick={() => navigate("/study-plan")} className={getNavClass("/study-plan")}>
-          <div className="min-w-[48px] flex justify-center items-center">
-            <span className="material-symbols-outlined">calendar_today</span>
-          </div>
-          <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Study Plan</span>
-        </div>
-
         <div onClick={() => navigate("/documents")} className={getNavClass("/documents")}>
           <div className="min-w-[48px] flex justify-center items-center">
-            <span className="material-symbols-outlined">description</span>
+            <span className="material-symbols-outlined">folder_open</span>
           </div>
-          <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Documents</span>
+          <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Library</span>
         </div>
 
         <div onClick={() => navigate("/study-room")} className={getNavClass("/study-room")}>
@@ -164,65 +121,79 @@ const Sidebar = () => {
           <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Study Room</span>
         </div>
 
-        {/* Upload File Section */}
-        <div className="mt-8 border-t border-[var(--border)] pt-6 relative">
-          <div 
-            onClick={handleDivClick}
-            className={`flex items-center gap-0 group-hover:gap-4 px-3 py-3 rounded-xl transition-all border border-dashed border-[var(--primary)]/30 cursor-pointer group/upload ${uploading ? 'bg-[var(--primary)]/10' : 'hover:bg-[var(--primary)]/5 hover:border-[var(--primary)]/60'}`}
-          >
-            <div className="min-w-[48px] flex justify-center items-center">
-              {uploading ? (
-                <div className="w-5 h-5 rounded-full border-2 border-[var(--primary)]/30 border-t-[var(--primary)] animate-spin"></div>
-              ) : (
-                <span className="material-symbols-outlined text-[var(--text-main)] group-hover/upload:text-[var(--primary)]">add_circle</span>
-              )}
-            </div>
-            <span className="font-medium text-sm opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">
-              {uploading ? `Uploading ${uploadProgress}%` : 'Add Material'}
-            </span>
-            
-            {uploading && (
-              <div className="absolute bottom-0 left-0 h-1 bg-[var(--primary)] transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
-            )}
+        <div onClick={() => navigate("/flashcards")} className={getNavClass("/flashcards")}>
+          <div className="min-w-[48px] flex justify-center items-center">
+            <span className="material-symbols-outlined">style</span>
           </div>
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            onChange={handleFileChange}
-            accept=".pdf,.docx,.doc,.png,.jpg,.jpeg,.gif,.bmp,.tiff"
-            disabled={uploading}
-            multiple
-          />
+          <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Flashcards</span>
         </div>
 
-        {/* Documents preview */}
-        {documents && documents.length > 0 && (
-          <div className="mt-8 opacity-0 group-hover:opacity-100 transition-all duration-300">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)] mb-4 px-4 font-bold whitespace-nowrap">Your Library</p>
-            <div className="space-y-1">
-              {documents.slice(0, 5).map((doc, index) => (
-                <div key={index} onClick={() => navigate(`/documents/${doc.id}`)} className="flex items-center gap-4 px-5 py-2.5 text-[var(--text-muted)] hover:text-[var(--primary)] hover:bg-[var(--primary)]/5 rounded-xl transition-all duration-200 cursor-pointer group/doc">
-                  <span className="material-symbols-outlined text-[18px] opacity-40 group-hover/doc:opacity-100">description</span>
-                  <span className="text-xs truncate font-medium">{doc.filename}</span>
-                </div>
-              ))}
-            </div>
+        <div onClick={() => navigate("/quiz")} className={getNavClass("/quiz")}>
+          <div className="min-w-[48px] flex justify-center items-center">
+            <span className="material-symbols-outlined">quiz</span>
           </div>
-        )}
+          <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Quiz</span>
+        </div>
+
+        <div onClick={() => navigate("/mindmap")} className={getNavClass("/mindmap")}>
+          <div className="min-w-[48px] flex justify-center items-center">
+            <span className="material-symbols-outlined">hub</span>
+          </div>
+          <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Mind Map</span>
+        </div>
+
+        <div onClick={() => navigate("/progress-report")} className={getNavClass("/progress-report")}>
+          <div className="min-w-[48px] flex justify-center items-center">
+            <span className="material-symbols-outlined">analytics</span>
+          </div>
+          <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Stats</span>
+        </div>
+
+        <div onClick={() => navigate("/pyqs")} className={getNavClass("/pyqs")}>
+          <div className="min-w-[48px] flex justify-center items-center">
+            <span className="material-symbols-outlined">trending_up</span>
+          </div>
+          <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">PYQS</span>
+        </div>
+
+        {/* Recent Prompts Section */}
+        <div className="mt-8 pt-6 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-all duration-500">
+          <p className="px-4 text-[10px] uppercase font-black tracking-widest text-[var(--text-muted)] mb-4">Recent Research</p>
+          <div className="space-y-1">
+            {prevPrompts.slice(0, 3).map((item, index) => (
+              <div 
+                key={index}
+                onClick={() => loadPrompt(item)}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-white/5 rounded-lg cursor-pointer transition-all group/item"
+              >
+                <span className="material-symbols-outlined text-sm opacity-30 group-hover/item:text-[#72dcff]">history</span>
+                <p className="text-xs text-[var(--text-muted)] group-hover/item:text-white truncate">{item}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </nav>
 
-      <div className="pt-6 border-t border-[var(--border)] mt-4 space-y-2">
-        <div onClick={() => navigate("/settings")} className={getNavClass("/settings")}>
-          <div className="min-w-[48px] flex justify-center items-center">
-            <span className="material-symbols-outlined">settings</span>
+      {/* Upload & Theme Section */}
+      <div className="mt-auto space-y-4 pt-4">
+        {/* Upload Trigger */}
+        <div 
+          onClick={() => fileInputRef.current.click()}
+          className="flex items-center gap-4 px-1 py-3 cursor-pointer group/upload"
+        >
+          <div className="min-w-[48px] h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[var(--text-muted)] group-hover/upload:bg-[#72dcff]/20 group-hover/upload:text-[#72dcff] group-hover/upload:border-[#72dcff]/30 transition-all">
+            <span className="material-symbols-outlined">{uploading ? 'sync' : 'add'}</span>
           </div>
-          <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Settings</span>
+          <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
+             <p className="text-sm font-bold text-white">Add Sources</p>
+             <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">{uploading ? `Uploading ${uploadProgress}%` : 'PDF, DOCX, TXT'}</p>
+          </div>
+          <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" multiple accept=".pdf,.docx,.txt" />
         </div>
 
-        <div onClick={toggleTheme} className="flex items-center gap-0 group-hover:gap-4 px-3 py-3 text-[var(--text-muted)] hover:text-[var(--primary)] transition-all group/theme duration-200 cursor-pointer">
-          <div className="min-w-[48px] flex justify-center items-center">
-            <span className="material-symbols-outlined">palette</span>
+        <div onClick={toggleTheme} className="flex items-center gap-4 px-1 py-3 cursor-pointer group/theme">
+          <div className="min-w-[48px] h-12 rounded-xl bg-white/5 flex items-center justify-center text-[var(--text-muted)] group-hover/theme:text-white transition-all">
+            <span className="material-symbols-outlined">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
           </div>
           <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap capitalize">{theme} Mode</span>
         </div>

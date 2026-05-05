@@ -6,11 +6,12 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
       const storedUser = localStorage.getItem('user');
-      return storedUser ? JSON.parse(storedUser) : null;
+      // If no user is stored, return a default guest user to bypass login requirements
+      return storedUser ? JSON.parse(storedUser) : { id: 1, name: "Guest", email: "guest@shiro.ai", role: "user" };
     } catch (error) {
       console.error("Failed to parse user from localStorage:", error);
       localStorage.removeItem('user');
-      return null;
+      return { id: 1, name: "Guest", email: "guest@shiro.ai", role: "user" };
     }
   });
 
@@ -33,7 +34,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'user') {
-        setUser(e.newValue ? JSON.parse(e.newValue) : null);
+        setUser(e.newValue ? JSON.parse(e.newValue) : { id: 1, name: "Guest", email: "guest@shiro.ai", role: "user" });
       }
     };
 
@@ -54,4 +55,3 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   return useContext(AuthContext);
 };
-

@@ -15,6 +15,7 @@ export const ContextProvider = ({ children }) => {
   const [messages, setMessages] = useState([]); // {text: string, isUser: boolean, isLoading?: boolean}
   const [isFeynmanMode, setIsFeynmanMode] = useState(false);
   const [feynmanConcept, setFeynmanConcept] = useState(null);
+  const [language, setLanguage] = useState("en");
 
   const fetchDocuments = async (userId) => {
     if (userId) {
@@ -161,7 +162,9 @@ export const ContextProvider = ({ children }) => {
         isFeynmanMode,
         setIsFeynmanMode,
         startFeynmanChallenge,
-        feynmanConcept
+        feynmanConcept,
+        language,
+        setLanguage
       }}
     >
       {children}
