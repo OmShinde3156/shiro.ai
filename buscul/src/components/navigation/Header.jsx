@@ -49,12 +49,14 @@ const Header = () => {
       const progressData = await progressRes.json();
       const timetableData = await timetableRes.json();
       
-      setUserStats({
+      const stats = {
         avgScore: progressData.average_score || 0,
         streak: progressData.study_streak || 0,
         tasksDone: timetableData.today_schedule?.filter(t => t.completed).length || 0,
         totalTasks: timetableData.today_schedule?.length || 0
-      });
+      };
+      setUserStats(stats);
+      updateUser(stats); // Update global user object
     } catch (err) {
       console.error("Error fetching quick stats:", err);
     }
