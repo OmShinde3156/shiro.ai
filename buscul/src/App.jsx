@@ -17,6 +17,7 @@ import AuthPage from "./components/pages/AuthPage";
 import DocumentDetailsPage from "./components/pages/DocumentDetailsPage";
 import SettingsPage from "./components/pages/SettingsPage";
 import FeynmanPage from "./components/pages/FeynmanPage";
+import LandingPage from "./components/pages/LandingPage";
 import { useAuth } from "./context/AuthContext";
 import { PodcastProvider } from "./context/PodcastContext";
 import StudyRoom from "./components/pages/StudyRoom";
@@ -31,11 +32,13 @@ import "driver.js/dist/driver.css";
 function App() {
   const { user } = useAuth();
   const location = useLocation();
+  const isLandingPage = location.pathname === "/";
+  const isAuthPage = location.pathname === "/login";
   const isStudyRoom = location.pathname === "/study-room";
 
   useEffect(() => {
-    // Tour runs for both guest and logged-in users
-    if (!localStorage.getItem("shiro_tour_completed")) {
+    // Tour runs for both guest and logged-in users, but not on landing page
+    if (!isLandingPage && !isAuthPage && !localStorage.getItem("shiro_tour_completed")) {
       const driverObj = driver({
         showProgress: true,
         steps: [
@@ -55,7 +58,10 @@ function App() {
         }
       }, 1500); // Wait for animations
     }
-  }, []);
+  }, [isLandingPage, isAuthPage]);
+
+  // Full-screen routes (no sidebar/header)
+  const isFullScreenRoute = isStudyRoom || isLandingPage || isAuthPage;
 
   return (
     <PodcastProvider>
@@ -73,9 +79,9 @@ function App() {
           error: { iconTheme: { primary: '#ef4444', secondary: '#151926' } },
         }}
       />
-      <CommandPalette />
+      {!isFullScreenRoute && <CommandPalette />}
       <div className="flex min-h-screen w-full bg-[var(--bg-main)] text-[var(--text-main)] font-body">
-        {!isStudyRoom && (
+        {!isFullScreenRoute && (
           <>
             <div className="hidden md:block">
               <Sidebar />
@@ -83,11 +89,12 @@ function App() {
             <BottomNavBar />
           </>
         )}
-        <div className={`flex-grow overflow-y-auto ${!isStudyRoom ? 'md:ml-20 lg:mr-20 pb-24 md:pb-0' : ''}`}>
-          {!isStudyRoom && <Header />}
+        <div className={`flex-grow overflow-y-auto ${!isFullScreenRoute ? 'md:ml-20 lg:mr-20 pb-24 md:pb-0' : ''}`}>
+          {!isFullScreenRoute && <Header />}
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<AuthPage />} />
-            <Route path="/" element={<Main />} />
+            <Route path="/home" element={<Main />} />
             <Route path="/study-room" element={<StudyRoom />} />
             <Route path="/quiz" element={<QuizPage />} />
             <Route path="/progress-report" element={<ProgressReport />} />
@@ -104,7 +111,7 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
-        {!isStudyRoom && <RightSidebar />}
+        {!isFullScreenRoute && <RightSidebar />}
       </div>
     </PodcastProvider>
   );

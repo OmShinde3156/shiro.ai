@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 
 const Header = () => {
   const { language, setLanguage } = useContext(Context);
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const navigate = useNavigate();
   
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -80,7 +80,12 @@ const Header = () => {
 
   return (
     <header className="w-full sticky top-0 z-40 bg-[var(--sidebar-bg)] opacity-80 backdrop-blur-xl flex justify-between items-center px-8 py-4 border-b border-[var(--border)]">
-      <span className="text-2xl font-black text-[var(--primary)] font-headline cursor-pointer" onClick={() => navigate("/")}>Shiro.ai</span>
+      <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/home")}>
+        <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/10">
+          <img src="/logo.jpg" alt="Logo" className="w-full h-full object-cover" />
+        </div>
+        <span className="text-2xl font-black text-[var(--primary)] font-headline">Shiro.ai</span>
+      </div>
       <div className="flex items-center gap-6">
         <select value={language} onChange={(e) => setLanguage(e.target.value)} className="bg-transparent border-none text-[var(--text-main)] opacity-70 hover:opacity-100 cursor-pointer text-sm font-semibold outline-none">
           <option value="en" className="bg-[var(--sidebar-bg)]">English</option>
@@ -170,6 +175,17 @@ const Header = () => {
                   >
                     <span className="material-symbols-outlined text-sm text-[var(--text-muted)] group-hover:rotate-45 transition-transform">settings</span>
                     Account Settings
+                  </button>
+                  <button 
+                    onClick={() => { 
+                      logout(); 
+                      setShowProfileMenu(false); 
+                      navigate("/"); 
+                    }}
+                    className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 rounded-xl text-xs font-bold text-red-400 flex items-center justify-center gap-3 border border-red-500/10 transition-all group"
+                  >
+                    <span className="material-symbols-outlined text-sm text-red-400 group-hover:translate-x-1 transition-transform">logout</span>
+                    Sign Out
                   </button>
                 </div>
               </div>

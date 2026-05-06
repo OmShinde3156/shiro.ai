@@ -8,7 +8,7 @@ const BottomNavBar = () => {
   const isActive = (path) => location.pathname === path;
 
   const navItems = [
-    { icon: 'home', label: 'Home', path: '/' },
+    { icon: 'home', label: 'Home', path: '/home' },
     { icon: 'description', label: 'Library', path: '/documents' },
     { icon: 'school', label: 'Study', path: '/study-room' },
     { icon: 'leaderboard', label: 'Stats', path: '/progress-report' },
