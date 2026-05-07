@@ -1,0 +1,136 @@
+PROJECT ANALYSIS REPORT: Shiro.ai (formerly Rexy.AI)
+
+1. Project Title
+----------------
+Shiro.ai - The Neon Curator / AI-Powered Personalized Study Guide
+
+2. Project Purpose
+------------------
+To provide a comprehensive, intelligent study platform utilizing Retrieval-Augmented Generation (RAG) to transform static notes into interactive quizzes, dynamic flashcards, audio podcasts, and epistemic mind maps, thereby accelerating learning and improving retention.
+
+3. Problem Solved
+-----------------
+It addresses information overload, inefficient studying (such as passive reading), and the lack of personalized, dynamic learning by providing an adaptive AI tutor, spaced repetition systems, and the Feynman Challenge to test true understanding.
+
+4. Main Features
+----------------
+- Deep Flow Hub (Study Room) with Pomodoro timer & ambient sounds.
+- AI Study Plan & Timetable generator.
+- Dynamic Flashcards with Spaced Repetition System (SM-2 algorithm).
+- Audio Summaries & Podcasts (Text-to-Speech via Whisper).
+- Epistemic Mind Maps (3D Force-Directed Graph).
+- Feynman Technique Challenge Mode (AI logic analyzer).
+- Global Command Palette (Ctrl+K) for fast navigation.
+- RAG-powered chatbot (Shiro AI).
+
+5. User Modules
+---------------
+- Authentication (Login / Guest Access).
+- Document Library (Upload, View, and Manage PDFs/Text).
+- Main Dashboard (Bento Grid layout).
+- Study Room (Active Recall Scratchpad, Magic Cursor).
+- Progress & Statistics Hub (Level/XP, Accuracy stats).
+- Settings Hub.
+
+6. Admin Modules
+----------------
+The system relies heavily on background automation rather than a visual admin portal.
+- Backend Database Management (PostgreSQL/SQLite via scripts).
+- Vector Database (ChromaDB) Management for semantic cleanups.
+- Background Task Monitoring (Celery / Redis).
+
+7. Frontend Technologies Used
+-----------------------------
+- React.js (v18.2) with Vite
+- React Router DOM (v7)
+- Tailwind CSS (styling and animations)
+- Recharts (analytics and progress rings)
+- React Force Graph 3D & Three.js (mind maps)
+- Framer Motion & Driver.js (UI transitions and tours)
+- Lucide React (iconography)
+
+8. Backend Technologies Used
+----------------------------
+- Python 3 with FastAPI
+- SQLAlchemy (ORM)
+- Uvicorn (ASGI Server)
+- Celery & Redis (Asynchronous background processing)
+- LangChain, HuggingFace, OpenAI, Groq (AI Models & orchestration)
+- ChromaDB (Vector Database)
+- Whisper (Speech-to-Text) & gTTS (Text-to-Speech)
+
+9. Database Structure / Tables / Collections
+--------------------------------------------
+- Relational Tables (PostgreSQL/SQLite via SQLAlchemy): `users`, `documents`, `quizzes`, `quiz_results`, `flashcard_sets`, `flashcards`, `flashcard_progress`, `chat_history`, `summaries`, `podcasts`, `mindmaps`, `study_timetables`, `timetable_progress`, `knowledge_nodes`, `knowledge_edges`, `library_insights`.
+- Vector Collections (ChromaDB): Embeddings generated per document to support Semantic Search and Graph-Augmented RAG.
+
+10. Authentication Flow
+-----------------------
+- Permissive system allowing both registered users and "Guest" access to bypass friction.
+- `AuthContext.jsx` in React manages the `localStorage` session state.
+- Endpoints `/login` and `/users` automatically create or verify users.
+- Passwords and user sessions are managed simply, with options for OTP simulation (`/request-otp`, `/verify-otp`).
+
+11. APIs Used
+-------------
+- Custom RESTful APIs via FastAPI (e.g., `/features/summary`, `/quiz/generate`, `/documents/upload`).
+- External LLM APIs: OpenAI API, Groq API (utilized dynamically via LangChain based on prompt requirements).
+- Embedding APIs: Sentence-Transformers / HuggingFace via ChromaDB.
+
+12. Folder Structure Explanation
+--------------------------------
+- `/Backend/`: Contains FastAPI app logic (`main.py`), database models and schemas (`models/`), route handlers (`routers/`), business logic components (`services/`), and asynchronous task definitions (`celery_app.py`, `tasks.py`).
+- `/Backend/chroma_db/`: Local storage for vector embeddings.
+- `/buscul/`: Frontend React application.
+- `/buscul/src/`: Contains `App.jsx`, `components/` (pages, navigation, chat, sidebar), and `context/` (Auth, Podcast).
+
+13. Working Process Step by Step
+--------------------------------
+1. User accesses the platform and logs in or proceeds as a Guest.
+2. User uploads a document (PDF or text). The backend extracts text, chunks it, and stores semantic embeddings in ChromaDB and metadata in the relational DB.
+3. User accesses the Study Room or selects a specific tool (e.g., Flashcards).
+4. The frontend calls specific FastAPI endpoints. The backend retrieves relevant context via RAG, queries LLMs, and returns structured data.
+5. User engages with the content (takes a quiz, listens to a podcast). The interaction is tracked in the DB, updating the Dashboard's XP, Level, and streak data.
+
+14. Architecture Explanation
+----------------------------
+- **Microservice-like Monolith**: A React Single Page Application (SPA) communicating via REST with a Python FastAPI backend.
+- **Graph-Augmented RAG**: The core intelligent architecture. Text isn't just embedded linearly; relationships between concepts are extracted (`GraphService`) to form an Epistemic Knowledge Graph.
+- **Asynchronous Pipeline**: Heavy tasks (like Audio generation or deep text processing) are handed off to a Celery worker queue backed by Redis, ensuring the API remains fast and non-blocking.
+
+15. Key Components Description
+------------------------------
+- `StudyRoom.jsx`: A dual-pane workspace blending source material with AI tools.
+- `GraphService` (`graph_service.py`): Extracts triplets (source, relation, target) from text to build knowledge maps.
+- `FlashcardService` (`flashcard_service.py`): Implements the SM-2 algorithm for tracking memory retention across sessions.
+- `FeynmanService`: Evaluates a user's natural language explanation of a topic to identify logic gaps and provide constructive feedback.
+
+16. Security Features
+---------------------
+- Configurable Cross-Origin Resource Sharing (CORS) setup in FastAPI.
+- Basic credential checking for user isolation.
+- API keys managed securely via `.env` file (not hardcoded).
+- Secure File Upload validation (`UploadFile` in FastAPI) to prevent malicious executions.
+
+17. Deployment Details
+----------------------
+- Containerized Architecture: Configured with `docker-compose.yml` to spin up the Backend, Frontend, Redis, and Celery workers simultaneously.
+- Frontend build optimization via Vite (`npm run build`).
+- Backend served efficiently using Uvicorn (typically run behind an Nginx or Traefik reverse proxy in production).
+
+18. Future Improvements
+-----------------------
+- **Spatial UI**: Transitioning the 2D knowledge galaxy into an immersive 3D force-directed graph (using Three.js).
+- **Autonomous Swarms**: Deploying background AI agents to continuously identify cross-document contradictions and synergies.
+- **Adaptive UI**: Implementing a state-based dashboard that reorganizes itself based on the user's current study needs and time of day.
+
+19. Conclusion
+--------------
+Shiro.ai stands as a highly ambitious, deeply integrated educational platform. By combining modern UI/UX aesthetics (Neon Dark Theme, Bento Grids) with sophisticated AI processing pipelines (Epistemic RAG, Celery task queuing), it provides a "Next-Gen" personalized study environment capable of significantly improving cognitive retention and user engagement compared to traditional tools.
+
+20. Technical Summary for Final Year Black Book
+-----------------------------------------------
+- **Project Title**: Shiro.ai - Graph-Augmented RAG Platform for Personalized Learning.
+- **Core Technology Stack**: React.js, FastAPI, PostgreSQL/SQLite, ChromaDB, Celery, Redis.
+- **Methodology Applied**: Epistemic RAG, Spaced Repetition (SM-2 Algorithm), Text-to-Speech synthesis, and Natural Language Processing.
+- **Project Outcome**: Successfully delivered a scalable, containerized application with robust background processing, offering innovative features like active recall scratchpads, 3D mind maps, the Feynman technique logic analyzer, and AI-driven study plans.
