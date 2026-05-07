@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import API_BASE_URL from "../../api/config.js";
+import AddSourceDialog from "../navigation/AddSourceDialog";
 
 const Sidebar = () => {
   const { 
@@ -22,52 +23,7 @@ const Sidebar = () => {
   const location = useLocation();
   const { user, logout } = useAuth();
 
-  const fileInputRef = useRef(null);
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadError, setUploadError] = useState(null);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-
-  const handleFileUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-    
-    setSelectedFiles(files);
-    setUploading(true);
-    setUploadProgress(10);
-    setUploadError(null);
-    setUploadSuccess(false);
-
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const formData = new FormData();
-        formData.append("file", files[i]);
-        formData.append("user_id", user.id);
-        
-        await fetch(`${API_BASE_URL}/upload`, {
-          method: "POST",
-          body: formData,
-        });
-        
-        setUploadProgress(10 + Math.round(((i + 1) / files.length) * 80));
-      }
-      
-      setUploadProgress(100);
-      setUploadSuccess(true);
-      fetchDocuments(user.id);
-      
-      setTimeout(() => {
-        setUploading(false);
-        setSelectedFiles([]);
-      }, 2000);
-
-    } catch (err) {
-      console.error("Upload failed:", err);
-      setUploadError("Failed to upload some files. Please try again.");
-      setUploading(false);
-    }
-  };
+  const [isAddSourceOpen, setIsAddSourceOpen] = useState(false);
 
   const loadPrompt = async (prompt) => {
     setRecentPrompt(prompt);
@@ -178,18 +134,24 @@ const Sidebar = () => {
       <div className="mt-auto space-y-4 pt-4">
         {/* Upload Trigger */}
         <div 
-          onClick={() => fileInputRef.current.click()}
+          onClick={() => setIsAddSourceOpen(true)}
           className="flex items-center gap-4 px-1 py-3 cursor-pointer group/upload"
         >
           <div className="min-w-[48px] h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[var(--text-muted)] group-hover/upload:bg-[#72dcff]/20 group-hover/upload:text-[#72dcff] group-hover/upload:border-[#72dcff]/30 transition-all">
-            <span className="material-symbols-outlined">{uploading ? 'sync' : 'add'}</span>
+            <span className="material-symbols-outlined">add</span>
           </div>
           <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
              <p className="text-sm font-bold text-white">Add Sources</p>
-             <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">{uploading ? `Uploading ${uploadProgress}%` : 'PDF, DOCX, TXT'}</p>
+             <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest">FILES, YT, WEB</p>
           </div>
-          <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" multiple accept=".pdf,.docx,.txt" />
         </div>
+
+        <AddSourceDialog 
+          isOpen={isAddSourceOpen} 
+          onClose={() => setIsAddSourceOpen(false)} 
+          userId={user?.id}
+          onUploadSuccess={() => fetchDocuments(user?.id)}
+        />
 
         <div onClick={toggleTheme} className="flex items-center gap-4 px-1 py-3 cursor-pointer group/theme">
           <div className="min-w-[48px] h-12 rounded-xl bg-white/5 flex items-center justify-center text-[var(--text-muted)] group-hover/theme:text-white transition-all">

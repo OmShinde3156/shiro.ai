@@ -150,7 +150,6 @@ const Main = () => {
 
   return (
     <main className="w-full min-h-screen pb-32">
-
       <div className="p-8 max-w-6xl mx-auto">
         {!showResults ? (
           <>
@@ -288,14 +287,12 @@ const Main = () => {
         )}
       </div>
 
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-4xl z-50 px-6">
-        <div className="flex flex-col gap-3">
-          {/* Shiro v4.0: Ultra-Modern Mode Toggle */}
+      <div className="fixed bottom-8 left-0 right-0 md:left-20 lg:right-20 z-50 flex justify-center px-6 pointer-events-none">
+        <div className="w-full max-w-4xl pointer-events-auto flex flex-col gap-3">
           <div className="flex justify-center mb-4 tour-mode-toggle">
             <div className="relative bg-black/40 backdrop-blur-2xl p-1 rounded-2xl border border-white/5 flex gap-1 shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden">
-              {/* Sliding Active Indicator */}
               <div 
-                className="absolute top-1 bottom-1 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] rounded-xl z-0 shadow-[0_0_20_rgba(114,220,255,0.3)]"
+                className="absolute top-1 bottom-1 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] rounded-xl z-0 shadow-[0_0_20px_rgba(114,220,255,0.3)]"
                 style={{
                   left: mode === "human" ? "4px" : "calc(50% + 2px)",
                   width: "calc(50% - 6px)",
@@ -307,7 +304,6 @@ const Main = () => {
                     : "0 4px 15px rgba(221, 139, 251, 0.4)"
                 }}
               />
-
               <button 
                 onClick={() => setMode("human")}
                 className={`relative z-10 flex items-center justify-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${mode === "human" ? "text-white" : "text-white/40 hover:text-white/70"}`}
@@ -315,7 +311,6 @@ const Main = () => {
                 <span className="material-symbols-outlined text-sm">face</span>
                 Human
               </button>
-
               <button 
                 onClick={() => setMode("surgical")}
                 className={`relative z-10 flex items-center justify-center gap-2 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${mode === "surgical" ? "text-white" : "text-white/40 hover:text-white/70"}`}
@@ -325,7 +320,6 @@ const Main = () => {
               </button>
             </div>
           </div>
-
 
           <div className="glass-card p-2 rounded-2xl border border-[var(--primary)]/20 shadow-[0_20px_50_rgba(0,0,0,0.5)] flex items-center gap-3 relative overflow-hidden tour-chat-input">
             <input 
@@ -341,9 +335,8 @@ const Main = () => {
         </div>
       </div>
 
-      {/* Source Citation Preview Modal */}
       {selectedCitation && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setSelectedCitation(null)}>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-black/70 backdrop-blur-md animate-in fade-in duration-200" onClick={() => setSelectedCitation(null)}>
            <div className="w-full max-w-2xl bg-[#151926] border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
               <div className="p-6 border-b border-white/5 flex justify-between items-center bg-primary/5">
                  <div>

@@ -32,3 +32,6 @@ networkx==3.6.1
 python-louvain==0.16
 scikit-learn==1.8.0
 numpy==2.2.4
+youtube-transcript-api==0.6.3
+trafilatura==1.12.2
+yt-dlp==2025.1.15
