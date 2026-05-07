@@ -9,6 +9,7 @@ from models.schema import DocumentResponse
 from services.summarizer_service import SummarizerService
 from services.quiz_service import QuizService
 from services.mindmap_service import MindMapService
+from services.research_service import research_service
 
 router = APIRouter(tags=["Documents"])
 
@@ -36,6 +37,37 @@ async def upload_document(
         return results
     except Exception as e:
         import traceback; traceback.print_exc()
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/upload-url", response_model=DocumentResponse)
+async def upload_url(
+    background_tasks: BackgroundTasks,
+    url: str = Form(...),
+    user_id: int = Form(...),
+    subject: str = Form("General"),
+    db: Session = Depends(get_db),
+    pdf_service: PDFService = Depends(get_pdf_service)
+):
+    """Ingest content from a URL (YouTube or Website)"""
+    try:
+        if "youtube.com" in url or "youtu.be" in url:
+            title, content = await research_service.get_youtube_content(url)
+            doc_type = "youtube"
+        else:
+            title, content = await research_service.get_web_content(url)
+            doc_type = "web"
+
+        # Create Document record
+        document = pdf_service.save_document_to_db(user_id, title, content, subject, doc_type, db)
+        
+        # Trigger background embedding
+        background_tasks.add_task(
+            pdf_service.process_document_background,
+            document.id, content, user_id
+        )
+            
+        return document
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/documents/{user_id}", response_model=List[DocumentResponse])

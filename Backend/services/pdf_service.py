@@ -49,17 +49,53 @@ class PDFService:
         
         return document
 
-    def _background_process(self, collection_name: str, text_content: str, document_id: int, user_id: int):
+    def save_document_to_db(self, user_id: int, filename: str, content: str, subject: str, file_type: str, db: Session) -> Document:
+        """Helper to save an externally fetched document (Web/YT) to the database."""
+        collection_name = f"doc_{uuid.uuid4().hex}"
+        document = Document(
+            filename=filename,
+            file_type=file_type,
+            subject=subject,
+            text_content=content,
+            vector_db_id=collection_name,
+            user_id=user_id
+        )
+        db.add(document)
+        db.commit()
+        db.refresh(document)
+        return document
+
+    async def process_document_background(self, document_id: int, text_content: str, user_id: int):
+        """Wrapper for background tasks (Async)."""
+        from database.database import SessionLocal
+        db = SessionLocal()
         try:
-            # Create collection and add embeddings
+            document = db.query(Document).filter(Document.id == document_id).first()
+            if document:
+                await self._background_process(document.vector_db_id, text_content, document_id, user_id)
+        finally:
+            db.close()
+
+    async def _background_process(self, collection_name: str, text_content: str, document_id: int, user_id: int):
+        try:
+            # 1. Vector Embedding (Existing)
             collection = self.vector_db.create_collection(collection_name)
             chunks = self.text_splitter.split_text(text_content)
             metadatas = [{"chunk_index": i, "document_id": document_id} for i in range(len(chunks))]
             self.vector_db.add_documents(collection_name, chunks, metadatas)
-            print(f"DEBUG: Successfully embedded background task for {collection_name}")
+            print(f"DEBUG: Successfully embedded vector search for {collection_name}")
             
+            # 2. Epistemic Graph Extraction (THE FIX)
+            from database.database import SessionLocal
+            db = SessionLocal()
+            try:
+                await self.graph_service.extract_and_store_graph(document_id, text_content, user_id, db)
+                print(f"DEBUG: Successfully extracted Knowledge Graph for document {document_id}")
+            finally:
+                db.close()
+                
         except Exception as e:
-            print(f"DEBUG: Background embedding failed: {e}")
+            print(f"DEBUG: Background processing failed for doc {document_id}: {e}")
     
     def get_user_documents(self, user_id: int, db: Session) -> List[Document]:
         """Get all documents for a user"""
