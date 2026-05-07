@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import './ProgressReport.css'; 
 import API_BASE_URL from '../../api/config.js';
 
 const SettingsPage = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +70,10 @@ const SettingsPage = () => {
                 <p className="text-sm text-[var(--text-main)]/40 mb-6">{user?.email}</p>
                 
                 <button 
-                  onClick={logout}
+                  onClick={() => {
+                    logout();
+                    navigate("/");
+                  }}
                   className="w-full py-2.5 px-4 rounded-xl border border-error/30 text-error hover:bg-error/5 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
                 >
                   <span className="material-symbols-outlined text-lg">logout</span>

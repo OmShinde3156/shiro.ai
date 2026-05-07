@@ -41,14 +41,16 @@ const Sidebar = () => {
   const handleHomeClick = () => {
     setShowResults(false);
     setInput("");
-    navigate("/");
+    navigate("/home");
   };
 
   return (
     <aside className="h-screen w-20 hover:w-64 fixed left-0 top-0 z-50 bg-[var(--sidebar-bg)] flex flex-col p-3 border-r border-[var(--border)] shadow-[4px_0_24px_rgba(114,220,255,0.08)] transition-all duration-300 group overflow-hidden">
       {/* Logo Section */}
       <div className="mb-10 cursor-pointer flex items-center px-1" onClick={handleHomeClick}>
-        <div className="min-w-[48px] h-12 rounded-xl bg-gradient-to-br from-[#72dcff] to-[#dd8bfb] flex items-center justify-center text-white font-black shadow-lg shadow-[#72dcff]/20 flex-shrink-0">S</div>
+        <div className="min-w-[48px] h-12 rounded-xl overflow-hidden bg-[var(--surface-container)] flex items-center justify-center shadow-lg shadow-[#72dcff]/10 flex-shrink-0">
+          <img src="/logo.jpg" alt="Shiro.ai Logo" className="w-full h-full object-cover" />
+        </div>
         <div className="ml-4 opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap overflow-hidden">
           <h1 className="text-xl font-bold text-[#72dcff] tracking-tight font-headline">Shiro.ai</h1>
           <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)] mt-1">The Neon Curator</p>
@@ -56,7 +58,7 @@ const Sidebar = () => {
       </div>
 
       <nav className="flex-grow space-y-2 overflow-y-auto overflow-x-hidden pr-2 scrollbar-none group-hover:scrollbar-thin scrollbar-thumb-surface-variant">
-        <div onClick={handleHomeClick} className={getNavClass("/")}>
+        <div onClick={handleHomeClick} className={getNavClass("/home")}>
           <div className="min-w-[48px] flex justify-center items-center">
             <span className="material-symbols-outlined">home</span>
           </div>
