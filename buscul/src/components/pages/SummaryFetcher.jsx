@@ -71,7 +71,7 @@ const SummaryFetcher = () => {
           <h1 className="text-3xl font-bold font-headline text-[var(--text-main)]">Document Summary</h1>
           <p className="text-[var(--text-muted)]">Turn complex chapters into bite-sized, high-retention summaries.</p>
         </div>
-        <button onClick={() => navigate("/")} className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-bold text-[var(--text-main)] transition-all">
+        <button onClick={() => navigate("/home")} className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-bold text-[var(--text-main)] transition-all">
           Back to Home
         </button>
       </div>

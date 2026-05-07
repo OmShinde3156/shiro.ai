@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import asyncio
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 from pathlib import Path
@@ -119,6 +120,15 @@ class LLMClient:
              try: self.groq_client = Groq(api_key=self.groq_api_key)
              except: pass
 
+        # Initialize Gemini
+        self.gemini_client = None
+        if self.google_api_key and self.google_api_key != "your_google_api_key_here":
+            try:
+                genai.configure(api_key=self.google_api_key)
+                self.gemini_client = genai.GenerativeModel(self.google_model)
+            except Exception as e:
+                logger.error(f"Failed to initialize Gemini: {e}")
+
         # Initialize embeddings model
         try:
             self.embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
@@ -215,6 +225,24 @@ class LLMClient:
     async def generate_summary(self, content: str, summary_type: str, language: str) -> str:
         prompt = Prompts.summary_prompt(content[:10000], summary_type, language)
         return await self.generate_response(prompt)
+
+    async def get_youtube_transcript_gemini(self, video_url: str) -> Optional[str]:
+        """
+        Extract transcript/content from a YouTube video using Gemini 2.0 Flash's native capabilities.
+        Bypasses most bot detection since it runs on Google's infrastructure.
+        """
+        if not self.gemini_client:
+            return None
+
+        prompt = f"Please provide a comprehensive and detailed transcript or a very detailed summary of this YouTube video: {video_url}. If you can't access the transcript directly, describe the content based on what you know about the video."
+        
+        try:
+            # We use a standard generative call; Gemini 2.0 Flash is multimodal-ready
+            response = await asyncio.to_thread(self.gemini_client.generate_content, prompt)
+            return response.text
+        except Exception as e:
+            logger.error(f"Gemini YouTube extraction failed: {e}")
+            return None
 
     async def generate_mindmap_data(self, content: str, topic: str) -> Dict[str, Any]:
         # Minimal mock for now. Can be upgraded with Pydantic later.

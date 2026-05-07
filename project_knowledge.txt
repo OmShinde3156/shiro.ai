@@ -51,6 +51,11 @@
     - **Triple-Layer Ingestion:** Robust YouTube ID regex (Shorts/Mobile support) + Description fallback + 'Requests' web scraper fallback.
     - **Async Optimization:** Refactored background tasks to `async def` for improved concurrency and thread safety.
     - **Feynman Hardening:** Verified Knowledge Graph population for all document types.
+*   2026-05-07 [10:00]: **YT-TRANSCRIPT-API ENHANCEMENT:**
+    - **URL Support:** Modified `youtube-transcript-api` to accept full YouTube URLs (youtube.com, youtu.be, shorts, live) in both API and CLI.
+    - **ID Extraction:** Added `YouTubeVideoIdExtractor` utility for safe and validated ID extraction from diverse URL formats.
+    - **Backend Integration:** Refactored `ResearchService` to use the new extractor, unifying URL handling for the "Add Sources" feature.
+    - **Backward Compatibility:** Ensured existing raw video ID support remains intact.
 
 ---
 

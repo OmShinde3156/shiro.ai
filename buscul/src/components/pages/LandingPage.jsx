@@ -302,7 +302,7 @@ const LandingPage = () => {
           </p>
 
           <div className="landing-hero-actions landing-fade-up">
-            <button onClick={() => navigate('/')} className="landing-btn-primary">
+            <button onClick={() => navigate('/home')} className="landing-btn-primary">
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>rocket_launch</span>
               Get Started Free
             </button>
@@ -524,7 +524,7 @@ const LandingPage = () => {
             </div>
             <div>
               <h4>Study Tools</h4>
-              <a href="#" onClick={(e) => { e.preventDefault(); navigate('/'); }}>AI Chat</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); navigate('/home'); }}>AI Chat</a>
               <a href="#" onClick={(e) => { e.preventDefault(); navigate('/quiz'); }}>Quizzes</a>
               <a href="#" onClick={(e) => { e.preventDefault(); navigate('/flashcards'); }}>Flashcards</a>
               <a href="#" onClick={(e) => { e.preventDefault(); navigate('/mindmap'); }}>Mind Maps</a>

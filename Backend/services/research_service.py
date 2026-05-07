@@ -1,7 +1,7 @@
 import os
 import re
 from typing import Tuple, Optional
-from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api import YouTubeTranscriptApi, YouTubeVideoIdExtractor
 import trafilatura
 import yt_dlp
 import logging
@@ -10,17 +10,51 @@ logger = logging.getLogger(__name__)
 
 class ResearchService:
     def extract_youtube_id(self, url: str) -> Optional[str]:
-        """Extract video ID from various YouTube URL formats (v4.8 updated)"""
-        patterns = [
-            r'(?:v=|\/)([0-9A-Za-z_-]{11}).*',
-            r'(?:embed\/|v\/|shorts\/|watch\?v=|youtu\.be\/)([0-9A-Za-z_-]{11})',
-            r'^([0-9A-Za-z_-]{11})$'
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, url)
-            if match:
-                return match.group(1)
-        return None
+        """Extract video ID using the centralized YouTubeVideoIdExtractor"""
+        try:
+            return YouTubeVideoIdExtractor.extract(url)
+        except Exception:
+            return None
+
+    def _get_ytdl_opts(self, download=False, video_id=None) -> dict:
+        """Production-grade yt-dlp configuration to bypass bot detection"""
+        # Path to cookies file - check both project root and Backend folder
+        cookies_path = os.path.join(os.getcwd(), "Backend", "cookies", "youtube_cookies.txt")
+        if not os.path.exists(cookies_path):
+            cookies_path = os.path.join(os.getcwd(), "cookies", "youtube_cookies.txt")
+        
+        opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'nocheckcertificate': True,
+            'ignoreerrors': False,
+            'logtostderr': False,
+            'no_color': True,
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'referer': 'https://www.google.com/',
+        }
+
+        if os.path.exists(cookies_path):
+            opts['cookiefile'] = cookies_path
+            logger.info(f"Using cookies from {cookies_path}")
+        else:
+            logger.warning(f"No YouTube cookies found at {cookies_path}. Bot detection might block requests.")
+        
+        if download and video_id:
+            temp_audio = f"static/temp_yt_{video_id}"
+            opts.update({
+                'format': 'bestaudio/best',
+                'outtmpl': temp_audio,
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+            })
+        else:
+            opts.update({'skip_download': True})
+            
+        return opts
 
     async def get_youtube_content(self, url: str) -> Tuple[str, str]:
         """Fetch transcript and metadata for a YouTube video with multi-layer fallback"""
@@ -28,17 +62,23 @@ class ResearchService:
         if not video_id:
             raise Exception("Invalid YouTube URL. Please provide a standard, shorts, or mobile link.")
 
-        # 1. Fetch Metadata (Title)
+        # 1. Fetch Metadata (Title & Description)
         title = f"YouTube Video ({video_id})"
         description = ""
+        last_error = ""
         try:
-            ydl_opts = {'quiet': True, 'skip_download': True, 'no_warnings': True}
+            ydl_opts = self._get_ytdl_opts()
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
                 title = info.get('title', title)
                 description = info.get('description', "")
         except Exception as e:
-            logger.warning(f"Failed to fetch YT metadata for {video_id}: {e}")
+            last_error = str(e)
+            if "Sign in to confirm you’re not a bot" in last_error:
+                logger.error("YouTube blocked the request (Bot Detection). Cookies required.")
+                title = f"Protected Video ({video_id})"
+            else:
+                logger.warning(f"Failed to fetch YT metadata: {e}")
 
         # 2. Layer 1: Fetch Existing Transcripts
         try:
@@ -54,48 +94,62 @@ class ResearchService:
             full_text = " ".join([t['text'] for t in transcript_list])
             return title, full_text
         except Exception as e:
-            logger.info(f"Transcript API failed for {video_id}, falling back to Audio Transcription: {e}")
+            logger.info(f"Transcript API failed for {video_id}: {e}")
 
         # 3. Layer 2: Audio Download & Whisper Transcription (The "Ultimate Fallback")
-        # This mirrors the logic in alexfdom/youtube-ingest
         temp_audio = f"static/temp_yt_{video_id}.mp3"
         try:
             from utils.stt_client import stt_client
-            
-            # Download audio stream
-            ydl_opts = {
-                'format': 'bestaudio/best',
-                'outtmpl': temp_audio.replace('.mp3', ''), # yt-dlp adds extension
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
-                'quiet': True,
-                'no_warnings': True,
-            }
+            ydl_opts = self._get_ytdl_opts(download=True, video_id=video_id)
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
             
-            # Transcription via Whisper API
-            full_text = stt_client.speech_to_text(temp_audio)
-            
-            # Cleanup
-            if os.path.exists(temp_audio): os.remove(temp_audio)
-            
-            if full_text and "Simulation Mode" not in full_text and "Error" not in full_text:
-                return title, f"AUDIO TRANSCRIBED VIA WHISPER:\n\n{full_text}"
+            if os.path.exists(temp_audio):
+                full_text = stt_client.speech_to_text(temp_audio)
+                os.remove(temp_audio) # Cleanup
                 
+                if full_text and "Simulation Mode" not in full_text and "Error" not in full_text:
+                    return title, f"AUDIO TRANSCRIBED VIA WHISPER:\n\n{full_text}"
+            
         except Exception as audio_err:
-            logger.error(f"Ultimate Fallback failed for {video_id}: {audio_err}")
+            logger.error(f"Audio transcription fallback failed for {video_id}: {audio_err}")
+            last_error = str(audio_err)
             if os.path.exists(temp_audio): os.remove(temp_audio)
 
-        # 4. Layer 3: Final Fallback to Description
+        # 4. Layer 3: Gemini 2.0 Flash Extraction (The "Super Fallback")
+        try:
+            from utils.llm_client import llm_client
+            gemini_content = await llm_client.get_youtube_transcript_gemini(url)
+            if gemini_content and len(gemini_content) > 100:
+                return title, f"CONTENT EXTRACTED VIA GEMINI AI:\n\n{gemini_content}"
+        except Exception as gemini_err:
+            logger.error(f"Gemini extraction failed for {video_id}: {gemini_err}")
+
+        # 5. Layer 4: Final Fallback to Description (Internal Scraper if ytdl fails)
+        if not description or len(description) < 50:
+             try:
+                import requests
+                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+                response = requests.get(url, headers=headers, timeout=10)
+                if response.status_code == 200:
+                    # Look for description in the page source
+                    meta_desc = re.search(r'"shortDescription":"(.*?)"', response.text)
+                    if meta_desc:
+                        description = meta_desc.group(1).replace("\\n", "\n").replace("\\u0026", "&")
+                    else:
+                        meta_tag = re.search(r'<meta name="description" content="(.*?)">', response.text)
+                        if meta_tag:
+                            description = meta_tag.group(1)
+             except Exception as scraper_err:
+                 logger.warning(f"Internal scraper fallback failed: {scraper_err}")
+
         if description and len(description) > 50:
-            return title, f"TRANSCRIPT & AUDIO FAILED.\n\nSummary from Video Description:\n{description}"
+            return title, f"TRANSCRIPT & AUDIO FAILED (Bot Detection).\n\nContent from Video Description:\n{description}"
         
-        raise Exception(f"All ingestion layers failed for this video. Transcripts are disabled and audio processing failed.")
+        # Explicit error message for the UI
+        fail_reason = "Bot detection blocked audio extraction." if "bot" in last_error.lower() else "No transcript available."
+        raise Exception(f"Ingestion failed: {fail_reason} Please ensure the video has captions or upload a cookies.txt.")
 
     async def get_web_content(self, url: str) -> Tuple[str, str]:
         """Scrape and clean content from a website with fallback"""

@@ -56,7 +56,7 @@ const AuthPage = () => {
       }
       const userData = await response.json();
       contextLogin(userData);
-      navigate('/');
+      navigate('/home');
     } catch (err) {
       setError(err.message);
     }

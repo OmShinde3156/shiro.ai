@@ -107,6 +107,27 @@ const Sidebar = () => {
           <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Stats</span>
         </div>
 
+        <div onClick={() => navigate("/feynman")} className={getNavClass("/feynman")}>
+          <div className="min-w-[48px] flex justify-center items-center">
+            <span className="material-symbols-outlined">record_voice_over</span>
+          </div>
+          <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Feynman Mode</span>
+        </div>
+
+        <div onClick={() => navigate("/audio-summary")} className={getNavClass("/audio-summary")}>
+          <div className="min-w-[48px] flex justify-center items-center">
+            <span className="material-symbols-outlined">headphones</span>
+          </div>
+          <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Podcasts</span>
+        </div>
+
+        <div onClick={() => navigate("/study-plan")} className={getNavClass("/study-plan")}>
+          <div className="min-w-[48px] flex justify-center items-center">
+            <span className="material-symbols-outlined">calendar_today</span>
+          </div>
+          <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Study Plan</span>
+        </div>
+
         <div onClick={() => navigate("/pyqs")} className={getNavClass("/pyqs")}>
           <div className="min-w-[48px] flex justify-center items-center">
             <span className="material-symbols-outlined">trending_up</span>

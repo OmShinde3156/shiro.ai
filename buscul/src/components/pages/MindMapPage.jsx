@@ -92,7 +92,7 @@ const MindMapPage = () => {
       {/* Header with Navigation */}
       <header className="mindmap-global-header">
         <div className="header-left">
-          <button onClick={() => navigate("/")} className="back-btn">
+          <button onClick={() => navigate("/home")} className="back-btn">
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
           <div className="title-group">

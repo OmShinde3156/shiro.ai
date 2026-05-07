@@ -37,7 +37,9 @@ class PDFService:
             subject=subject,
             text_content=text_content,
             vector_db_id=collection_name,
-            user_id=user_id
+            user_id=user_id,
+            source_url=None,
+            video_id=None
         )
         
         db.add(document)
@@ -49,7 +51,7 @@ class PDFService:
         
         return document
 
-    def save_document_to_db(self, user_id: int, filename: str, content: str, subject: str, file_type: str, db: Session) -> Document:
+    def save_document_to_db(self, user_id: int, filename: str, content: str, subject: str, file_type: str, db: Session, source_url: str = None, video_id: str = None) -> Document:
         """Helper to save an externally fetched document (Web/YT) to the database."""
         collection_name = f"doc_{uuid.uuid4().hex}"
         document = Document(
@@ -58,7 +60,9 @@ class PDFService:
             subject=subject,
             text_content=content,
             vector_db_id=collection_name,
-            user_id=user_id
+            user_id=user_id,
+            source_url=source_url,
+            video_id=video_id
         )
         db.add(document)
         db.commit()

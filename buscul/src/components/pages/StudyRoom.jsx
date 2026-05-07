@@ -332,7 +332,7 @@ const StudyRoom = () => {
     <div className="study-room-container h-screen flex flex-col overflow-hidden select-none">
       <header className="h-20 border-b border-white/5 bg-black/40 backdrop-blur-3xl flex items-center justify-between px-8 z-50">
         <div className="flex items-center gap-6">
-          <button onClick={() => navigate("/")} className="text-white/40 hover:text-white transition-colors">
+          <button onClick={() => navigate("/home")} className="text-white/40 hover:text-white transition-colors">
             <span className="material-symbols-outlined">close</span>
           </button>
           <div className="h-8 w-[1px] bg-white/10"></div>

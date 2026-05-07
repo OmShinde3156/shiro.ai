@@ -34,6 +34,14 @@ const DocumentDetailsPage = () => {
           if (response.ok) {
             const data = await response.json();
             setDocument(data);
+            
+            // Proactive AI Suggestion for Video Sources
+            if (data.file_type === 'youtube' || data.video_id) {
+              setChatMessages([
+                { text: `I've analyzed the content of this YouTube video: **"${data.filename}"**. I've extracted the core concepts below, but for a deeper visual understanding, I highly recommend watching the original video as well.`, isUser: false },
+                { text: "What would you like to focus on first? I can generate a quiz, create study cards, or explain specific parts.", isUser: false }
+              ]);
+            }
           } else {
             setError('Failed to fetch document details');
           }
@@ -169,6 +177,31 @@ const DocumentDetailsPage = () => {
               </div>
             </div>
           </div>
+
+          {/* Visual Suggestion Card (NEW) */}
+          {(document?.video_id || document?.source_url) && (
+            <div className="glass-card relative overflow-hidden p-6 border-secondary/20 bg-secondary/5 flex flex-col md:flex-row items-center justify-between gap-6 group">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/10 blur-3xl -mr-16 -mt-16 group-hover:bg-secondary/20 transition-all"></div>
+               <div className="flex items-center gap-4 relative z-10">
+                  <div className="w-14 h-14 rounded-2xl bg-secondary/20 flex items-center justify-center text-secondary border border-secondary/30 shadow-lg shadow-secondary/10">
+                     <span className="material-symbols-outlined text-3xl">play_circle</span>
+                  </div>
+                  <div>
+                     <h3 className="text-lg font-bold text-white mb-1">Shiro's Visual Suggestion</h3>
+                     <p className="text-white/60 text-xs max-w-md">I've analyzed the core concepts, but watching the original video will give you the full visual context and deeper intuition.</p>
+                  </div>
+               </div>
+               <a 
+                href={document.source_url || `https://www.youtube.com/watch?v=${document.video_id}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="relative z-10 flex items-center gap-2 bg-secondary text-on-primary px-6 py-3 rounded-xl text-xs font-bold hover:scale-105 transition-all shadow-lg shadow-secondary/20 whitespace-nowrap"
+               >
+                  <span className="material-symbols-outlined text-lg">open_in_new</span>
+                  Watch Original Video
+               </a>
+            </div>
+          )}
 
           {/* Action Bento Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

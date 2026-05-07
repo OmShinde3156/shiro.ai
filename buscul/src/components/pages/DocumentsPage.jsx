@@ -80,7 +80,7 @@ const DocumentsPage = () => {
       <section className="flex flex-col gap-6 pt-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="flex items-center gap-6">
-            <button onClick={() => navigate("/")} className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all text-[var(--text-muted)] hover:text-primary">
+            <button onClick={() => navigate("/home")} className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all text-[var(--text-muted)] hover:text-primary">
               <span className="material-symbols-outlined">arrow_back</span>
             </button>
             <div>

@@ -56,7 +56,7 @@ const PyqsPage = () => {
     <div className="pyqs-container p-8 max-w-6xl mx-auto">
       <header className="mb-12">
         <div className="flex items-center gap-4 mb-4">
-           <button onClick={() => navigate("/")} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all">
+           <button onClick={() => navigate("/home")} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all">
              <span className="material-symbols-outlined">arrow_back</span>
            </button>
            <h1 className="text-3xl font-black font-headline text-[var(--text-main)]">PYQ Prediction</h1>

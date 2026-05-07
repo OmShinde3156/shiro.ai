@@ -33,6 +33,8 @@ class Document(Base):
     subject = Column(String)
     text_content = Column(Text, nullable=False)
     vector_db_id = Column(String)  # ChromaDB collection ID
+    source_url = Column(String, nullable=True) # Original URL (YT/Web)
+    video_id = Column(String, nullable=True) # Extracted YouTube ID
     upload_date = Column(DateTime, default=datetime.utcnow)
     user_id = Column(Integer, ForeignKey("users.id"))
     

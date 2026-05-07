@@ -172,7 +172,7 @@ const FlashcardApp = () => {
         <header className="header flex justify-between items-center mb-10">
           <div>
             <div className="flex items-center gap-4 mb-2">
-              <button onClick={() => navigate("/")} className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all text-[var(--text-muted)] hover:text-primary">
+              <button onClick={() => navigate("/home")} className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all text-[var(--text-muted)] hover:text-primary">
                 <ChevronLeft size={20} />
               </button>
               <h1 className="app-title text-3xl font-bold font-headline text-[var(--text-main)] leading-none">Active Recall</h1>
@@ -269,7 +269,7 @@ const FlashcardApp = () => {
         <header className="header flex justify-between items-center mb-10">
           <div>
             <div className="flex items-center gap-4 mb-2">
-              <button onClick={() => navigate("/")} className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all text-[var(--text-muted)] hover:text-primary">
+              <button onClick={() => navigate("/home")} className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all text-[var(--text-muted)] hover:text-primary">
                 <ChevronLeft size={20} />
               </button>
               <h1 className="app-title text-3xl font-bold font-headline text-[var(--text-main)] leading-none">Active Recall</h1>

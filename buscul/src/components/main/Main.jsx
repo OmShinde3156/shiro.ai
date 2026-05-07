@@ -245,7 +245,7 @@ const Main = () => {
           <div className="max-w-4xl mx-auto flex flex-col gap-8 pb-10">
              {/* Back Button for Chat */}
              <button 
-               onClick={() => { setShowResults(false); setInput(""); navigate("/"); }}
+               onClick={() => { setShowResults(false); setInput(""); navigate("/home"); }}
                className="w-fit flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold text-[var(--text-muted)] hover:text-primary transition-all mb-4 group"
              >
                <span className="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_back</span>

@@ -50,15 +50,18 @@ async def upload_url(
 ):
     """Ingest content from a URL (YouTube or Website)"""
     try:
+        source_url = url
+        video_id = None
         if "youtube.com" in url or "youtu.be" in url:
             title, content = await research_service.get_youtube_content(url)
+            video_id = research_service.extract_youtube_id(url)
             doc_type = "youtube"
         else:
             title, content = await research_service.get_web_content(url)
             doc_type = "web"
 
         # Create Document record
-        document = pdf_service.save_document_to_db(user_id, title, content, subject, doc_type, db)
+        document = pdf_service.save_document_to_db(user_id, title, content, subject, doc_type, db, source_url=source_url, video_id=video_id)
         
         # Trigger background embedding
         background_tasks.add_task(

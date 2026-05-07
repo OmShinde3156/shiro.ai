@@ -25,7 +25,7 @@ const CommandPalette = () => {
   const inputRef = useRef(null);
 
   const navigationItems = [
-    { id: 'home', title: 'Dashboard', icon: <Layout size={18} />, path: '/', category: 'Pages' },
+    { id: 'home', title: 'Dashboard', icon: <Layout size={18} />, path: '/home', category: 'Pages' },
     { id: 'documents', title: 'Library', icon: <FileText size={18} />, path: '/documents', category: 'Pages' },
     { id: 'study-room', title: 'Deep Work Flow', icon: <Zap size={18} />, path: '/study-room', category: 'Pages' },
     { id: 'flashcards', title: 'Flashcards', icon: <BookOpen size={18} />, path: '/flashcards', category: 'Pages' },
