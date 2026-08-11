@@ -35,6 +35,7 @@ class Document(Base):
     vector_db_id = Column(String)  # ChromaDB collection ID
     source_url = Column(String, nullable=True) # Original URL (YT/Web)
     video_id = Column(String, nullable=True) # Extracted YouTube ID
+    content_hash = Column(String, nullable=True, index=True) # Hash of content for idempotence
     upload_date = Column(DateTime, default=datetime.utcnow)
     user_id = Column(Integer, ForeignKey("users.id"))
     
@@ -196,6 +197,7 @@ class KnowledgeEdge(Base):
     target_node_id = Column(Integer, ForeignKey("knowledge_nodes.id"))
     relation = Column(String, nullable=False) # e.g. "contains", "results_in", "instance_of"
     weight = Column(Float, default=1.0)
+    confidence_score = Column(Float, default=1.0) # From Architect extraction
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class LibraryInsight(Base):

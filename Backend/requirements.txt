@@ -35,3 +35,12 @@ numpy==2.2.4
 youtube-transcript-api==0.6.3
 trafilatura==1.12.2
 yt-dlp==2025.1.15
+
+# Dots-OCR / Structural RAG
+qwen_vl_utils
+transformers==4.56.1
+huggingface_hub
+accelerate
+cairosvg
+gradio
+gradio_image_annotation

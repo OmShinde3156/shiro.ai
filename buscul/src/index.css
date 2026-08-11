@@ -2,19 +2,19 @@
 
 /* --- THEME SYSTEM --- */
 
-/* 1. Neon Shiro (Default Gen Z) */
+/* 1. Neon Shiro (Default Gen Z - Obsidian) */
 body.theme-neon, :root {
-  --bg-main: #0b0f1a;
-  --bg-card: rgba(20, 26, 46, 0.8);
-  --bg-card-light: #1c2540;
-  --primary: #72dcff;
-  --secondary: #dd8bfb;
-  --tertiary: #5eead4;
-  --text-main: #ecedf6;
-  --text-muted: rgba(236, 237, 246, 0.85); /* Increased contrast */
-  --border: rgba(255, 255, 255, 0.15);
-  --sidebar-bg: #0b0e14;
-  --app-gradient: radial-gradient(circle at top, #0f172a, #020617);
+  --bg-main: #05070a;
+  --bg-card: rgba(13, 17, 28, 0.65);
+  --bg-card-light: #161b2c;
+  --primary: #00f0ff;
+  --secondary: #8b5cf6;
+  --tertiary: #10b981;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: rgba(0, 240, 255, 0.15);
+  --sidebar-bg: #030507;
+  --app-gradient: radial-gradient(ellipse at top, #0d1221, #020305);
 }
 
 /* 2. Midnight Slate (Focus/Night Mode) */
@@ -101,8 +101,15 @@ body {
 
 /* ✨ SMOOTH FADE */
 @keyframes fadeIn {
-  0% { opacity: 0; transform: translateY(10px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% { opacity: 0; transform: translateY(15px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 🔮 BREATHING ORB (AI THINKING) */
+@keyframes orbBreathe {
+  0% { transform: scale(0.85); opacity: 0.6; box-shadow: 0 0 10px var(--primary); }
+  50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 30px var(--secondary); }
+  100% { transform: scale(0.85); opacity: 0.6; box-shadow: 0 0 10px var(--primary); }
 }
 
 .material-symbols-outlined {
@@ -123,13 +130,13 @@ body {
 /* 🧊 GLASS CARD */
 .glass-card {
   background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.4);
   border-radius: 24px;
   padding: 24px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: fadeIn 0.4s ease-out;
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .glass-card:hover {

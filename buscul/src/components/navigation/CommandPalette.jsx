@@ -31,6 +31,7 @@ const CommandPalette = () => {
     { id: 'flashcards', title: 'Flashcards', icon: <BookOpen size={18} />, path: '/flashcards', category: 'Pages' },
     { id: 'quiz', title: 'Quiz Arena', icon: <GraduationCap size={18} />, path: '/quiz', category: 'Pages' },
     { id: 'mindmap', title: 'Mind Map', icon: <Brain size={18} />, path: '/mindmap', category: 'Pages' },
+    { id: 'answer-planner', title: 'Answer Blueprint', icon: <BookOpen size={18} />, path: '/answer-planner', category: 'Pages' },
     { id: 'stats', title: 'Learning Analytics', icon: <History size={18} />, path: '/progress-report', category: 'Pages' },
     { id: 'settings', title: 'Settings', icon: <Settings size={18} />, path: '/settings', category: 'Pages' },
   ];

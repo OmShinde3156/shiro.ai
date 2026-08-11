@@ -189,6 +189,16 @@ class LLMClient:
             return "In Simulation Mode, I would provide a detailed summary here. Please add an API key to enable real AI processing."
         return "I'm Shiro, your AI mentor. I'm currently in Simulation Mode. To unlock my full potential, please provide a valid OpenAI, Groq, or Google API key in the Backend/.env file."
 
+    def _clean_json_string(self, raw_str: str) -> str:
+        """Strip markdown code block wrappers if the LLM incorrectly adds them."""
+        raw_str = raw_str.strip()
+        if raw_str.startswith("```"):
+            lines = raw_str.split("\n")
+            if lines[0].startswith("```"): lines = lines[1:]
+            if lines and lines[-1].startswith("```"): lines = lines[:-1]
+            raw_str = "\n".join(lines).strip()
+        return raw_str
+
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     async def generate_quiz_questions(self, content: str, num_questions: int, difficulty: str) -> List[Dict[str, Any]]:
         # If no real client, return sample quiz
@@ -201,7 +211,8 @@ class LLMClient:
         
         try:
             # Pydantic native schema validation guarantees correctness
-            validated_data = QuizResponse.model_validate_json(resp)
+            clean_resp = self._clean_json_string(resp)
+            validated_data = QuizResponse.model_validate_json(clean_resp)
             return [q.model_dump() for q in validated_data.questions]
         except ValidationError as e:
             logger.error(f"Pydantic Validation failed: {e}. Raw response: {resp}")
@@ -216,7 +227,8 @@ class LLMClient:
         resp = await self.generate_response(prompt, response_format="json_object")
         
         try:
-            validated_data = FlashcardResponse.model_validate_json(resp)
+            clean_resp = self._clean_json_string(resp)
+            validated_data = FlashcardResponse.model_validate_json(clean_resp)
             return [f.model_dump() for f in validated_data.flashcards]
         except ValidationError as e:
             logger.error(f"Pydantic Validation failed: {e}. Raw response: {resp}")
@@ -262,7 +274,8 @@ class LLMClient:
         
         resp = await self.generate_response(schema_prompt, response_format="json_object")
         try:
-            validated_data = QuizResponse.model_validate_json(resp)
+            clean_resp = self._clean_json_string(resp)
+            validated_data = QuizResponse.model_validate_json(clean_resp)
             return [q.model_dump() for q in validated_data.questions]
         except ValidationError as e:
             logger.error(f"Pydantic Validation failed: {e}. Raw response: {resp}")

@@ -15,6 +15,7 @@ from services.progress_service import ProgressService
 from services.timetable_service import TimetableService
 from services.feynman_service import FeynmanService
 from services.swarm_service import SwarmService
+from services.answer_planner_service import AnswerPlannerService
 from utils.tts_client import tts_client
 from utils.stt_client import stt_client
 from models.schema import (
@@ -26,7 +27,7 @@ from models.schema import (
     UserProgressResponse,
     TimetableRequest, TimetableResponse, TimetableProgressRequest,
     TranslationRequest, QuizRequest, QuizResponse, QuizResultResponse, QuizSubmissionRequest,
-    AddXPRequest
+    AddXPRequest, AnswerPlannerRequest, AnswerPlannerResponse
 )
 from models.database import Document, Podcast, MindMap
 
@@ -43,6 +44,7 @@ def get_timetable_service(): return TimetableService()
 def get_feynman_service(): return FeynmanService()
 def get_quiz_service(): return QuizService()
 def get_swarm_service(): return SwarmService()
+def get_answer_planner_service(): return AnswerPlannerService()
 
 # ==============================================
 # QUIZ ENDPOINTS
@@ -290,4 +292,26 @@ async def translate_content(request: TranslationRequest):
     try:
         return await TranslationService().translate_content(request.content, request.target_language, request.content_type)
     except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# ==============================================
+# ANSWER PLANNER ENDPOINT
+# ==============================================
+
+@router.post("/answer-planner", response_model=AnswerPlannerResponse, tags=["Answer Planner"])
+async def plan_answer(request: AnswerPlannerRequest, db: Session = Depends(get_db), planner_service: AnswerPlannerService = Depends(get_answer_planner_service)):
+    try:
+        result = await planner_service.full_pipeline(
+            request.question, request.marks, request.subject, request.answer_type, request.document_id, db
+        )
+        return {
+            "question": request.question,
+            "marks": request.marks,
+            "plan": result["plan"],
+            "final_answer": result["final_answer"],
+            "verification": [v.model_dump() if hasattr(v, 'model_dump') else v for v in result["verification"]],
+            "confidence": result["confidence"]
+        }
+    except Exception as e:
+        import traceback; traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))

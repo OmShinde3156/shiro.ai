@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from models.database import ChatHistory, Document, User
 from database.vector_db import VectorDB
+
 from utils.llm_client import llm_client
 from services.graph_service import GraphService
 from services.progress_service import ProgressService
@@ -14,10 +15,16 @@ logger = logging.getLogger(__name__)
 
 # --- Pydantic Schemas for Agentic Pipeline ---
 
+class VerificationStep(BaseModel):
+    claim: str = Field(description="A specific factual claim made in the draft.")
+    is_verified: bool = Field(description="Whether the claim is supported by the technical context.")
+    source_reference: Optional[str] = Field(description="The source or reason if verified/unverified.")
+
 class Stage1Response(BaseModel):
     thought: str = Field(description="Internal analysis of the user's request and student data.")
-    intent: str = Field(description="Either 'GENERAL' or 'RESEARCH'")
-    draft: str = Field(description="The initial high-fidelity response in the requested language.")
+    plan: List[str] = Field(description="Step-by-step reasoning plan to answer the query.")
+    draft: str = Field(description="The initial high-fidelity response.")
+    claims_to_verify: List[str] = Field(description="List of factual claims in the draft that need verification.")
 
 class UIActionCardProps(BaseModel):
     title: str
@@ -34,8 +41,9 @@ class Citation(BaseModel):
     content: str = Field(description="The exact snippet from the source used for this citation.")
 
 class Stage2Response(BaseModel):
-    final_response: str = Field(description="The refined response. Use [cit-N] notation inline to cite sources.")
-    citations: List[Citation] = Field(default_factory=list, description="List of source snippets linked to the inline citations.")
+    verification_results: List[VerificationStep]
+    final_response: str = Field(description="The refined response. Hallucinated or unverified claims MUST be removed.")
+    citations: List[Citation] = Field(default_factory=list)
     ui_action_card: Optional[UIActionCard] = Field(default=None)
 
 class ChatService:
@@ -55,104 +63,116 @@ class ChatService:
         mode: str = "human"
     ) -> Dict[str, Any]:
         """
-        Shiro Core v4.0 (InsightsLM Merge): Enhanced RAG with Citations
+        Shiro Core v7.0 (High-Performance RAG): Streamlined single-pass grounded answering.
         """
         user = db.query(User).filter(User.id == user_id).first()
         user_name = user.name if user else "Learner"
         
-        # 1. PARALLEL CONTEXT GATHERING
+        # 1. CONTEXT GATHERING
         recent_history = db.query(ChatHistory).filter(ChatHistory.user_id == user_id).order_by(ChatHistory.timestamp.desc()).limit(5).all()
         history_summary = "\n".join([f"User: {h.message}\nShiro: {h.response}" for h in reversed(recent_history)])
 
-        try:
-            progress_data = await self.progress_service.get_user_progress(user_id, db)
-            timetable_data = self.timetable_service.get_user_timetable(user_id, db)
-        except Exception:
-            progress_data = {}
-            timetable_data = {}
-        
-        agent_master_context = f"""
-        ### USER KNOWLEDGE STATE:
-        - Weak Subjects: {', '.join(progress_data.get('weak_subjects', []))}
-        - Study Streak: {progress_data.get('study_streak', 0)} days
-        ### CURRENT STUDY PLAN:
-        - Today's Tasks: {json.dumps(timetable_data.get('today_schedule', []))}
-        """
-
+        # Parallel context retrieval
         graph_context = ""
         try:
-            graph_context = self.graph_service.get_related_concepts(message, user_id, db)
+            graph_context = self.graph_service.get_related_concepts(message, user_id, db, min_confidence=0.6)
         except Exception: pass
             
-        context_docs = graph_context + "\n"
+        context_text = f"PREVIOUS CONCEPT CONNECTIONS:\n{graph_context}\n\nDOCUMENT SNIPPETS:\n"
         sources = []
-        
+
+
         if document_ids:
             documents = db.query(Document).filter(Document.id.in_(document_ids)).all()
             for doc in documents:
                 if doc.vector_db_id:
                     try:
-                        results = self.vector_db.query_documents(doc.vector_db_id, message, n_results=5)
+                        results = self.vector_db.query_documents(doc.vector_db_id, message, n_results=4)
                         if results and results.get('documents') and results['documents']:
-                            for content in results['documents'][0]:
-                                context_docs += f"[SOURCE: {doc.filename}] {content}\n"
-                                sources.append({"document_id": doc.id, "filename": doc.filename, "snippet": content})
+                            for i, content in enumerate(results['documents'][0]):
+                                cit_id = f"cit-{len(sources) + 1}"
+                                context_text += f"[{cit_id} from {doc.filename}]: {content}\n"
+                                sources.append({
+                                    "id": cit_id,
+                                    "document_id": doc.id,
+                                    "filename": doc.filename,
+                                    "content": content
+                                })
                     except Exception: pass
 
-        # 2. STAGE 1: PLAN & DRAFT
-        mode_instruction = f"BEHAVIOR: {'WARM HUMAN' if mode=='human' else 'RIGID SURGICAL'}. Use context appropriately."
+        # 2. SINGLE-PASS GENERATION
+        system_prompt = f"""
+        You are Shiro.ai, an advanced AI study assistant and communication-focused tutor.
+        Your job is to communicate like a great teacher: clear, calm, structured, and easy to understand.
 
-        plan_gen_prompt = f"""As Shiro, respond to {user_name}.
-        {mode_instruction}
-        STUDENT DATA: {agent_master_context}
-        USER REQUEST: {message}
-        TECHNICAL CONTEXT: {context_docs}
-        Respond EXACTLY with JSON: {{ "thought": "...", "intent": "...", "draft": "..." }}
+        PRIMARY GOAL:
+        Help students understand concepts deeply while keeping explanations simple, structured, and engaging.
+        Balance: Accuracy, Clarity, Teaching Ability, and Communication Quality.
+
+        COMMUNICATION STYLE:
+        - Use simple language; avoid unnecessary complexity.
+        - Explain step-by-step for hard concepts.
+        - Friendly but professional tone.
+        - Adapt tone based on user difficulty (e.g., simplify if they seem confused, be precise if advanced).
+        - Use analogies and ask clarifying questions when needed.
+
+        RESPONSE STRUCTURE RULES:
+        1. Simple question: Direct answer + 1 short explanation.
+        2. Conceptual question: Explanation → Example → Summary.
+        3. Exam question (marks mentioned):
+           - 1 mark → Definition only.
+           - 2-3 marks → Key points.
+           - 5 marks → Intro + Points + Example + Conclusion.
+           - 10 marks → Structured headings + Detailed explanation.
+
+        TEACHING BEHAVIOR:
+        - Break complex ideas into steps.
+        - Highlight **key terms** using bolding.
+        - Give small examples when useful.
+        - Ensure student "understands", not just reads.
+        - Avoid long paragraphs without structure. Use bullets and headings.
+
+        RAG CONTEXT RULES:
+        - Use the provided TECHNICAL CONTEXT as supporting knowledge only.
+        - DO NOT copy directly. Summarize and explain in your own words.
+        - If context is weak/irrelevant, prioritize general pedagogical clarity while admitting context limitations.
+
+        INSTRUCTIONS:
+        1. Answer based on the TECHNICAL CONTEXT and CONVERSATION HISTORY.
+        2. Use inline citations [cit-N] for source snippets.
+        3. Provide an 'Internal Thought' process for your pedagogical reasoning.
+        4. Suggest a 'Next Action' (TAKE_QUIZ, CREATE_FLASHCARDS, etc.) if it helps mastery.
+
+        TECHNICAL CONTEXT:
+        {context_text}
+
+        CONVERSATION HISTORY:
+        {history_summary}
         """
+
+        prompt = f"USER REQUEST: {message}\n\nRespond in JSON format with fields: 'thought', 'response', 'suggested_action'."
         
-        stage1_draft = ""
-        internal_thought = "Analyzing..."
-        
+        final_response = "I encountered an error processing your request."
+        internal_thought = "Processing..."
+        suggested_action = None
+
         try:
-            stage1_resp = await llm_client.generate_response(plan_gen_prompt, response_format="json_object")
-            stage1_data = Stage1Response.model_validate_json(stage1_resp)
-            stage1_draft = stage1_data.draft
-            internal_thought = stage1_data.thought
-        except Exception:
-            stage1_draft = "I encountered an error. How can I help?"
+            resp_json = await llm_client.generate_response(
+                f"{system_prompt}\n{prompt}", 
+                response_format="json_object"
+            )
+            data = json.loads(resp_json)
+            final_response = data.get('response', '')
+            internal_thought = data.get('thought', 'Reasoning complete.')
+            suggested_action = data.get('suggested_action')
 
-        # 3. STAGE 2: REFINE & CITE (InsightsLM logic)
-        source_mapping = [{"id": f"cit-{i+1}", "document_id": s['document_id'], "filename": s['filename'], "content": s['snippet'][:500]} for i, s in enumerate(sources)]
+            if suggested_action:
+                final_response += f"\n\n<shiro_ui>{{\"type\": \"ActionCard\", \"props\": {{\"title\": \"{suggested_action.replace('_', ' ').title()}\", \"action\": \"{suggested_action}\"}}}}</shiro_ui>"
 
-        refine_ui_prompt = f"""Review this response.
-        MODE: {mode.upper()}
-        DRAFT: {stage1_draft}
-        SOURCE MAPPING: {json.dumps(source_mapping)}
-        STUDENT DATA: {agent_master_context}
-        
-        Task: 
-        1. Refine the tone.
-        2. MANDATORY: Cite sources from MAPPING using [cit-N] inline.
-        3. Match every [cit-N] to the 'citations' field.
-        
-        Respond EXACTLY with JSON:
-        {{ "final_response": "...", "citations": [...], "ui_action_card": null }}
-        """
-        
-        final_response = stage1_draft
-        found_citations = []
-        
-        try:
-            stage2_resp = await llm_client.generate_response(refine_ui_prompt, response_format="json_object")
-            stage2_data = Stage2Response.model_validate_json(stage2_resp)
-            final_response = stage2_data.final_response
-            found_citations = [c.model_dump() for c in stage2_data.citations]
-            
-            if stage2_data.ui_action_card:
-                final_response += f"\n\n<shiro_ui>{stage2_data.ui_action_card.model_dump_json()}</shiro_ui>"
-        except Exception: pass
+        except Exception as e:
+            logger.error(f"Generation Error: {e}")
 
-        # 4. PERSIST
+        # 3. PERSIST & RETURN
         try:
             chat_entry = ChatHistory(user_id=user_id, message=message, response=final_response, document_ids=document_ids, language=language)
             db.add(chat_entry)
@@ -163,6 +183,6 @@ class ChatService:
             "response": final_response,
             "internal_thought": internal_thought,
             "sources": sources,
-            "citations": found_citations,
+            "citations": sources, # Direct mapping for simplicity and reliability
             "language": language
         }

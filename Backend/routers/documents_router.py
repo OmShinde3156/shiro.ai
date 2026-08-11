@@ -61,13 +61,16 @@ async def upload_url(
             doc_type = "web"
 
         # Create Document record
-        document = pdf_service.save_document_to_db(user_id, title, content, subject, doc_type, db, source_url=source_url, video_id=video_id)
+        document, is_new = pdf_service.save_document_to_db(user_id, title, content, subject, doc_type, db, source_url=source_url, video_id=video_id)
         
-        # Trigger background embedding
-        background_tasks.add_task(
-            pdf_service.process_document_background,
-            document.id, content, user_id
-        )
+        if is_new:
+            # Trigger background embedding only for NEW documents
+            background_tasks.add_task(
+                pdf_service.process_document_background,
+                document.id, content, user_id
+            )
+        else:
+            print(f"DEBUG: Skipping background processing for existing document {document.id}")
             
         return document
     except Exception as e:

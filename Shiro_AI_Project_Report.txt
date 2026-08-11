@@ -95,8 +95,8 @@ The system relies heavily on background automation rather than a visual admin po
 14. Architecture Explanation
 ----------------------------
 - **Microservice-like Monolith**: A React Single Page Application (SPA) communicating via REST with a Python FastAPI backend.
-- **Graph-Augmented RAG**: The core intelligent architecture. Text isn't just embedded linearly; relationships between concepts are extracted (`GraphService`) to form an Epistemic Knowledge Graph.
-- **Asynchronous Pipeline**: Heavy tasks (like Audio generation or deep text processing) are handed off to a Celery worker queue backed by Redis, ensuring the API remains fast and non-blocking.
+- **Truth-Aware GraphRAG**: The core intelligent architecture. Text isn't just embedded linearly; relationships between concepts are extracted (`GraphService`) to form an Epistemic Knowledge Graph with confidence-weighted reasoning.
+- **Elastic Asynchronous Pipeline**: Heavy tasks (like Audio generation or deep text processing) are handed off to a Celery worker queue. If Redis is unavailable, the system automatically falls back to internal FastAPI `BackgroundTasks`.
 
 15. Key Components Description
 ------------------------------

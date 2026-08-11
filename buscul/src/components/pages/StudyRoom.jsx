@@ -489,12 +489,11 @@ const StudyRoom = () => {
                    <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-hide">
                       {chatMessages.map((msg, i) => (
                         <div key={i} className={`max-w-[85%] p-4 rounded-2xl text-xs leading-relaxed ${msg.isUser ? 'ml-auto bg-primary/10 text-white border border-primary/20' : 'bg-white/5 text-white/70 border border-white/5'}`}>
-                          <MarkdownRenderer 
-                            content={msg.text} 
-                            citations={msg.citations || []} 
-                            onCitationClick={(cit) => setSelectedCitation(cit)} 
-                          />
-                        </div>
+                          <MarkdownRenderer
+                            content={msg.text?.replace(/<shiro_ui>[\s\S]*?<\/shiro_ui>/g, '') || ''}
+                            citations={msg.citations || []}
+                            onCitationClick={(cit) => setSelectedCitation(cit)}
+                          />                        </div>
                       ))}
                       {aiLoading && <div className="p-2 flex gap-1"><span className="w-1 h-1 bg-primary rounded-full animate-bounce"></span><span className="w-1 h-1 bg-primary rounded-full animate-bounce delay-100"></span><span className="w-1 h-1 bg-primary rounded-full animate-bounce delay-200"></span></div>}
                    </div>

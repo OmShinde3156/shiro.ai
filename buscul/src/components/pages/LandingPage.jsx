@@ -6,9 +6,10 @@ import './LandingPage.css';
 const useScrollReveal = () => {
   const ref = useRef(null);
   useEffect(() => {
+    const scrollContainer = document.getElementById('scroll-container');
     const observer = new IntersectionObserver(
       (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('visible'); }),
-      { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
+      { root: scrollContainer, threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
     );
     const els = ref.current?.querySelectorAll('.landing-fade-up');
     els?.forEach((el) => observer.observe(el));
@@ -71,7 +72,7 @@ const AnimatedCounter = ({ target, suffix = '' }) => {
           else setCount(Math.floor(current));
         }, duration / steps);
       }
-    }, { threshold: 0.3 });
+    }, { root: document.getElementById('scroll-container'), threshold: 0.3 });
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
   }, [target]);
@@ -140,13 +141,20 @@ const LandingPage = () => {
   const typedWord = useTypingEffect(['Smarter', 'Faster', 'Better'], 90, 2200);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const scrollContainer = document.getElementById('scroll-container');
+    if (!scrollContainer) return;
+    
+    const handleScroll = (e) => setScrolled(e.target.scrollTop > 50);
+    scrollContainer.addEventListener('scroll', handleScroll);
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
   }, []);
 
   const scrollToSection = (id) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    const el = document.getElementById(id);
+    const container = document.getElementById('scroll-container');
+    if (el && container) {
+      container.scrollTo({ top: el.offsetTop - 80, behavior: 'smooth' });
+    }
   };
 
   return (

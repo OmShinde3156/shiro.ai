@@ -27,8 +27,8 @@ const AuthPage = () => {
 
   useEffect(() => {
     // Only redirect if it's a real user (not guest)
-    if (user && user.email !== 'guest@shiro.ai') {
-      navigate('/');
+    if (user && user.email !== 'guest@shiro.ai' && user.email !== 'guest@study.ai') {
+      navigate('/home');
     }
   }, [user, navigate]);
 

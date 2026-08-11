@@ -240,3 +240,19 @@ class TranslationRequest(BaseModel):
     content: str
     target_language: Language
     content_type: str = "text"
+
+# Answer Planner Schemas
+class AnswerPlannerRequest(BaseModel):
+    question: str
+    marks: int = Field(default=5, ge=1, le=20)
+    document_id: int
+    answer_type: str = "descriptive"
+    subject: str = "General"
+
+class AnswerPlannerResponse(BaseModel):
+    question: str
+    marks: int
+    plan: Dict[str, Any]
+    final_answer: str
+    verification: List[Dict[str, Any]]
+    confidence: float

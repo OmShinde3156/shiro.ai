@@ -39,7 +39,7 @@ class MindMapService:
 
     async def generate_mindmap(self, document_id: int, topic: str, depth: int, db: Session):
         """Generate a hierarchical mind map with controllable depth."""
-        print(f"🔍 DEBUG: Starting mindmap generation for document {document_id}")
+        print(f" DEBUG: Starting mindmap generation for document {document_id}")
         
         # 1) Load document
         document = db.query(Document).filter(Document.id == document_id).first()
@@ -53,20 +53,20 @@ class MindMapService:
         if not topic:
             topic = f"Summary of {document.filename or 'Document'}"
 
-        print(f"📄 Document loaded: {len(raw_text)} characters")
+        print(f" Document loaded: {len(raw_text)} characters")
 
         # 2) Preprocess + chunk
         chunks = self._chunk_text(self._clean_text(raw_text), target_chunk_size=1500, overlap=150)
-        print(f"📝 Created {len(chunks)} chunks")
+        print(f" Created {len(chunks)} chunks")
 
         # 3) Extract salient terms (TF-IDF) - with detailed logging
         top_terms = self._score_terms(chunks, top_k=80)
-        print(f"📊 Extracted {len(top_terms)} terms with scores:")
+        print(f" Extracted {len(top_terms)} terms with scores:")
         for i, (term, score) in enumerate(top_terms[:10]):  # Show top 10
             print(f"  {i+1}. '{term}': {score:.3f}")
 
         if not top_terms:
-            print("⚠️  No terms extracted, falling back to root-only")
+            print("  No terms extracted, falling back to root-only")
             mindmap_data = {
                 "nodes": [{"id": "root", "label": topic, "level": 0, "score": 1.0}],
                 "edges": [],
@@ -75,14 +75,14 @@ class MindMapService:
 
         # 4) Use LLM to extract main topics
         main_topics = await self._extract_main_topics_with_llm(raw_text, max_topics=8)
-        print(f"🤖 LLM extracted topics: {main_topics}")
+        print(f" LLM extracted topics: {main_topics}")
 
         # 5) Build co-occurrence graph & PageRank
         all_salient_terms = set([t for t, _ in top_terms] + main_topics)
         G = self._build_cooccurrence_graph(chunks, terms=all_salient_terms)
         pr = nx.pagerank(G, weight="weight") if len(G) > 1 else {}
-        print(f"🕸️  Graph has {len(G.nodes)} nodes, {len(G.edges)} edges")
-        print(f"📈 PageRank scores (top 5): {dict(list(sorted(pr.items(), key=lambda x: x[1], reverse=True)[:5]))}")
+        print(f"  Graph has {len(G.nodes)} nodes, {len(G.edges)} edges")
+        print(f" PageRank scores (top 5): {dict(list(sorted(pr.items(), key=lambda x: x[1], reverse=True)[:5]))}")
 
         # 6) Calculate normalized scores with debugging
         term_score = self._calculate_normalized_scores_debug(top_terms, pr, main_topics)
@@ -94,7 +94,7 @@ class MindMapService:
 
         # Use main topics or top terms for level 1
         level1_terms = main_topics if main_topics else [t for t, _ in top_terms[:8]]
-        print(f"🌟 Level 1 terms: {level1_terms}")
+        print(f" Level 1 terms: {level1_terms}")
 
         # Calculate positions and create nodes with explicit scoring
         level1_positions = self._calculate_circular_positions(len(level1_terms), radius=250)
@@ -105,7 +105,7 @@ class MindMapService:
             
             # Get score directly from term_score dict
             raw_score = term_score.get(term, 0.3)
-            print(f"  📍 Node '{term}': raw_score={raw_score:.3f}")
+            print(f"   Node '{term}': raw_score={raw_score:.3f}")
             
             # Apply level normalization
             final_score = max(0.4, min(0.9, raw_score))  # Clamp to reasonable range
@@ -115,9 +115,9 @@ class MindMapService:
             nodes.append(n)
             edges.append(Edge(source="root", target=nid, weight=1.0))
 
-        print(f"✅ Created {len(nodes)} nodes total")
+        print(f" Created {len(nodes)} nodes total")
         for node in nodes:
-            print(f"  📌 {node.label} (level {node.level}): {node.score:.3f}")
+            print(f"   {node.label} (level {node.level}): {node.score:.3f}")
 
         # Build mind map data
         mindmap_data = {
@@ -125,7 +125,7 @@ class MindMapService:
             "edges": [e.__dict__ for e in edges],
         }
 
-        print(f"📦 Final mindmap data:")
+        print(f" Final mindmap data:")
         print(f"  Nodes: {len(mindmap_data['nodes'])}")
         for node_data in mindmap_data['nodes']:
             print(f"    {node_data['label']}: {node_data['score']} ({type(node_data['score'])})")
@@ -147,11 +147,11 @@ class MindMapService:
                                          pagerank: Dict[str, float], 
                                          main_topics: List[str]) -> Dict[str, float]:
         """Calculate and normalize scores with detailed debugging."""
-        print("🧮 Calculating normalized scores...")
+        print(" Calculating normalized scores...")
         term_score = {}
         
         # Base TF-IDF scores
-        print("  📊 TF-IDF base scores:")
+        print("   TF-IDF base scores:")
         for term, score in top_terms[:5]:
             term_score[term] = float(score)
             print(f"    '{term}': {score:.3f}")
@@ -163,7 +163,7 @@ class MindMapService:
         # Add PageRank boost
         if pagerank:
             max_pr = max(pagerank.values())
-            print(f"  📈 Adding PageRank boost (max={max_pr:.3f}):")
+            print(f"   Adding PageRank boost (max={max_pr:.3f}):")
             for term in list(term_score.keys())[:5]:  # Show first 5
                 old_score = term_score[term]
                 pr_score = pagerank.get(term, 0.0) / max_pr if max_pr > 0 else 0.0
@@ -171,13 +171,13 @@ class MindMapService:
                 print(f"    '{term}': {old_score:.3f} + {pr_score:.3f} = {term_score[term]:.3f}")
         
         # Boost LLM topics
-        print(f"  🤖 Boosting LLM topics: {main_topics}")
+        print(f"   Boosting LLM topics: {main_topics}")
         for topic in main_topics:
             old_score = term_score.get(topic, 0.5)
             term_score[topic] = min(1.0, old_score + 0.2)
             print(f"    '{topic}': {old_score:.3f} -> {term_score[topic]:.3f}")
         
-        print(f"  ✅ Final term scores (showing top 8):")
+        print(f"   Final term scores (showing top 8):")
         sorted_scores = sorted(term_score.items(), key=lambda x: x[1], reverse=True)
         for term, score in sorted_scores[:8]:
             print(f"    '{term}': {score:.3f}")
@@ -215,15 +215,15 @@ class MindMapService:
             match = re.search(r"\[(.*?)\]", response)
             if match:
                 topics = json.loads(match.group(0))
-                print(f"🤖 LLM response topics: {topics}")
+                print(f" LLM response topics: {topics}")
                 return topics
             return []
         except Exception as e:
-            print(f"❌ LLM topic extraction failed: {e}")
+            print(f" LLM topic extraction failed: {e}")
             return []
 
     def _score_terms(self, chunks: List[str], top_k=80) -> List[Tuple[str, float]]:
-        print("📊 Scoring terms with CountVectorizer...")
+        print(" Scoring terms with CountVectorizer...")
         try:
             vectorizer = CountVectorizer(
                 ngram_range=(1, 3),
@@ -247,11 +247,11 @@ class MindMapService:
             return scored[:top_k]
             
         except Exception as e:
-            print(f"❌ Error in _score_terms: {e}")
+            print(f" Error in _score_terms: {e}")
             return self._fallback_term_scoring(chunks, top_k)
 
     def _fallback_term_scoring(self, chunks: List[str], top_k=50) -> List[Tuple[str, float]]:
-        print("📊 Using fallback term scoring...")
+        print(" Using fallback term scoring...")
         word_counts = Counter()
         stop_words = set(TfidfVectorizer(stop_words="english").get_stop_words())
         
@@ -285,7 +285,7 @@ class MindMapService:
                         G.add_edge(t1, t2, weight=current_weight + 1)
                         edge_count += 1
         
-        print(f"🕸️  Built graph with {len(G.nodes)} nodes, {len(G.edges)} edges ({edge_count} total connections)")
+        print(f"  Built graph with {len(G.nodes)} nodes, {len(G.edges)} edges ({edge_count} total connections)")
         return G
 
     def _calculate_circular_positions(self, count: int, radius: float, center_x=0, center_y=0) -> List[Tuple[float, float]]:
@@ -302,7 +302,7 @@ class MindMapService:
         return positions
 
     def _persist_and_return(self, document, topic: str, mindmap_data: Dict[str, Any], db: Session):
-        print("💾 Persisting mindmap to database...")
+        print(" Persisting mindmap to database...")
         mindmap_id = str(uuid.uuid4())
         m = MindMap(
             id=mindmap_id,
@@ -324,8 +324,8 @@ class MindMapService:
             "created_at": m.created_at,
         }
         
-        print(f"✅ Mindmap saved with ID: {mindmap_id}")
-        print(f"📦 Returning data with {len(result['nodes'])} nodes")
+        print(f" Mindmap saved with ID: {mindmap_id}")
+        print(f" Returning data with {len(result['nodes'])} nodes")
         return result
 
     def get_user_mindmaps(self, user_id: int, db: Session) -> List[Dict[str, Any]]:

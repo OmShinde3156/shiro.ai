@@ -79,12 +79,9 @@ const Header = () => {
   }, []);
 
   return (
-    <header className="w-full sticky top-0 z-40 bg-[var(--sidebar-bg)] opacity-80 backdrop-blur-xl flex justify-between items-center px-8 py-4 border-b border-[var(--border)]">
-      <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/home")}>
-        <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/10">
-          <img src="/logo.jpg" alt="Logo" className="w-full h-full object-cover" />
-        </div>
-        <span className="text-2xl font-black text-[var(--primary)] font-headline">Shiro.ai</span>
+    <header className="w-full bg-[var(--sidebar-bg)] opacity-80 backdrop-blur-xl flex justify-between items-center px-8 py-4 border-b border-[var(--border)] sticky top-0 z-40">
+      <div className="flex-1">
+        {/* Placeholder for future global search or command palette trigger */}
       </div>
       <div className="flex items-center gap-6">
         <select value={language} onChange={(e) => setLanguage(e.target.value)} className="bg-transparent border-none text-[var(--text-main)] opacity-70 hover:opacity-100 cursor-pointer text-sm font-semibold outline-none">

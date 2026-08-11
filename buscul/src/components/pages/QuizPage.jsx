@@ -13,6 +13,7 @@ const QuizPage = () => {
 
   const [selectedDocId, setSelectedDocId] = useState(location.state?.documentId || "");
   const [quizData, setQuizData] = useState(null);
+  const [quizId, setQuizId] = useState(null);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -58,6 +59,7 @@ const QuizPage = () => {
 
       const data = await response.json();
       setQuizData(data.questions);
+      setQuizId(data.quiz_id);
     } catch (error) {
       console.error(error);
       setError(error.message);
@@ -73,21 +75,45 @@ const QuizPage = () => {
     }));
   };
 
-  const submitQuiz = () => {
+  const submitQuiz = async () => {
     let calculatedScore = 0;
+    const formattedAnswers = {};
+    
     quizData.forEach((q, idx) => {
+      formattedAnswers[q.id] = selectedAnswers[idx] || "";
       if (selectedAnswers[idx] === q.correct_answer) {
         calculatedScore++;
       }
     });
-    setSubmitted(true);
 
-    // Navigate to ProgressReport with score + total
-    setTimeout(() => {
-      navigate("/progress-report", {
-        state: { score: calculatedScore, total: quizData.length },
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/submit-quiz`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: user.id,
+          document_id: parseInt(selectedDocId),
+          quiz_id: quizId,
+          answers: formattedAnswers
+        })
       });
-    }, 1500); // Give user a moment to see they submitted
+      if (!response.ok) {
+        console.error("Failed to submit quiz analytics to backend");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+      setSubmitted(true);
+      
+      // Navigate to ProgressReport with score + total
+      setTimeout(() => {
+        navigate("/progress-report", {
+          state: { score: calculatedScore, total: quizData.length },
+        });
+      }, 1500); // Give user a moment to see they submitted
+    }
   };
 
   return (

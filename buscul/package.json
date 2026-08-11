@@ -1,7 +1,7 @@
 {
   "name": "gemini_clone",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.2.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,6 +15,7 @@
     "axios": "^1.11.0",
     "dagre": "^0.8.5",
     "driver.js": "^1.4.0",
+    "framer-motion": "^12.43.0",
     "lucide-react": "^0.562.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

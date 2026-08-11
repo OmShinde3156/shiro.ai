@@ -1,26 +1,29 @@
 .mindmap-page-container {
-  height: 100vh;
+  height: 100%;
+  min-height: 100%;
   width: 100%;
   display: flex;
   flex-direction: column;
-  background: #0b0e14;
+  background: transparent;
   color: white;
-  overflow: hidden;
   font-family: "Inter", sans-serif;
 }
 
-/* Global Navigation Header */
+/* Local Toolbar (Formerly Global Header) */
 .mindmap-global-header {
-  height: 80px;
-  background: rgba(21, 25, 38, 0.8);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(114, 220, 255, 0.1);
+  min-height: 80px;
+  background: rgba(20, 26, 46, 0.4);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(114, 220, 255, 0.1);
+  border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 40px;
-  z-index: 100;
+  padding: 16px 24px;
+  margin: 16px 24px;
+  z-index: 10;
   flex-shrink: 0;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
 }
 
 .header-left {

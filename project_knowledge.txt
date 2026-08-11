@@ -57,6 +57,26 @@
     - **Backend Integration:** Refactored `ResearchService` to use the new extractor, unifying URL handling for the "Add Sources" feature.
     - **Backward Compatibility:** Ensured existing raw video ID support remains intact.
 
+*   2026-05-07 [11:30]: **v0.2.7 "TRUTH-AWARE" RELEASE:**
+    - **Epistemic Evolution:** Implemented Truth-Aware GraphRAG with confidence-weighted reasoning and multi-hop decay (0.8).
+    - **Entity Normalization:** Semantic entity merging to prevent graph fragmentation.
+    - **Idempotent Ingestion:** SHA-256 content hashing to prevent duplicate processing and redundant embeddings.
+    - **Chain of Verification (CoVe):** Advanced reasoning flow with claim extraction and fact-checking against source context.
+    - **Consistency Auditor:** Diagnostic tool (`sync_check.py`) to purge orphaned ChromaDB collections and ensure relational-vector parity.
+    - **Fixed Ontology:** Enforced strict relationship types (is_a, part_of, causes, etc.) for logically sound reasoning.
+
+*   2026-05-21 [18:00]: **"ELASTIC" INFRASTRUCTURE UPDATE:**
+    - **Redis Fallback:** Implemented `HAS_REDIS` detection in `celery_app.py`. System now gracefully falls back to FastAPI `BackgroundTasks` if Redis is offline.
+    - **Surgical Migrations:** Added auto-migration logic in `database.py` to handle schema drift (missing columns like `content_hash`, `confidence_score`, `xp`, `level`) without full resets.
+    - **UI Refinement:** Removed `RightSidebar` globally to provide a more focused, distraction-free workspace.
+    - **Path Refactor:** Updated navigation routes from `/` to `/home` for improved internal linking and session management.
+
+*   2026-05-26 [14:30]: **v5.0 "MULTI-STAGE ENGINE" UPDATE:**
+    - **3-Stage Answer Engine:** Implemented Planner → Writer → Verifier pipeline with Chain of Verification (CoVe).
+    - **Truth-Aware Grounding:** Integrated Answer Engine with VectorDB/RAG for context-backed exam responses.
+    - **UI Implementation:** Created `AnswerPlanner.jsx` featuring tabbed visualization of blueprints, drafts, and verification claims.
+    - **Mark-Aware Depth:** Backend logic enforced word budgets and structural complexity based on exam marks (1, 3, 5, 8+).
+
 ---
 
 ## 3. TECHNICAL DEBT & FAILURES LOG (DIAGNOSTICS)
@@ -68,6 +88,7 @@
 | **Flashcard v4.0** | 2026-05-03 | Performance bottleneck in O(N*M) iteration. | Refactored to relational `Flashcard` table with SQL JOINs. |
 | **Study Room UX** | 2026-05-03 | Syntax errors due to code truncation. | Restored full logic and verified all React hooks. |
 | **URL/YT Ingestion**| 2026-05-06 | Multi-layer failures in external fetching. | Implemented v4.8 "Shield" Patch with triple fallbacks. |
+| **Infrastructure** | 2026-05-21 | Celery worker failures when Redis container is down. | Implemented dynamic mock/fallback to BackgroundTasks. |
 
 ---
 

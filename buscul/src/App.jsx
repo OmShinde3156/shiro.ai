@@ -5,6 +5,7 @@ import QuizPage from "./components/pages/QuizPage";
 import AudioSummaryPage from "./components/pages/AudioSummaryPage";
 import FlashcardApp from "./components/pages/FlashcardApp";
 import MindMapPage from "./components/pages/MindMapPage";
+import AnswerPlanner from "./components/pages/AnswerPlanner";
 import Sidebar from "./components/sidebar/Sidebar";
 import RightSidebar from "./components/rightsidebar/RightSidebar";
 import Header from "./components/navigation/Header";
@@ -80,7 +81,7 @@ function App() {
         }}
       />
       {!isFullScreenRoute && <CommandPalette />}
-      <div className="flex min-h-screen w-full bg-[var(--bg-main)] text-[var(--text-main)] font-body">
+      <div className="flex h-screen w-full bg-[var(--bg-main)] text-[var(--text-main)] font-body overflow-hidden">
         {!isFullScreenRoute && (
           <>
             <div className="hidden md:block">
@@ -89,29 +90,31 @@ function App() {
             <BottomNavBar />
           </>
         )}
-        <div className={`flex-grow overflow-y-auto ${!isFullScreenRoute ? 'md:ml-20 lg:mr-20 pb-24 md:pb-0' : ''}`}>
+        <div className={`flex flex-col flex-grow h-screen overflow-hidden ${!isFullScreenRoute ? 'md:ml-20 pb-24 md:pb-0' : ''}`}>
           {!isFullScreenRoute && <Header />}
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<AuthPage />} />
-            <Route path="/home" element={<Main />} />
-            <Route path="/study-room" element={<StudyRoom />} />
-            <Route path="/quiz" element={<QuizPage />} />
-            <Route path="/progress-report" element={<ProgressReport />} />
-            <Route path="/audio-summary" element={<AudioSummaryPage />} />
-            <Route path="/flashcards" element={<FlashcardApp />} />
-            <Route path="/mindmap" element={<MindMapPage />} />
-            <Route path="/summary" element={<SummaryFetcher />} />
-            <Route path="/pyqs" element={<PyqsPage />} />
-            <Route path="/documents" element={<DocumentsPage />} />
-            <Route path="/documents/:id" element={<DocumentDetailsPage />} />
-            <Route path="/study-plan" element={<StudyPlanPage />} />
-            <Route path="/feynman" element={<FeynmanPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <div id="scroll-container" className="flex-grow overflow-y-auto relative w-full h-full custom-scroll">
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<AuthPage />} />
+              <Route path="/home" element={<Main />} />
+              <Route path="/study-room" element={<StudyRoom />} />
+              <Route path="/quiz" element={<QuizPage />} />
+              <Route path="/progress-report" element={<ProgressReport />} />
+              <Route path="/audio-summary" element={<AudioSummaryPage />} />
+              <Route path="/flashcards" element={<FlashcardApp />} />
+              <Route path="/mindmap" element={<MindMapPage />} />
+              <Route path="/answer-planner" element={<AnswerPlanner />} />
+              <Route path="/summary" element={<SummaryFetcher />} />
+              <Route path="/pyqs" element={<PyqsPage />} />
+              <Route path="/documents" element={<DocumentsPage />} />
+              <Route path="/documents/:id" element={<DocumentDetailsPage />} />
+              <Route path="/study-plan" element={<StudyPlanPage />} />
+              <Route path="/feynman" element={<FeynmanPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </div>
         </div>
-        {!isFullScreenRoute && <RightSidebar />}
       </div>
     </PodcastProvider>
   );

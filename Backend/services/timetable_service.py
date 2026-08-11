@@ -10,8 +10,9 @@ class TimetableService:
     async def create_timetable(self, request: TimetableRequest, db: Session):
         """Create personalized study timetable with Cognitive Peak Optimization"""
         
-        # Calculate days until exam
-        days_until_exam = (request.exam_date - datetime.now(timezone.utc)).days
+        # Calculate days until exam safely regardless of timezone info
+        exam_dt = request.exam_date.replace(tzinfo=None) if hasattr(request.exam_date, 'tzinfo') and request.exam_date.tzinfo else request.exam_date
+        days_until_exam = (exam_dt - datetime.utcnow()).days
         
         if days_until_exam <= 0:
             raise Exception("Exam date must be in the future")
@@ -32,7 +33,7 @@ class TimetableService:
         
         # Generate daily schedule
         daily_schedule = {}
-        current_date = datetime.now(timezone.utc).date()
+        current_date = datetime.utcnow().date()
         
         # Distribute subjects across days
         for day_offset in range(days_until_exam):
@@ -79,14 +80,14 @@ class TimetableService:
         # Get most recent active timetable
         timetable = db.query(StudyTimetable).filter(
             StudyTimetable.user_id == user_id,
-            StudyTimetable.exam_date > datetime.now(timezone.utc)
+            StudyTimetable.exam_date > datetime.utcnow()
         ).order_by(StudyTimetable.created_at.desc()).first()
         
         if not timetable:
             return {"message": "No active timetable found"}
         
         # Get today's schedule
-        today = datetime.now(timezone.utc).date().strftime("%Y-%m-%d")
+        today = datetime.utcnow().date().strftime("%Y-%m-%d")
         today_schedule = timetable.daily_schedule.get(today, [])
         
         # Get progress for today's tasks
@@ -109,7 +110,7 @@ class TimetableService:
             "exam_date": timetable.exam_date,
             "today_schedule": today_schedule,
             "crash_course": timetable.crash_course,
-            "days_remaining": (timetable.exam_date - datetime.now(timezone.utc)).days
+            "days_remaining": ((timetable.exam_date.replace(tzinfo=None) if hasattr(timetable.exam_date, 'tzinfo') and timetable.exam_date.tzinfo else timetable.exam_date) - datetime.utcnow()).days
         }
     
     def update_task_progress(self, request: TimetableProgressRequest, db: Session):
@@ -134,7 +135,7 @@ class TimetableService:
         progress.hours_studied = request.hours_studied
         
         if request.completed:
-            progress.completion_date = datetime.now(timezone.utc)
+            progress.completion_date = datetime.utcnow()
         
         db.commit()
         

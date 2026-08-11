@@ -4,6 +4,7 @@ import { Context } from "../../context/Context";
 import { useAuth } from "../../context/AuthContext";
 import API_BASE_URL from "../../api/config.js";
 import toast from 'react-hot-toast';
+import { motion } from "framer-motion";
 import MarkdownRenderer from "../chat/MarkdownRenderer";
 import Header from "../navigation/Header";
 import { 
@@ -91,6 +92,7 @@ const Main = () => {
     else if (topic === "Create Mind Maps") navigate("/mindmap");
     else if (topic === "Audio Summary") navigate("/audio-summary");
     else if (topic === "PYQS Prediction") navigate("/pyqs");
+    else if (topic === "Answer Blueprint") navigate("/answer-planner");
     else { setInput(topic); onSent(language, user?.id, documents.map(d => d.id), mode); }
   };
 
@@ -99,6 +101,7 @@ const Main = () => {
       { id: 'quiz', title: "Take Quiz", desc: "Test what you know.", icon: "quiz", color: "secondary", priority: 1, span: "col-span-12 md:col-span-4" },
       { id: 'summary', title: "Summarize this Topic", desc: "Turn long chapters into easy notes.", icon: "auto_awesome", color: "primary", priority: 2, span: "col-span-12 md:col-span-8" },
       { id: 'flashcards', title: "Generate Flashcards", desc: "Quick memory cards.", icon: "style", color: "tertiary", priority: 3, span: "col-span-12 md:col-span-4" },
+      { id: 'answer-planner', title: "Answer Blueprint", desc: "Master exam structures.", icon: "architecture", color: "secondary", priority: 3.5, span: "col-span-12 md:col-span-4" },
       { id: 'studyroom', title: "Study Room", desc: "A quiet space to learn with Shiro AI.", icon: "auto_stories", color: "secondary", priority: 4, span: "col-span-12 md:col-span-8", isStudy: true },
       { id: 'feynman', title: "Feynman Challenge", desc: "Teach it to master it.", icon: "psychology", color: "primary", priority: 5, span: "col-span-12 md:col-span-4" }
     ];
@@ -149,16 +152,21 @@ const Main = () => {
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
   return (
-    <main className="w-full min-h-screen pb-32">
+    <main className="w-full h-full flex flex-col relative">
       <div className="p-8 max-w-6xl mx-auto">
         {!showResults ? (
           <>
-            <section className="mb-12">
+            <motion.section 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="mb-12"
+            >
               <h2 className="text-[3.5rem] font-bold font-headline leading-tight tracking-tight text-[var(--text-main)]">
                 Hey, {user?.name?.split(" ")[0] || "Learner"}. <br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Let's Improve Your Score</span>
               </h2>
-            </section>
+            </motion.section>
 
             {/* Shiro Intelligence Hub - Autonomous Swarm discoveries */}
             <div className="mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
@@ -217,12 +225,20 @@ const Main = () => {
                )}
             </div>
 
-            <section className="grid grid-cols-12 gap-6 auto-rows-[160px]">
-              {getAdaptiveCards().map((card) => (
-                <div 
+            <motion.section 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="grid grid-cols-12 gap-6 auto-rows-[160px]"
+            >
+              {getAdaptiveCards().map((card, idx) => (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + (idx * 0.1) }}
                   key={card.id}
                   onClick={() => card.isStudy ? navigate("/study-room") : handleCardClick(card.title)} 
-                  className={`cursor-pointer ${card.span} row-span-2 glass-card rounded-3xl p-8 bento-hover transition-all border border-white/10 flex flex-col justify-between group overflow-hidden relative ${card.id === 'studyroom' ? 'bg-secondary/5 border-secondary/30' : ''}`}
+                  className={`cursor-pointer ${card.span} row-span-2 glass-card rounded-3xl p-8 transition-all flex flex-col justify-between group overflow-hidden relative ${card.id === 'studyroom' ? 'bg-secondary/5 border-secondary/30' : ''}`}
                 >
                   <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
                     <span className="material-symbols-outlined text-[100px]">{card.icon}</span>
@@ -237,9 +253,9 @@ const Main = () => {
                   <button className={`bg-${card.color} text-white font-bold px-6 py-3 rounded-xl w-fit shadow-lg shadow-${card.color}/20`}>
                     {card.id === 'studyroom' ? 'Enter Room' : 'Start Now'}
                   </button>
-                </div>
+                </motion.div>
               ))}
-            </section>
+            </motion.section>
           </>
         ) : (
           <div className="max-w-4xl mx-auto flex flex-col gap-8 pb-10">
@@ -260,7 +276,7 @@ const Main = () => {
                  <div className={`glass-card p-6 rounded-3xl max-w-[85%] ${msg.isUser ? 'rounded-tr-none' : 'rounded-tl-none border-l-4 border-primary'}`}>
                     {msg.thought && <details className="mb-4 group"><summary className="list-none cursor-pointer inline-flex items-center gap-2 p-2 bg-primary/10 rounded-xl text-[10px] font-bold text-primary uppercase"><span className="material-symbols-outlined text-sm">psychology</span>Thought</summary><div className="mt-2 p-4 bg-primary/5 rounded-2xl text-xs italic">{msg.thought}</div></details>}
                     <MarkdownRenderer 
-                      content={msg.text} 
+                      content={msg.text?.replace(/<shiro_ui>[\s\S]*?<\/shiro_ui>/g, '') || ''} 
                       citations={msg.citations || []} 
                       onCitationClick={(cit) => setSelectedCitation(cit)} 
                     />
@@ -282,12 +298,23 @@ const Main = () => {
                  </div>
                </div>
              ))}
+             {loading && (
+               <motion.div 
+                 initial={{ opacity: 0, scale: 0.8 }}
+                 animate={{ opacity: 1, scale: 1 }}
+                 className="flex items-start gap-4"
+               >
+                 <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center" style={{ animation: 'orbBreathe 2s infinite ease-in-out' }}>
+                    <span className="material-symbols-outlined text-primary text-xl shadow-lg">auto_awesome</span>
+                 </div>
+               </motion.div>
+             )}
              <div ref={messagesEndRef} />
           </div>
         )}
       </div>
 
-      <div className="fixed bottom-8 left-0 right-0 md:left-20 lg:right-20 z-50 flex justify-center px-6 pointer-events-none">
+      <div className="sticky bottom-0 left-0 right-0 z-50 flex justify-center px-6 pointer-events-none pb-8 pt-4 bg-gradient-to-t from-[var(--bg-main)] to-transparent mt-auto">
         <div className="w-full max-w-4xl pointer-events-auto flex flex-col gap-3">
           <div className="flex justify-center mb-4 tour-mode-toggle">
             <div className="relative bg-black/40 backdrop-blur-2xl p-1 rounded-2xl border border-white/5 flex gap-1 shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden">
