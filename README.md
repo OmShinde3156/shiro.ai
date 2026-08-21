@@ -42,17 +42,34 @@ It is built for students, researchers, and professionals who want to maximize th
 
 ## Tech Stack
 
-- **Frontend**: React.js · Vite · Tailwind CSS
-- **Backend**: Python 3.11 · FastAPI · Celery
-- **Database**: SQLite · SQLAlchemy
-- **Vector Store**: ChromaDB
-- **AI Models**: Google Gemini API · Google Text-to-Speech
+Shiro is built on a modern, scalable architecture using the following technologies:
+
+**Frontend (Client)**
+- **JavaScript (ES6+)**: The primary language for client-side logic.
+- **React.js**: Core UI library for building the interactive interfaces.
+- **Vite**: Ultra-fast build tool and development server.
+- **Tailwind CSS**: Utility-first CSS framework for custom neon styling.
+- **Context API**: Native React state management for themes, auth, and podcasts.
+
+**Backend (Server & Processing)**
+- **Python 3.11+**: The core language powering the AI logic and API.
+- **FastAPI**: High-performance asynchronous web framework for building the REST API.
+- **Celery**: Distributed task queue handling heavy asynchronous jobs (like podcast generation).
+- **Redis**: In-memory data structure store, used as the message broker for Celery.
+
+**Database & AI Infrastructure**
+- **SQLite & SQLAlchemy**: Relational database and ORM for user data, progress, and metadata.
+- **ChromaDB**: Local vector database for semantic search and Retrieval-Augmented Generation (RAG).
+- **Google Gemini API**: The primary LLM powering chat, summarization, and content extraction.
+- **Groq API**: Lightning-fast inference engine used for specialized, low-latency AI tasks.
+- **Google Text-to-Speech (TTS)**: Synthesizes lifelike audio for the podcast generation feature.
 
 ## Prerequisites
 
-- Node.js 20+
-- Python 3.11+
-- A Google Gemini API Key
+- **Node.js 20+**
+- **Python 3.11+**
+- **Redis Server** (Running locally or via Docker for Celery tasks)
+- **API Keys**: Google Gemini API Key and Groq API Key
 
 ## Installation / Setup
 
@@ -78,11 +95,17 @@ It is built for students, researchers, and professionals who want to maximize th
 
 ## Environment Variables
 
-In the `Backend` directory, create a `.env` file based on the required secrets.
-*(Note: Never commit your actual `.env` file to version control)*
+In the `Backend` directory, create a `.env` file containing the necessary API keys and configuration.
+*(Note: Never commit your actual `.env` file to version control. Use `.env.example` as a template.)*
 
 ```env
+# AI APIs
 GEMINI_API_KEY=your_gemini_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
+
+# Redis / Celery (Optional depending on local setup)
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
 ```
 
 ## Usage
