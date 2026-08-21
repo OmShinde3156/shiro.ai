@@ -44,7 +44,38 @@ class ResearchService:
             content = " ".join([t['text'] for t in transcript_list])
             return title, content
         except Exception as e:
-            # Fallback to description if no transcript
+            # Fallback 1: yt-dlp auto-subtitles extraction
+            try:
+                ydl_opts = {
+                    'quiet': True,
+                    'skip_download': True,
+                    'writesubtitles': True,
+                    'writeautomaticsub': True,
+                    'subtitleslangs': ['en']
+                }
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                    subs = info.get('requested_subtitles')
+                    if subs and 'en' in subs:
+                        sub_url = subs['en'].get('url')
+                        if sub_url:
+                            import requests
+                            sub_res = requests.get(sub_url)
+                            if sub_res.status_code == 200:
+                                raw_vtt = sub_res.text
+                                # Clean VTT tags and timestamps
+                                import re
+                                text = re.sub(r'<[^>]+>', '', raw_vtt)
+                                text = re.sub(r'[\d:\.]+ --> [\d:\.]+', '', text)
+                                text = re.sub(r'WEBVTT|Language: en|Kind: captions', '', text)
+                                text = re.sub(r'Align:[^\n]+|Position:[^\n]+', '', text)
+                                text = ' '.join(text.split())
+                                if text.strip():
+                                    return title, text.strip()
+            except Exception:
+                pass
+            
+            # Fallback 2: Description
             try:
                 with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
                     info = ydl.extract_info(url, download=False)

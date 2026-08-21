@@ -27,7 +27,7 @@ const CommandPalette = () => {
   const navigationItems = [
     { id: 'home', title: 'Dashboard', icon: <Layout size={18} />, path: '/home', category: 'Pages' },
     { id: 'documents', title: 'Library', icon: <FileText size={18} />, path: '/documents', category: 'Pages' },
-    { id: 'study-room', title: 'Deep Work Flow', icon: <Zap size={18} />, path: '/study-room', category: 'Pages' },
+    { id: 'study-room', title: 'Deep Work Flow', icon: <Zap size={18} />, path: '/study-rooms', category: 'Pages' },
     { id: 'flashcards', title: 'Flashcards', icon: <BookOpen size={18} />, path: '/flashcards', category: 'Pages' },
     { id: 'quiz', title: 'Quiz Arena', icon: <GraduationCap size={18} />, path: '/quiz', category: 'Pages' },
     { id: 'mindmap', title: 'Mind Map', icon: <Brain size={18} />, path: '/mindmap', category: 'Pages' },

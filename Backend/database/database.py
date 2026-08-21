@@ -66,6 +66,39 @@ def init_db():
                     except Exception as e:
                         print(f"Migration for {col} on documents failed: {e}")
 
+            # FlashcardProgress table FSRS migrations
+            fsrs_columns = [
+                ("fsrs_state", "INTEGER DEFAULT 0"),
+                ("fsrs_stability", "FLOAT DEFAULT 0.0"),
+                ("fsrs_difficulty", "FLOAT DEFAULT 0.0"),
+                ("fsrs_elapsed_days", "INTEGER DEFAULT 0"),
+                ("fsrs_scheduled_days", "INTEGER DEFAULT 0"),
+                ("fsrs_reps", "INTEGER DEFAULT 0"),
+                ("fsrs_lapses", "INTEGER DEFAULT 0")
+            ]
+            for col, col_type in fsrs_columns:
+                try:
+                    conn.execute(text(f"SELECT {col} FROM flashcard_progress LIMIT 1"))
+                except Exception:
+                    print(f"Adding missing {col} column to flashcard_progress table...")
+                    try:
+                        conn.execute(text(f"ALTER TABLE flashcard_progress ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception as e:
+                        print(f"Migration for {col} on flashcard_progress failed: {e}")
+
+            # Summaries table migrations
+            for col, col_type in [("status", "TEXT DEFAULT 'completed'")]:
+                try:
+                    conn.execute(text(f"SELECT {col} FROM summaries LIMIT 1"))
+                except Exception:
+                    print(f"Adding missing {col} column to summaries table...")
+                    try:
+                        conn.execute(text(f"ALTER TABLE summaries ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception as e:
+                        print(f"Migration for {col} on summaries failed: {e}")
+
 def get_db():
     """Database dependency"""
     db = SessionLocal()

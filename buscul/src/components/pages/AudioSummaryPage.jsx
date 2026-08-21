@@ -112,6 +112,20 @@ const AudioSummaryPage = () => {
     }
   };
 
+  const handleDelete = async (podcastId) => {
+    if (!window.confirm("Are you sure you want to delete this audio cast?")) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/podcasts/${podcastId}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        fetchPodcasts();
+      }
+    } catch (err) {
+      console.error("Failed to delete podcast:", err);
+    }
+  };
+
   const playEpisode = (podcastId, episodeIndex) => {
     const audioKey = `${podcastId}-${episodeIndex}`;
     if (currentlyPlaying && audioRefs.current[currentlyPlaying]) {
@@ -274,20 +288,25 @@ const AudioSummaryPage = () => {
                         <h3 className="text-xl font-bold text-white">Study Session based on Doc #{podcast.document_id}</h3>
                       </div>
                       
-                      {podcast.status === "completed" && (
-                         <div className="flex items-center gap-3">
-                           <div className="flex -space-x-2">
-                             {podcast.episodes.map((_, i) => (
-                               <div key={i} className="w-8 h-8 rounded-full bg-surface-container-high border-2 border-primary flex items-center justify-center text-[10px] font-bold text-white shadow-lg z-10 relative">
-                                 Ep.{i+1}
-                               </div>
-                             ))}
-                           </div>
-                           <button onClick={() => savePodcast(podcast)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-all border border-white/10" title="Save Podcast">
-                             <span className="material-symbols-outlined text-sm">bookmark</span>
-                           </button>
-                         </div>
-                      )}
+                      <div className="flex items-center gap-3">
+                        {podcast.status === "completed" && (
+                          <>
+                            <div className="flex -space-x-2">
+                              {podcast.episodes.map((_, i) => (
+                                <div key={i} className="w-8 h-8 rounded-full bg-surface-container-high border-2 border-primary flex items-center justify-center text-[10px] font-bold text-white shadow-lg z-10 relative">
+                                  Ep.{i+1}
+                                </div>
+                              ))}
+                            </div>
+                            <button onClick={() => savePodcast(podcast)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-all border border-white/10" title="Save Podcast">
+                              <span className="material-symbols-outlined text-sm">bookmark</span>
+                            </button>
+                          </>
+                        )}
+                        <button onClick={() => handleDelete(podcast.id)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-red-500/20 hover:text-red-400 transition-all border border-white/10" title="Delete Podcast">
+                          <span className="material-symbols-outlined text-sm">delete</span>
+                        </button>
+                      </div>
                     </div>
 
                     {/* Podcast Body / Player Area */}

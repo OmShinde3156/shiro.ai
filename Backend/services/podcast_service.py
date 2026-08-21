@@ -70,3 +70,22 @@ class PodcastService:
 
     def get_user_podcasts(self, user_id: int, db: Session):
         return db.query(Podcast).filter(Podcast.user_id == user_id).all()
+
+    def delete_podcast(self, podcast_id: str, db: Session):
+        podcast = db.query(Podcast).filter(Podcast.id == podcast_id).first()
+        if not podcast:
+            return False
+            
+        if podcast.episodes:
+            for ep_url in podcast.episodes:
+                filename = ep_url.split("/")[-1]
+                path = os.path.join(self.STATIC_DIR, filename)
+                if os.path.exists(path):
+                    try:
+                        os.remove(path)
+                    except Exception:
+                        pass
+                        
+        db.delete(podcast)
+        db.commit()
+        return True

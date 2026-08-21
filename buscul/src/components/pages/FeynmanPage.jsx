@@ -5,6 +5,8 @@ import API_BASE_URL from '../../api/config.js';
 import toast from 'react-hot-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import './FeynmanPage.css';
 import { useXP } from '../../hooks/useXP';
 
@@ -314,7 +316,7 @@ const FeynmanPage = () => {
                    Shiro's Feedback
                  </h3>
                  <div className="prose prose-invert max-w-none text-white/80 leading-relaxed text-sm">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{evaluation.shiro_response}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{evaluation.shiro_response}</ReactMarkdown>
                  </div>
               </div>
            </div>
