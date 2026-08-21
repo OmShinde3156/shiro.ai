@@ -1,112 +1,86 @@
-# Shiro.ai - Your Personalized AI Study Assistant
+# Shiro.ai - The Neon Curator
 
-shiro.ai is an advanced, AI-powered study companion designed to transform how you learn. By leveraging Retrieval-Augmented Generation (RAG) and state-of-the-art LLMs, shiro.ai processes your study materials (PDFs, Documents, Images) to provide a personalized, interactive, and multimodal learning experience.
+<div align="center">
+  <a href="images/image.png">
+    <img src="images/thumbs/image.png" alt="Shiro.ai Landing Page" width="600"/>
+  </a>
+</div>
 
-Whether you need to cram for an exam, visualize complex topics, or listen to your notes on the go, shiro.ai has you covered.
-
-![Dashboard Overview](images/image%20copy.png)
+Shiro.ai is an advanced, AI-powered study companion designed to transform any learning material into interactive, engaging, and dynamic study sessions. With a sleek dark-mode UI inspired by modern aesthetics, Shiro bridges the gap between passive reading and active recall.
 
 ## 🚀 Key Features
 
-*   **📚 Document Intelligence:** Upload PDFs, Word documents, or images. shiro.ai extracts and understands the content to power all its features.
-*   **🤖 AI Tutor Chat:** Chat with your documents! Ask questions and get instant answers based *only* on your uploaded materials, ensuring accuracy and relevance.
-*   **📝 Smart Quizzes:** Automatically generate quizzes from your study material to test your knowledge. Track your performance and identify weak areas.
-*   **📇 Flashcards & Spaced Repetition:** Convert your notes into flashcards instantly. Use the built-in spaced repetition system to maximize retention.
-*   **🎧 Audio Podcasts:** Turn your boring documents into engaging audio podcasts. Listen to summaries and deep dives while you commute or relax.
-*   **🧠 Mind Maps:** Visualize connections between concepts with automatically generated mind maps. Perfect for understanding complex subjects.
-*   **📅 Personalized Timetables:** Get a custom study schedule tailored to your goals and available time.
-*   **📊 Progress Tracking:** Visualize your learning journey with streaks, heatmaps, and detailed progress reports.
-
-## 📸 Screenshots
+*Click on any thumbnail to view the full resolution image!*
 
 | Feature | Preview |
 | :--- | :--- |
-| **Landing Page** | ![Landing](images/image.png) |
-| **Dashboard** | ![Dashboard](images/image%20copy.png) |
-| **My Library** | ![Library](images/image%20copy%202.png) |
-| **Document Details & Chat** | ![Chat](images/image%20copy%209.png) |
-| **Study Tools & Flashcards** | ![Tools](images/image%20copy%203.png) |
-| **Mind Maps** | ![Mind Map](images/image%20copy%204.png) |
-| **Quiz System** | ![Quiz System](images/image%20copy%205.png) |
-| **Learning Analytics** | ![Analytics](images/image%20copy%206.png) |
-| **Audio Podcasts** | ![Podcasts](images/image%20copy%207.png) |
-| **Feynman Room** | ![Feynman Room](images/image%20copy%208.png) |
+| **Landing Page** | <a href="images/image.png"><img src="images/thumbs/image.png" width="300" /></a> |
+| **Dashboard / Home** | <a href="images/image copy.png"><img src="images/thumbs/image copy.png" width="300" /></a> |
+| **My Library** | <a href="images/image copy 2.png"><img src="images/thumbs/image copy 2.png" width="300" /></a> |
+| **Document Details & Chat** | <a href="images/image copy 9.png"><img src="images/thumbs/image copy 9.png" width="300" /></a> |
+| **Study Tools & Flashcards** | <a href="images/image copy 3.png"><img src="images/thumbs/image copy 3.png" width="300" /></a> |
+| **Starfish Mind Maps** | <a href="images/image copy 4.png"><img src="images/thumbs/image copy 4.png" width="300" /></a> |
+| **Quiz System** | <a href="images/image copy 5.png"><img src="images/thumbs/image copy 5.png" width="300" /></a> |
+| **Learning Analytics** | <a href="images/image copy 6.png"><img src="images/thumbs/image copy 6.png" width="300" /></a> |
+| **Audio Podcasts** | <a href="images/image copy 7.png"><img src="images/thumbs/image copy 7.png" width="300" /></a> |
+| **Feynman Room** | <a href="images/image copy 8.png"><img src="images/thumbs/image copy 8.png" width="300" /></a> |
+
 ## 🛠️ Tech Stack
 
-### Backend
-*   **Framework:** FastAPI (Python)
-*   **Database:** SQLAlchemy (SQL), ChromaDB (Vector Database for RAG)
-*   **AI/ML:** LangChain, OpenAI / Groq LLMs, Sentence Transformers
-*   **Audio:** gTTS (Google Text-to-Speech)
-*   **Processing:** PyMuPDF (Fitz), Python-docx, Pillow (Images)
+**Frontend:**
+- React (Vite)
+- Tailwind CSS (Custom Dark Neon Theme)
+- Context API for State Management
 
-### Frontend
-*   **Framework:** React.js (Vite)
-*   **Routing:** React Router DOM
-*   **Styling:** CSS3, Lucide React Icons
-*   **Visualization:** Recharts (Data visualization), React Markdown
+**Backend:**
+- FastAPI
+- Python 3.11
+- SQLAlchemy + SQLite (Local Database)
+- Celery (Background Task Processing)
 
-## ⚙️ Installation & Setup
+**AI & Models:**
+- Google Gemini API (Core LLM & Chat)
+- Google Text-to-Speech (TTS for Podcasts)
+- ChromaDB (Local Vector Store for RAG)
+
+## ⚡ Getting Started
 
 ### Prerequisites
-*   Python 3.9+
-*   Node.js & npm
-*   Git
+- Python 3.11+
+- Node.js & npm
+- A Google Gemini API Key
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/yourusername/shiro.ai.git
-cd shiro.ai
-```
+### Installation
 
-### 2. Backend Setup
-Navigate to the backend directory and set up the Python environment.
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/OmShinde3156/shiro.ai.git
+   cd shiro.ai
+   ```
 
-```bash
-cd Backend
+2. **Backend Setup**
+   ```bash
+   cd Backend
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   
+   # Create a .env file and add your GEMINI_API_KEY
+   echo "GEMINI_API_KEY=your_api_key_here" > .env
+   
+   # Start the FastAPI server
+   python main.py
+   ```
 
-# Create a virtual environment (optional but recommended)
-python -m venv venv
-# Windows
-venv\Scripts\activate
-# macOS/Linux
-source venv/bin/activate
+3. **Frontend Setup**
+   ```bash
+   cd ../buscul
+   npm install
+   npm run dev
+   ```
 
-# Install dependencies
-pip install -r requirements.txt
-```
-
-**Environment Variables:**
-Create a `.env` file in the `Backend` directory and add your API keys:
-```env
-OPENAI_API_KEY=your_openai_key
-GROQ_API_KEY=your_groq_api_key
-BASE_URL=http://localhost:8000
-```
-
-**Run the Backend Server:**
-```bash
-python main.py
-# The API will run at http://localhost:8000
-```
-
-### 3. Frontend Setup
-Open a new terminal and navigate to the frontend directory (`buscul`).
-
-```bash
-cd buscul
-
-# Install dependencies
-npm install
-
-# Run the development server
-npm run dev
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! Please fork the repository and create a pull request for any feature additions or bug fixes.
-
-## 📄 License
-
-This project is licensed under the MIT License.
+4. **Background Tasks (Optional for Podcasts)**
+   In a separate terminal within the `Backend` directory:
+   ```bash
+   celery -A celery_app worker --loglevel=info -P gevent
+   ```
