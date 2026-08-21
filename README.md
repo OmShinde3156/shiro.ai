@@ -179,3 +179,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 - [x] Multi-episode Podcast Generation
 - [x] Starfish Mind Maps
 - [ ] Multi-user Study Rooms (In Progress)
+- [ ] Youtube Integration
