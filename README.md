@@ -11,7 +11,7 @@
 ## Description
 
 Shiro.ai is an advanced, AI-powered study companion designed to transform any learning material into interactive, engaging, and dynamic study sessions. 
-It solves the problem of passive reading by automatically generating study aids like quizzes, flashcards, mind maps, and full audio podcasts from any uploaded document (PDF, Text, YouTube). 
+It solves the problem of passive reading by automatically generating study aids like quizzes, flashcards, mind maps, and full audio podcasts from any uploaded document. 
 It is built for students, researchers, and professionals who want to maximize their learning efficiency and retention.
 
 ## Demo / Screenshots
@@ -32,7 +32,7 @@ It is built for students, researchers, and professionals who want to maximize th
 
 ## Features
 
-- **Document Processing**: Upload PDFs, notes, or YouTube videos to extract knowledge.
+- **Document Processing**: Upload PDFs or notes to extract knowledge.
 - **Starfish Mind Maps**: Visually explore interconnected concepts generated directly from your documents.
 - **Podcast Generation**: Turn long documents into engaging, multi-episode audio study sessions using AI TTS.
 - **Feynman Room**: Test your understanding by teaching concepts back to the AI.
@@ -179,4 +179,3 @@ Distributed under the MIT License. See `LICENSE` for more information.
 - [x] Multi-episode Podcast Generation
 - [x] Starfish Mind Maps
 - [ ] Multi-user Study Rooms (In Progress)
-- [ ] Export features (PDF/Anki)
