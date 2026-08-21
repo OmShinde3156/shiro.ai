@@ -57,6 +57,7 @@ class DocumentResponse(BaseModel):
     text_content: str
     upload_date: datetime
     user_id: int
+    file_url: Optional[str] = None
     source_url: Optional[str] = None
     video_id: Optional[str] = None
     summary: Optional[Any] = None

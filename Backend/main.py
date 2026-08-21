@@ -5,6 +5,8 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='repla
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+import os
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 import os
 from datetime import datetime
@@ -18,7 +20,8 @@ from routers import (
     auth_router, 
     documents_router, 
     features_router, 
-    important_questions_router
+    important_questions_router,
+    rooms_router
 )
 
 # ✅ Initialize App
@@ -36,14 +39,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ Static Files
-app.mount("/static", StaticFiles(directory="static"), name="static") 
+# ✅ Mount Static Files for PDF Serving
+os.makedirs("static/uploads", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # ✅ Include Routers
 app.include_router(features_router.router)
 app.include_router(auth_router.router)
 app.include_router(documents_router.router)
 app.include_router(important_questions_router.router)
+app.include_router(rooms_router.router)
 
 # ✅ Startup Event
 @app.on_event("startup")

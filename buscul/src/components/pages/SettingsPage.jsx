@@ -42,10 +42,8 @@ const SettingsPage = () => {
   };
 
   const themeOptions = [
-    { id: 'neon', name: 'Neon Shiro', color: '#72dcff', bg: '#0b0f1a' },
-    { id: 'midnight', name: 'Midnight', color: '#94a3b8', bg: '#121212' },
-    { id: 'nordic', name: 'Nordic Frost', color: '#5c7f67', bg: '#f0f4f8' },
-    { id: 'solar', name: 'Solar Flare', color: '#f59e0b', bg: '#fffdfa' }
+    { id: 'dark', name: 'Dark Mode', color: '#72dcff', bg: '#0b0f1a' },
+    { id: 'light', name: 'Light Mode', color: '#0ea5e9', bg: '#ffffff' }
   ];
 
   return (

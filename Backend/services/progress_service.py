@@ -108,14 +108,17 @@ class ProgressService:
             "total_study_time": await self._calculate_study_time(user_id, db)
         }
     
-    async def update_quiz_progress(self, user_id: int, document_id: int, quiz_result: Dict, db: Session):
+    async def update_quiz_progress(self, user_id: int, document_id: int, quiz_result: Any, db: Session):
         """Update progress after quiz completion"""
         
         # This method can be used to trigger additional analytics
         # or update user streaks, achievements, etc.
         
+        # Handle both dict and Pydantic object (QuizResultResponse)
+        score = quiz_result.score if hasattr(quiz_result, "score") else quiz_result.get("score", 0)
+        
         # For now, just update study streak if score is above threshold
-        if quiz_result.get("score", 0) >= 60:
+        if score >= 60:
             await self._update_study_streak(user_id, db)
     
     async def get_user_activity(self, user_id: int, db: Session) -> List[Dict[str, Any]]:
@@ -209,7 +212,15 @@ class ProgressService:
         current_date = datetime.now().date()
         
         for quiz_date_tuple in quiz_dates:
-            quiz_date = quiz_date_tuple[0]
+            date_val = quiz_date_tuple[0]
+            if isinstance(date_val, str):
+                try:
+                    quiz_date = datetime.strptime(date_val, "%Y-%m-%d").date()
+                except ValueError:
+                    continue
+            else:
+                quiz_date = date_val
+                
             expected_date = current_date - timedelta(days=streak)
             
             if quiz_date == expected_date:
@@ -272,8 +283,16 @@ class ProgressService:
             day_name = date.strftime("%A")
             activity[day_name] = 0
         
-        for date, count in quiz_activity:
-            day_name = date.strftime("%A")
+        for date_val, count in quiz_activity:
+            if isinstance(date_val, str):
+                try:
+                    parsed_date = datetime.strptime(date_val, "%Y-%m-%d").date()
+                except ValueError:
+                    continue
+            else:
+                parsed_date = date_val
+                
+            day_name = parsed_date.strftime("%A")
             if day_name in activity:
                 activity[day_name] = count
         

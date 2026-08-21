@@ -7,6 +7,8 @@ import runChat from '../../config/Gemini.js';
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 
 const DocumentDetailsPage = () => {
   const { id } = useParams();
@@ -170,7 +172,7 @@ const DocumentDetailsPage = () => {
                   <span className="material-symbols-outlined text-lg">{isReading ? 'stop' : 'volume_up'}</span>
                   {isReading ? 'Stop' : 'Listen'}
                 </button>
-                <button onClick={() => navigate('/study-room', { state: { documentId: document?.id } })} className="bg-gradient-to-br from-primary to-[#006d84] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2">
+                <button onClick={() => navigate('/study-rooms', { state: { documentId: document?.id } })} className="bg-gradient-to-br from-primary to-[#006d84] text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2">
                   <span className="material-symbols-outlined text-lg">school</span>
                   Study Room
                 </button>
@@ -264,7 +266,7 @@ const DocumentDetailsPage = () => {
                 AI Summary
               </h3>
               <div className="prose prose-invert max-w-none text-white/90">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{document.summary.summary_text}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{document.summary.summary_text}</ReactMarkdown>
               </div>
             </div>
           )}
@@ -385,7 +387,7 @@ const DocumentDetailsPage = () => {
                       <span className="material-symbols-outlined text-[12px]">{msg.isUser ? 'person' : 'auto_awesome'}</span>
                     </div>
                     <div className={`p-3 rounded-2xl text-xs leading-relaxed ${msg.isUser ? 'bg-primary text-on-primary rounded-tr-none' : 'bg-white/5 text-white border border-white/5 rounded-tl-none whitespace-pre-wrap'}`}>
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{msg.text}</ReactMarkdown>
                     </div>
                   </div>
                 ))}

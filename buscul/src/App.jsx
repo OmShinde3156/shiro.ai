@@ -22,6 +22,7 @@ import LandingPage from "./components/pages/LandingPage";
 import { useAuth } from "./context/AuthContext";
 import { PodcastProvider } from "./context/PodcastContext";
 import StudyRoom from "./components/pages/StudyRoom";
+import StudyRoomLobby from "./components/pages/StudyRoomLobby";
 import BottomNavBar from "./components/navigation/BottomNavBar";
 import CommandPalette from "./components/navigation/CommandPalette";
 import './App.css';
@@ -35,7 +36,7 @@ function App() {
   const location = useLocation();
   const isLandingPage = location.pathname === "/";
   const isAuthPage = location.pathname === "/login";
-  const isStudyRoom = location.pathname === "/study-room";
+  const isStudyRoom = location.pathname === "/study-rooms" || location.pathname.startsWith("/room/");
 
   useEffect(() => {
     // Tour runs for both guest and logged-in users, but not on landing page
@@ -97,7 +98,8 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<AuthPage />} />
               <Route path="/home" element={<Main />} />
-              <Route path="/study-room" element={<StudyRoom />} />
+              <Route path="/study-rooms" element={<StudyRoomLobby />} />
+              <Route path="/room/:roomId" element={<StudyRoom />} />
               <Route path="/quiz" element={<QuizPage />} />
               <Route path="/progress-report" element={<ProgressReport />} />
               <Route path="/audio-summary" element={<AudioSummaryPage />} />

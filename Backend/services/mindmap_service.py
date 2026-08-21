@@ -2,7 +2,7 @@
 from sqlalchemy.orm import Session
 from models.database import Document, MindMap
 from utils.llm_client import LLMClient
-from typing import Dict, Any, List, Tuple, Set
+from typing import Dict, Any, List, Tuple, Set, Optional
 from collections import defaultdict, Counter
 from dataclasses import dataclass
 import uuid
@@ -59,76 +59,94 @@ class MindMapService:
         chunks = self._chunk_text(self._clean_text(raw_text), target_chunk_size=1500, overlap=150)
         print(f" Created {len(chunks)} chunks")
 
-        # 3) Extract salient terms (TF-IDF) - with detailed logging
+        # 3) Extract salient terms (TF-IDF)
         top_terms = self._score_terms(chunks, top_k=80)
-        print(f" Extracted {len(top_terms)} terms with scores:")
-        for i, (term, score) in enumerate(top_terms[:10]):  # Show top 10
-            print(f"  {i+1}. '{term}': {score:.3f}")
+        all_salient_terms = set([t for t, _ in top_terms])
+        
+        # Build co-occurrence graph for base scoring
+        G = self._build_cooccurrence_graph(chunks, terms=all_salient_terms)
+        pr = nx.pagerank(G, weight="weight") if len(G) > 1 else {}
+        term_score = self._calculate_normalized_scores_debug(top_terms, pr, [])
 
-        if not top_terms:
-            print("  No terms extracted, falling back to root-only")
+        # 4) Use LLM to extract hierarchical topics
+        hierarchy = await self._extract_hierarchical_topics_with_llm(raw_text)
+        
+        if not hierarchy or "children" not in hierarchy:
+            print("  LLM hierarchy failed, falling back to root-only")
             mindmap_data = {
                 "nodes": [{"id": "root", "label": topic, "level": 0, "score": 1.0}],
                 "edges": [],
             }
             return self._persist_and_return(document, topic, mindmap_data, db)
 
-        # 4) Use LLM to extract main topics
-        main_topics = await self._extract_main_topics_with_llm(raw_text, max_topics=8)
-        print(f" LLM extracted topics: {main_topics}")
-
-        # 5) Build co-occurrence graph & PageRank
-        all_salient_terms = set([t for t, _ in top_terms] + main_topics)
-        G = self._build_cooccurrence_graph(chunks, terms=all_salient_terms)
-        pr = nx.pagerank(G, weight="weight") if len(G) > 1 else {}
-        print(f"  Graph has {len(G.nodes)} nodes, {len(G.edges)} edges")
-        print(f" PageRank scores (top 5): {dict(list(sorted(pr.items(), key=lambda x: x[1], reverse=True)[:5]))}")
-
-        # 6) Calculate normalized scores with debugging
-        term_score = self._calculate_normalized_scores_debug(top_terms, pr, main_topics)
+        # 5) Build nodes and edges recursively
+        max_depth = max(1, int(depth or 3))
+        nodes = []
+        edges = []
         
-        # 7) Create level-1 nodes manually with explicit scoring
-        max_depth = max(1, int(depth or 2))
-        root = Node(id="root", label=topic, level=0, score=1.0, x=0.0, y=0.0)
-        nodes, edges = [root], []
+        root_label = hierarchy.get("topic", topic)
+        root = Node(id="root", label=root_label, level=0, score=1.0, x=0.0, y=0.0)
+        nodes.append(root)
 
-        # Use main topics or top terms for level 1
-        level1_terms = main_topics if main_topics else [t for t, _ in top_terms[:8]]
-        print(f" Level 1 terms: {level1_terms}")
+        def get_phrase_score(phrase: str) -> float:
+            # Simple heuristic: average score of salient words in the phrase
+            words = re.findall(r"\b[a-zA-Z][a-zA-Z0-9\-]+\b", phrase.lower())
+            scores = [term_score.get(w, 0.2) for w in words if w in term_score]
+            if not scores:
+                return 0.5
+            return sum(scores) / len(scores)
 
-        # Calculate positions and create nodes with explicit scoring
-        level1_positions = self._calculate_circular_positions(len(level1_terms), radius=250)
-        
-        for i, term in enumerate(level1_terms):
-            nid = f"n1_{i}"
-            x, y = level1_positions[i]
-            
-            # Get score directly from term_score dict
-            raw_score = term_score.get(term, 0.3)
-            print(f"   Node '{term}': raw_score={raw_score:.3f}")
-            
-            # Apply level normalization
-            final_score = max(0.4, min(0.9, raw_score))  # Clamp to reasonable range
-            print(f"      Final score: {final_score:.3f}")
-            
-            n = Node(id=nid, label=term, level=1, score=final_score, x=x, y=y)
-            nodes.append(n)
-            edges.append(Edge(source="root", target=nid, weight=1.0))
+        def build_tree(parent_id: str, children: List[Dict], current_level: int, center_x: float, center_y: float, base_angle: float, radius_step: float = 200.0):
+            if current_level > max_depth or not children:
+                return
+                
+            count = len(children)
+            for i, child in enumerate(children):
+                child_topic = child.get("topic", "Unknown")
+                node_id = f"{parent_id}_{i}"
+                
+                if current_level == 1:
+                    # Level 1: 5 arms of the starfish
+                    angle = (2 * math.pi * i / max(1, count)) - (math.pi / 2)
+                    radius = radius_step * 1.5
+                    x = center_x + radius * math.cos(angle)
+                    y = center_y + radius * math.sin(angle)
+                    node_angle = angle
+                else:
+                    # Higher levels: Fan out from the base_angle extending outward
+                    spread = math.pi / (1.5 * current_level) 
+                    start_angle = base_angle - (spread / 2)
+                    step_angle = spread / max(1, count - 1) if count > 1 else 0
+                    
+                    angle = start_angle + (i * step_angle) if count > 1 else base_angle
+                    radius = radius_step * 0.8
+                    x = center_x + radius * math.cos(angle)
+                    y = center_y + radius * math.sin(angle)
+                    node_angle = angle
+                
+                raw_score = get_phrase_score(child_topic)
+                # Boost score slightly for higher levels
+                level_boost = max(0, (3 - current_level) * 0.1)
+                final_score = max(0.3, min(0.9, raw_score + level_boost))
+                
+                n = Node(id=node_id, label=child_topic, level=current_level, score=final_score, x=x, y=y)
+                nodes.append(n)
+                edges.append(Edge(source=parent_id, target=node_id, weight=1.0))
+                
+                subchildren = child.get("children", [])
+                if subchildren:
+                    # Continue extending outward along the node_angle
+                    build_tree(node_id, subchildren, current_level + 1, x, y, node_angle, radius_step * 0.85)
+
+        build_tree("root", hierarchy.get("children", []), 1, 0.0, 0.0, 0.0, 220.0)
 
         print(f" Created {len(nodes)} nodes total")
-        for node in nodes:
-            print(f"   {node.label} (level {node.level}): {node.score:.3f}")
 
         # Build mind map data
         mindmap_data = {
             "nodes": [self._node_to_dict(n) for n in nodes],
             "edges": [e.__dict__ for e in edges],
         }
-
-        print(f" Final mindmap data:")
-        print(f"  Nodes: {len(mindmap_data['nodes'])}")
-        for node_data in mindmap_data['nodes']:
-            print(f"    {node_data['label']}: {node_data['score']} ({type(node_data['score'])})")
 
         return self._persist_and_return(document, topic, mindmap_data, db)
 
@@ -138,7 +156,7 @@ class MindMapService:
             "id": node.id,
             "label": node.label,
             "level": node.level,
-            "score": float(node.score),  # Ensure it's a Python float
+            "score": float(node.score),
             "x": float(node.x),
             "y": float(node.y)
         }
@@ -147,41 +165,21 @@ class MindMapService:
                                          pagerank: Dict[str, float], 
                                          main_topics: List[str]) -> Dict[str, float]:
         """Calculate and normalize scores with detailed debugging."""
-        print(" Calculating normalized scores...")
         term_score = {}
-        
-        # Base TF-IDF scores
-        print("   TF-IDF base scores:")
-        for term, score in top_terms[:5]:
-            term_score[term] = float(score)
-            print(f"    '{term}': {score:.3f}")
-        
-        # Add remaining terms
         for term, score in top_terms:
             term_score[term] = float(score)
         
-        # Add PageRank boost
         if pagerank:
             max_pr = max(pagerank.values())
-            print(f"   Adding PageRank boost (max={max_pr:.3f}):")
-            for term in list(term_score.keys())[:5]:  # Show first 5
+            for term in term_score:
                 old_score = term_score[term]
                 pr_score = pagerank.get(term, 0.0) / max_pr if max_pr > 0 else 0.0
                 term_score[term] = 0.7 * old_score + 0.3 * pr_score
-                print(f"    '{term}': {old_score:.3f} + {pr_score:.3f} = {term_score[term]:.3f}")
-        
-        # Boost LLM topics
-        print(f"   Boosting LLM topics: {main_topics}")
+                
         for topic in main_topics:
             old_score = term_score.get(topic, 0.5)
             term_score[topic] = min(1.0, old_score + 0.2)
-            print(f"    '{topic}': {old_score:.3f} -> {term_score[topic]:.3f}")
-        
-        print(f"   Final term scores (showing top 8):")
-        sorted_scores = sorted(term_score.items(), key=lambda x: x[1], reverse=True)
-        for term, score in sorted_scores[:8]:
-            print(f"    '{term}': {score:.3f}")
-        
+            
         return term_score
 
     # Simplified helper methods for debugging
@@ -202,25 +200,51 @@ class MindMapService:
             chunks.append(" ".join(cur))
         return chunks
 
-    async def _extract_main_topics_with_llm(self, text: str, max_topics=8) -> List[str]:
-        prompt = f"""Analyze the following text and identify the {max_topics} most important, high-level topics or themes.
-        Each topic should be a short, concise phrase (2-4 words).
-        Return a simple JSON list of strings.
+    async def _extract_hierarchical_topics_with_llm(self, text: str) -> Dict[str, Any]:
+        prompt = f"""Analyze the following text and generate a hierarchical mind map structure designed to trigger quick "flashback" memory recall for students.
+        The structure should have a root topic, main topics (level 1), subtopics (level 2), and highly detailed concepts/facts (level 3).
+        
+        Important Guidelines:
+        - Do not use single words. Use context-rich, descriptive sentences or phrases.
+        - Level 3 (detailed concepts) should contain 10-15 word factual summaries that act as memory hooks (e.g., instead of "Powerhouse", use "Mitochondria acts as the cell's powerhouse by generating ATP energy through cellular respiration").
+        
+        Return ONLY a JSON object representing the hierarchy, structured like this:
+        {{
+            "topic": "Main concept of the text",
+            "children": [
+                {{
+                    "topic": "Descriptive main topic 1",
+                    "children": [
+                        {{
+                            "topic": "Context-rich subtopic phrase",
+                            "children": [
+                                {{"topic": "Detailed, highly factual concept sentence for quick memory recall"}}
+                            ]
+                        }}
+                    ]
+                }}
+            ]
+        }}
+        
+        Ensure there are exactly 5 main topics (representing the 5 arms of a starfish), and they branch out meaningfully up to 3 levels deep with rich content.
+        Return ONLY valid JSON. Do not use markdown backticks.
 
         Text:
         {text[:8000]} 
         """
         try:
             response = await self.llm_client.generate_response(prompt)
-            match = re.search(r"\[(.*?)\]", response)
-            if match:
-                topics = json.loads(match.group(0))
-                print(f" LLM response topics: {topics}")
-                return topics
-            return []
+            start_idx = response.find('{')
+            end_idx = response.rfind('}')
+            if start_idx != -1 and end_idx != -1:
+                json_str = response[start_idx:end_idx+1]
+                data = json.loads(json_str)
+                print(f" LLM hierarchical topics extracted successfully.")
+                return data
+            return {}
         except Exception as e:
-            print(f" LLM topic extraction failed: {e}")
-            return []
+            print(f" LLM hierarchical topic extraction failed: {e}")
+            return {}
 
     def _score_terms(self, chunks: List[str], top_k=80) -> List[Tuple[str, float]]:
         print(" Scoring terms with CountVectorizer...")
@@ -341,3 +365,17 @@ class MindMapService:
             }
             for m in mindmaps
         ]
+
+    def get_latest_mindmap_for_document(self, document_id: int, db: Session) -> Optional[Dict[str, Any]]:
+        """Get latest mindmap for a specific document"""
+        mindmap = db.query(MindMap).filter(MindMap.document_id == document_id).order_by(MindMap.created_at.desc()).first()
+        if not mindmap:
+            return None
+        return {
+            "mindmap_id": mindmap.id,
+            "document_id": mindmap.document_id,
+            "topic": mindmap.topic,
+            "nodes": mindmap.nodes,
+            "edges": mindmap.edges,
+            "created_at": mindmap.created_at
+        }

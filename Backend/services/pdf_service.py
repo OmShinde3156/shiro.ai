@@ -35,6 +35,7 @@ class PDFService:
         upload_dir = os.path.join("static", "uploads")
         os.makedirs(upload_dir, exist_ok=True)
         filepath = os.path.join(upload_dir, f"{uuid.uuid4().hex}_{file.filename}")
+        file_url = filepath.replace("\\", "/")
         with open(filepath, "wb") as f:
             f.write(content)
         
@@ -65,6 +66,7 @@ class PDFService:
             subject=subject,
             text_content=text_content,
             vector_db_id=collection_name,
+            file_url=file_url,
             content_hash=content_hash,
             user_id=user_id,
             source_url=None,
@@ -140,6 +142,26 @@ class PDFService:
             try:
                 await self.graph_service.extract_and_store_graph(document_id, text_content, user_id, db)
                 print(f"DEBUG: Successfully extracted Knowledge Graph for document {document_id}")
+                
+                # 3. Trigger full SkillPack Generation via Celery
+                from tasks import generate_study_pack_task
+                document = db.query(Document).filter(Document.id == document_id).first()
+                if document:
+                    # Construct source path/url
+                    if document.source_url:
+                        source = document.source_url
+                    elif document.video_id:
+                        source = f"https://www.youtube.com/watch?v={document.video_id}"
+                    elif document.file_url:
+                        # Assuming Backend is the CWD for Celery workers
+                        source = document.file_url
+                    else:
+                        source = None
+                    
+                    if source:
+                        print(f"DEBUG: Triggering StudyPack Generation for {source}")
+                        generate_study_pack_task.delay(document_id, user_id, source)
+                        
             finally:
                 db.close()
                 

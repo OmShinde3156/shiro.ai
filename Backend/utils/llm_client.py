@@ -103,12 +103,22 @@ class LLMClient:
 
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "").strip()
         self.groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
-        self.google_api_key = os.getenv("GOOGLE_API_KEY", "").strip()
+        self.google_api_key = os.getenv("GOOGLE_API_KEY", os.getenv("GEMINI_API_KEY", "")).strip()
         
         self.openai_model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-        self.groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-        self.google_model = os.getenv("GOOGLE_MODEL", "gemini-2.0-flash-exp")
+        self.groq_model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+        self.google_model = os.getenv("GOOGLE_MODEL", os.getenv("GEMINI_MODEL", "gemini-2.5-flash"))
         
+        # Configure Skill-Anything environment variables
+        if self.openai_api_key and self.openai_api_key != "sk-dummy-key-replace-me":
+            os.environ["SKILL_ANYTHING_API_KEY"] = self.openai_api_key
+            os.environ["SKILL_ANYTHING_MODEL"] = self.openai_model
+        elif self.groq_api_key and self.groq_api_key != "gsk_dummy_key_replace_me":
+            os.environ["SKILL_ANYTHING_API_KEY"] = self.groq_api_key
+            os.environ["SKILL_ANYTHING_API_BASE"] = "https://api.groq.com/openai/v1"
+            os.environ["SKILL_ANYTHING_MODEL"] = self.groq_model
+            
+
         # Initialize clients ONLY if keys look valid
         self.openai_client = None
         if self.openai_api_key and self.openai_api_key != "sk-dummy-key-replace-me":
@@ -140,9 +150,17 @@ class LLMClient:
         """
         Generates a response from the LLM. 
         Supports structured JSON output natively via `response_format="json_object"`.
+        Falls back through providers if one fails or returns invalid JSON.
         """
         full_prompt = f"Context: {context}\n\nQuestion: {prompt}" if context else prompt
         
+        def _is_valid_json(text: str) -> bool:
+            try:
+                json.loads(self._clean_json_string(text))
+                return True
+            except:
+                return False
+
         # 1. Try Groq First (Fastest / Primary for Surgical)
         if self.groq_client:
             try:
@@ -155,7 +173,10 @@ class LLMClient:
                     kwargs["response_format"] = {"type": "json_object"}
                     
                 response = self.groq_client.chat.completions.create(**kwargs)
-                return response.choices[0].message.content
+                content = response.choices[0].message.content
+                if response_format == "json_object" and not _is_valid_json(content):
+                    raise Exception("Groq returned invalid JSON")
+                return content
             except Exception as e:
                 logger.warning(f"Groq failed: {e}")
 
@@ -171,12 +192,30 @@ class LLMClient:
                     kwargs["response_format"] = {"type": "json_object"}
                     
                 response = self.openai_client.chat.completions.create(**kwargs)
-                return response.choices[0].message.content
+                content = response.choices[0].message.content
+                if response_format == "json_object" and not _is_valid_json(content):
+                    raise Exception("OpenAI returned invalid JSON")
+                return content
             except Exception as e:
                 logger.warning(f"OpenAI failed: {e}")
 
+        # 3. Try Gemini Third (Best at complex reasoning & JSON schemas)
+        if self.gemini_client:
+            try:
+                gen_config = {}
+                if response_format == "json_object":
+                    gen_config["response_mime_type"] = "application/json"
+                response = self.gemini_client.generate_content(full_prompt, generation_config=gen_config if gen_config else None)
+                content = response.text
+                if response_format == "json_object" and not _is_valid_json(content):
+                    raise Exception("Gemini returned invalid JSON")
+                return content
+            except Exception as e:
+                logger.warning(f"Gemini failed: {e}")
+
         if response_format == "json_object":
-            raise Exception("Both Groq and OpenAI failed to generate a JSON response. API keys might be missing or limits exceeded.")
+            raise Exception("All LLM providers (Groq, OpenAI, Gemini) failed to generate a JSON response. API keys might be missing or limits exceeded.")
+            
             
         # Final Fallback
         return self._get_simulation_response(prompt)

@@ -25,7 +25,7 @@ const RightSidebar = () => {
         icon: 'rocket_launch',
         title: 'Launch Study',
         desc: 'Ready to dive in? Open the Study Room to start a focused session.',
-        action: () => navigate('/study-room')
+        action: () => navigate('/study-rooms')
       });
     } else if (path.includes('/documents')) {
       setActiveNudge({

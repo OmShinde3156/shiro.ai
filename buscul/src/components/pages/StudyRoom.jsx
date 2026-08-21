@@ -409,7 +409,7 @@ const StudyRoom = () => {
                 <span className="material-symbols-outlined text-sm">menu_book</span>
                 <span className="text-[10px] font-bold uppercase tracking-widest">Primary Source Material</span>
              </div>
-             <div className="prose prose-invert max-w-none text-white/70 leading-[1.8] text-lg font-light">
+             <div className="prose prose-invert max-w-none text-white/70 leading-normal text-[12px] font-light">
                 {currentDocument?.text_content || "Loading focus content..."}
              </div>
           </div>

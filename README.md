@@ -4,7 +4,7 @@ shiro.ai is an advanced, AI-powered study companion designed to transform how yo
 
 Whether you need to cram for an exam, visualize complex topics, or listen to your notes on the go, shiro.ai has you covered.
 
-![Dashboard Overview](images/Screenshot%202025-12-19%20025405.png)
+![Dashboard Overview](images/image%20copy.png)
 
 ## 🚀 Key Features
 
@@ -21,10 +21,16 @@ Whether you need to cram for an exam, visualize complex topics, or listen to you
 
 | Feature | Preview |
 | :--- | :--- |
-| **Dashboard** | ![Dashboard](images/Screenshot%202025-12-19%20025405.png) |
-| **Study Tools** | ![Tools](images/Screenshot%202025-12-19%20025424.png) |
-| **Flashcards** | ![Flashcards](images/Screenshot%202025-12-19%20025446.png) |
-| **Quiz System** | ![Quiz](images/Screenshot%202025-12-19%20025513.png) |
+| **Landing Page** | ![Landing](images/image.png) |
+| **Dashboard** | ![Dashboard](images/image%20copy.png) |
+| **My Library** | ![Library](images/image%20copy%202.png) |
+| **Document Details & Chat** | ![Chat](images/image%20copy%209.png) |
+| **Study Tools & Flashcards** | ![Tools](images/image%20copy%203.png) |
+| **Mind Maps** | ![Mind Map](images/image%20copy%204.png) |
+| **Quiz System** | ![Quiz System](images/image%20copy%205.png) |
+| **Learning Analytics** | ![Analytics](images/image%20copy%206.png) |
+| **Audio Podcasts** | ![Podcasts](images/image%20copy%207.png) |
+| **Feynman Room** | ![Feynman Room](images/image%20copy%208.png) |
 ## 🛠️ Tech Stack
 
 ### Backend

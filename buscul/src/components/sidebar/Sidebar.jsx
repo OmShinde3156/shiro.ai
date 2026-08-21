@@ -72,7 +72,7 @@ const Sidebar = () => {
           <span className="font-['Inter'] font-medium text-sm tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap">Library</span>
         </div>
 
-        <div onClick={() => navigate("/study-room")} className={getNavClass("/study-room")}>
+        <div onClick={() => navigate("/study-rooms")} className={getNavClass("/study-rooms")}>
           <div className="min-w-[48px] flex justify-center items-center">
             <span className="material-symbols-outlined">school</span>
           </div>

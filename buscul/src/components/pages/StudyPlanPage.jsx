@@ -67,7 +67,8 @@ const StudyPlanPage = () => {
           user_id: user.id,
           timetable_id: timetable.timetable_id,
           task_id: taskId,
-          completed: !currentCompleted
+          completed: !currentCompleted,
+          hours_studied: 0.0
         }),
       });
       if (response.ok) {

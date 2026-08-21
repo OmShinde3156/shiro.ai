@@ -33,6 +33,7 @@ class Document(Base):
     subject = Column(String)
     text_content = Column(Text, nullable=False)
     vector_db_id = Column(String)  # ChromaDB collection ID
+    file_url = Column(String, nullable=True) # Path to the stored static PDF file
     source_url = Column(String, nullable=True) # Original URL (YT/Web)
     video_id = Column(String, nullable=True) # Extracted YouTube ID
     content_hash = Column(String, nullable=True, index=True) # Hash of content for idempotence
@@ -96,10 +97,22 @@ class FlashcardProgress(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     flashcard_id = Column(String, ForeignKey("flashcards.id"))
+    
+    # Legacy SM-2 fields (kept for backward compatibility or migration)
     ease_factor = Column(Float, default=2.5)
     interval_days = Column(Integer, default=0) # 0 means new
-    next_review = Column(DateTime, default=datetime.utcnow)
     review_count = Column(Integer, default=0)
+    
+    # FSRS fields
+    fsrs_state = Column(Integer, default=0) # State: 0=New, 1=Learning, 2=Review, 3=Relearning
+    fsrs_stability = Column(Float, default=0.0)
+    fsrs_difficulty = Column(Float, default=0.0)
+    fsrs_elapsed_days = Column(Integer, default=0)
+    fsrs_scheduled_days = Column(Integer, default=0)
+    fsrs_reps = Column(Integer, default=0)
+    fsrs_lapses = Column(Integer, default=0)
+    
+    next_review = Column(DateTime, default=datetime.utcnow)
     last_reviewed = Column(DateTime)
     
     # Relationships
@@ -211,3 +224,63 @@ class LibraryInsight(Base):
     source_doc_ids = Column(JSON) # List of doc IDs involved
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+# Shiro v2.5: Multiplayer Study Rooms
+class StudyRoom(Base):
+    __tablename__ = "study_rooms"
+    
+    id = Column(String, primary_key=True)  # Room code, e.g., "DSA-GRAPH-123"
+    name = Column(String, nullable=False)
+    subject = Column(String)
+    description = Column(String)
+    is_public = Column(Boolean, default=True)
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=True)
+    created_by = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    document = relationship("Document")
+    members = relationship("RoomMember", back_populates="room", cascade="all, delete-orphan")
+    messages = relationship("RoomMessage", back_populates="room", cascade="all, delete-orphan")
+    host = relationship("User")
+
+class RoomMember(Base):
+    __tablename__ = "room_members"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    room_id = Column(String, ForeignKey("study_rooms.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    joined_at = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+
+    # Relationships
+    room = relationship("StudyRoom", back_populates="members")
+    user = relationship("User")
+
+class RoomMessage(Base):
+    __tablename__ = "room_messages"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    room_id = Column(String, ForeignKey("study_rooms.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True) # None for AI
+    is_ai = Column(Boolean, default=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    room = relationship("StudyRoom", back_populates="messages")
+    user = relationship("User")
+
+class StudyPack(Base):
+    __tablename__ = "study_packs"
+    
+    id = Column(String, primary_key=True)
+    document_id = Column(Integer, ForeignKey("documents.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    
+    # Store all the 12 sections as JSON
+    pack_data = Column(JSON)  # Contains detailed_notes, glossary, timeline, cheat_sheet, etc.
+    
+    status = Column(String, default="processing")  # processing, completed, failed
+    created_at = Column(DateTime, default=datetime.utcnow)
+

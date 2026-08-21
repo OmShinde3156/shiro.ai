@@ -44,7 +44,20 @@ if HAS_REDIS:
 else:
     # Minimal mock for when Redis is offline
     print("[!] REDIS OFFLINE: Shiro will fall back to FastAPI BackgroundTasks.")
-    celery_app = None
+    class DummyTask:
+        def __init__(self, func):
+            self.func = func
+        def delay(self, *args, **kwargs):
+            import threading
+            threading.Thread(target=self.func, args=args, kwargs=kwargs).start()
+    
+    class DummyCelery:
+        def task(self, *args, **kwargs):
+            def decorator(func):
+                return DummyTask(func)
+            return decorator
+            
+    celery_app = DummyCelery()
 
-if __name__ == "__main__" and celery_app:
+if __name__ == "__main__" and celery_app and hasattr(celery_app, "start"):
     celery_app.start()

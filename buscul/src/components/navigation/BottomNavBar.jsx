@@ -10,7 +10,7 @@ const BottomNavBar = () => {
   const navItems = [
     { icon: 'home', label: 'Home', path: '/home' },
     { icon: 'description', label: 'Library', path: '/documents' },
-    { icon: 'school', label: 'Study', path: '/study-room' },
+    { icon: 'school', label: 'Study', path: '/study-rooms' },
     { icon: 'leaderboard', label: 'Stats', path: '/progress-report' },
     { icon: 'person', label: 'Profile', path: '/settings' },
   ];

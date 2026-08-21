@@ -108,6 +108,7 @@ setuptools==82.0.1
 shellingham==1.5.4
 six==1.17.0
 sniffio==1.3.1
+skill-anything[all]
 SQLAlchemy==2.0.48
 starlette==0.52.1
 sympy==1.14.0

@@ -41,11 +41,24 @@ def generate_podcast_task(podcast_id: str, document_id: int, episodes: int, topi
         episode_files = []
 
         # Use an event loop to run the async LLM calls
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
 
         for i, chunk in enumerate(chunks, start=1):
             focus_prompt = f"Focus on this topic: {topic}." if topic else ""
-            prompt = f"Summarize in under 200 words for podcast episode {i} (Language: {podcast.language}). {focus_prompt}\n\nContent:\n{chunk}"
+            prompt = f"""Generate a two-speaker conversational podcast script for episode {i} (Language: {podcast.language}).
+The two speakers are "Host" and "Co-Host". 
+Make it an engaging, natural dialogue discussing the following content. {focus_prompt}
+Do not use generic AI phrases like "Let's dive in" or "In conclusion".
+Format the response strictly as:
+Host: [Dialogue]
+Co-Host: [Dialogue]
+
+Content:
+{chunk}"""
             
             # Run async LLM call in sync environment
             resp = loop.run_until_complete(llm_client.generate_response(prompt))
@@ -82,7 +95,11 @@ def generate_summary_task(summary_id: str, document_id: int, summary_type: str, 
         if not summary or not document:
             return
 
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         summary_text = loop.run_until_complete(llm_client.generate_summary(document.text_content, summary_type, language))
         
         summary.summary_text = summary_text
@@ -104,9 +121,28 @@ def run_swarm_analysis_task(user_id: int):
     db = SessionLocal()
     try:
         swarm_service = SwarmService()
-        loop = asyncio.get_event_loop()
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         loop.run_until_complete(swarm_service.run_library_analysis(user_id, db))
     except Exception as e:
         logger.error(f"Swarm Task Failed: {e}")
     finally:
         db.close()
+
+@celery_app.task(name="tasks.generate_study_pack_task")
+def generate_study_pack_task(document_id: int, user_id: int, source_path_or_url: str):
+    db = SessionLocal()
+    try:
+        from services.study_pack_service import StudyPackService
+        service = StudyPackService()
+        
+        # This is a synchronous call that handles its own async internals or uses the synchronous skill-anything engine
+        service.generate_study_pack_sync(document_id, user_id, source_path_or_url, db)
+    except Exception as e:
+        logger.error(f"Study Pack Generation Task Failed: {e}")
+    finally:
+        db.close()
+

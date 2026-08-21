@@ -1,6 +1,8 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 
 const CitationButton = ({ id, onClick }) => (
   <button
@@ -36,7 +38,8 @@ const MarkdownRenderer = ({ content, citations = [], onCitationClick }) => {
         return (
           <ReactMarkdown 
             key={index} 
-            remarkPlugins={[remarkGfm]}
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeKatex]}
             components={{
               p: ({children}) => <span className="inline">{children}</span>
             }}

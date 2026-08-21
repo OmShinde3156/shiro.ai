@@ -142,6 +142,13 @@ async def get_podcast_status(task_id: str, db: Session = Depends(get_db), podcas
 async def get_user_podcasts(user_id: int, db: Session = Depends(get_db), podcast_service: PodcastService = Depends(get_podcast_service)):
     return podcast_service.get_user_podcasts(user_id, db)
 
+@router.delete("/podcasts/{podcast_id}", tags=["Podcast"])
+async def delete_podcast(podcast_id: str, db: Session = Depends(get_db), podcast_service: PodcastService = Depends(get_podcast_service)):
+    success = podcast_service.delete_podcast(podcast_id, db)
+    if not success:
+        raise HTTPException(status_code=404, detail="Podcast not found")
+    return {"status": "success", "message": "Podcast deleted successfully"}
+
 # ==============================================
 # MIND MAP ENDPOINTS
 # ==============================================

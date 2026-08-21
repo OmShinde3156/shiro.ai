@@ -237,7 +237,7 @@ const Main = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 + (idx * 0.1) }}
                   key={card.id}
-                  onClick={() => card.isStudy ? navigate("/study-room") : handleCardClick(card.title)} 
+                  onClick={() => card.isStudy ? navigate("/study-rooms") : handleCardClick(card.title)} 
                   className={`cursor-pointer ${card.span} row-span-2 glass-card rounded-3xl p-8 transition-all flex flex-col justify-between group overflow-hidden relative ${card.id === 'studyroom' ? 'bg-secondary/5 border-secondary/30' : ''}`}
                 >
                   <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
