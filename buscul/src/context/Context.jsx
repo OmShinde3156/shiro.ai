@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../api/fetchWithAuth';
 import { createContext, useState } from "react";
 import runChat from "../config/Gemini.js";
 import API_BASE_URL from "../api/config.js";
@@ -20,7 +21,7 @@ export const ContextProvider = ({ children }) => {
   const fetchDocuments = async (userId) => {
     if (userId) {
       try {
-        const response = await fetch(`${API_BASE_URL}/documents/${userId}`);
+        const response = await fetchWithAuth(`${API_BASE_URL}/documents`);
         if (response.ok) {
           const data = await response.json();
           setDocuments(data);
@@ -44,7 +45,7 @@ export const ContextProvider = ({ children }) => {
       formData.append('user_id', userId);
       formData.append('document_ids', JSON.stringify(documentIds));
 
-      const response = await fetch(`${API_BASE_URL}/feynman/challenge`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/feynman/challenge`, {
         method: 'POST',
         body: formData,
       });
@@ -92,7 +93,7 @@ export const ContextProvider = ({ children }) => {
         formData.append('concept_name', feynmanConcept);
         formData.append('explanation', currentInput);
 
-        const response = await fetch(`${API_BASE_URL}/feynman/evaluate`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/feynman/evaluate`, {
           method: 'POST',
           body: formData,
         });

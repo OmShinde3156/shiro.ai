@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useState } from 'react';
 import { 
   FileUp, 
@@ -27,7 +28,7 @@ const AddSourceDialog = ({ isOpen, onClose, userId, onUploadSuccess }) => {
     formData.append("user_id", userId);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/upload-document`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/upload-document`, {
         method: "POST",
         body: formData,
       });
@@ -57,7 +58,7 @@ const AddSourceDialog = ({ isOpen, onClose, userId, onUploadSuccess }) => {
 
     try {
       console.log(`[Ingestion] Sending URL to ${API_BASE_URL}/upload-url:`, url);
-      const response = await fetch(`${API_BASE_URL}/upload-url`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/upload-url`, {
         method: "POST",
         body: formData,
       });

@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -16,7 +17,7 @@ const SettingsPage = () => {
     const fetchHistory = async () => {
       if (user && user.id) {
         try {
-          const response = await fetch(`${API_BASE_URL}/activity/${user.id}`);
+          const response = await fetchWithAuth(`${API_BASE_URL}/activity`);
           if (response.ok) {
             const data = await response.json();
             setActivities(data);

@@ -310,7 +310,7 @@ const LandingPage = () => {
           </p>
 
           <div className="landing-hero-actions landing-fade-up">
-            <button onClick={() => navigate('/home')} className="landing-btn-primary">
+            <button onClick={() => navigate('/login')} className="landing-btn-primary">
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>rocket_launch</span>
               Get Started Free
             </button>

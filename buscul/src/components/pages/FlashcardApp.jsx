@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useState, useEffect, useContext } from 'react';
 import { ChevronLeft, ChevronRight, RotateCcw, BookOpen, Save, CheckCircle2, BrainCircuit } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -55,7 +56,7 @@ const FlashcardApp = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`${API_BASE_URL}/generate-flashcards`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/generate-flashcards`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -85,7 +86,7 @@ const FlashcardApp = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`${API_BASE_URL}/flashcards/review/${user.id}`);
+      const response = await fetchWithAuth(`${API_BASE_URL}/flashcards/review`);
       const data = await response.json();
       setFlashcards(data || []);
       setCurrentIndex(0);
@@ -104,7 +105,7 @@ const FlashcardApp = () => {
 
     try {
       // Record study progress in backend (Spaced Repetition logic)
-      await fetch(`${API_BASE_URL}/study-flashcard`, {
+      await fetchWithAuth(`${API_BASE_URL}/study-flashcard`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

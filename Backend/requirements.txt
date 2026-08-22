@@ -45,3 +45,4 @@ accelerate
 cairosvg
 gradio
 gradio_image_annotation
+PyJWT==2.8.0

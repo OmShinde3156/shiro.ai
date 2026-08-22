@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -21,7 +22,7 @@ const MindMapPage = () => {
   const fetchDocuments = async () => {
     if (!user?.id) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/documents/${user.id}`);
+      const response = await fetchWithAuth(`${API_BASE_URL}/documents`);
       if (response.ok) {
         const data = await response.json();
         setDocuments(data);
@@ -34,7 +35,7 @@ const MindMapPage = () => {
   const fetchUserMindMaps = async () => {
     if (!user?.id) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/mindmaps/${user.id}`);
+      const response = await fetchWithAuth(`${API_BASE_URL}/mindmaps`);
       if (response.ok) {
         const data = await response.json();
         setUserMindMaps(data);
@@ -61,7 +62,7 @@ const MindMapPage = () => {
     setError('');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/generate-mindmap`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/generate-mindmap`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -165,7 +166,7 @@ const MindMapPage = () => {
                     <p>{m.node_count} concepts mapped</p>
                   </div>
                   <button onClick={async () => {
-                    const res = await fetch(`${API_BASE_URL}/mindmap-details/${m.mindmap_id}`);
+                    const res = await fetchWithAuth(`${API_BASE_URL}/mindmap-details/${m.mindmap_id}`);
                     if (res.ok) { setMindMapData(await res.json()); setActiveTab('view'); }
                   }} className="view-link">Open Map</button>
                 </div>

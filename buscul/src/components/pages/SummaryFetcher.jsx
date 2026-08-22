@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown"; 
@@ -39,7 +40,7 @@ const SummaryFetcher = () => {
     setSummary(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/summarize`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/summarize`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

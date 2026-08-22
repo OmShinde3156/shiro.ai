@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Context } from "../../context/Context";
@@ -47,7 +48,7 @@ const Main = () => {
   const fetchInsights = async () => {
     if (!user?.id) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/insights/${user.id}`);
+      const response = await fetchWithAuth(`${API_BASE_URL}/insights`);
       if (response.ok) {
         const data = await response.json();
         setInsights(data);
@@ -61,7 +62,7 @@ const Main = () => {
     if (!user?.id) return;
     setIsScanning(true);
     toast.promise(
-      fetch(`${API_BASE_URL}/insights/analyze/${user.id}`, { method: 'POST' }),
+      fetchWithAuth(`${API_BASE_URL}/insights/analyze`, { method: 'POST' }),
       {
         loading: 'Shiro Swarm initiating library analysis...',
         success: 'Scan triggered! Check back in a few seconds.',

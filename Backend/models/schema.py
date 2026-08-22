@@ -86,7 +86,6 @@ class QuizResponse(BaseModel):
     created_at: datetime
 
 class QuizSubmissionRequest(BaseModel):
-    user_id: int
     document_id: int
     quiz_id: str
     answers: Dict[str, str]  # question_id -> answer
@@ -118,7 +117,6 @@ class FlashcardSetResponse(BaseModel):
     created_at: datetime
 
 class FlashcardStudyRequest(BaseModel):
-    user_id: int
     flashcard_id: str
     ease_rating: int = Field(ge=1, le=5)  # 1=hard, 5=easy
 
@@ -129,7 +127,6 @@ class FlashcardStudyResponse(BaseModel):
 
 # Chat Schemas
 class ChatRequest(BaseModel):
-    user_id: int
     message: str
     document_ids: List[int]
     language: Language = Language.ENGLISH
@@ -157,7 +154,6 @@ class SummaryResponse(BaseModel):
 
 # Podcast Schemas
 class PodcastRequest(BaseModel):
-    user_id: int
     document_ids: List[int]
     episodes: int = Field(default=1, ge=1, le=10)
     language: Language = Language.ENGLISH
@@ -216,7 +212,6 @@ class ImportantQuestionsRequest(BaseModel):
 
 # Timetable Schemas
 class TimetableRequest(BaseModel):
-    user_id: int
     exam_date: datetime
     subjects: List[Dict[str, Any]]  # [{"name": "Math", "priority": 1, "hours_needed": 20}]
     study_hours_per_day: int = 4
@@ -230,7 +225,6 @@ class TimetableResponse(BaseModel):
     created_at: datetime
 
 class TimetableProgressRequest(BaseModel):
-    user_id: int
     timetable_id: str
     task_id: str
     completed: bool

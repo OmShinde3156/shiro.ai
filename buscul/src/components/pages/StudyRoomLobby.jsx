@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -24,7 +25,7 @@ const StudyRoomLobby = () => {
 
   const fetchRooms = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/rooms/`);
+      const res = await fetchWithAuth(`${API_BASE_URL}/rooms/`);
       const data = await res.json();
       setRooms(data);
     } catch (err) {
@@ -37,7 +38,7 @@ const StudyRoomLobby = () => {
   const handleCreateRoom = async () => {
     if (!newRoomData.name || !user?.id) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/rooms/`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/rooms/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

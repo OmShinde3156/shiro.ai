@@ -83,7 +83,7 @@ class FlashcardService:
             "created_at": flashcard_set.created_at
         }
     
-    def study_flashcard(self, study_request: FlashcardStudyRequest, db: Session) -> FlashcardStudyResponse:
+    def study_flashcard(self, study_request: FlashcardStudyRequest, db: Session, user_id: int) -> FlashcardStudyResponse:
         """Record flashcard study session with FSRS algorithm"""
         try:
             from fsrs import FSRS, Card, Rating, State
@@ -95,13 +95,13 @@ class FlashcardService:
         
         # Get progress record
         progress = db.query(FlashcardProgress).filter(
-            FlashcardProgress.user_id == study_request.user_id,
+            FlashcardProgress.user_id == user_id,
             FlashcardProgress.flashcard_id == study_request.flashcard_id
         ).first()
         
         if not progress:
             progress = FlashcardProgress(
-                user_id=study_request.user_id,
+                user_id=user_id,
                 flashcard_id=study_request.flashcard_id,
                 ease_factor=2.5,
                 interval_days=0,

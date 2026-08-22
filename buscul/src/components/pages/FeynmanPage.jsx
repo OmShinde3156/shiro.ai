@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -39,7 +40,7 @@ const FeynmanPage = () => {
 
   const fetchDocuments = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/documents/${user.id}`);
+      const response = await fetchWithAuth(`${API_BASE_URL}/documents`);
       if (response.ok) {
         const data = await response.json();
         setDocuments(data);
@@ -64,7 +65,7 @@ const FeynmanPage = () => {
       formData.append('user_id', user.id);
       formData.append('document_ids', JSON.stringify([parseInt(selectedDocId)]));
 
-      const response = await fetch(`${API_BASE_URL}/feynman/challenge`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/feynman/challenge`, {
         method: 'POST',
         body: formData,
       });
@@ -169,7 +170,7 @@ const FeynmanPage = () => {
       formData.append('concept_name', concept);
       formData.append('explanation', explanation);
 
-      const response = await fetch(`${API_BASE_URL}/feynman/evaluate`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/feynman/evaluate`, {
         method: 'POST',
         body: formData,
       });

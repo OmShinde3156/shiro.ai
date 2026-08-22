@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import API_BASE_URL from '../../api/config.js';
@@ -24,7 +25,7 @@ const StudyPlanPage = () => {
     if (!user) return;
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/timetable/${user.id}`);
+      const response = await fetchWithAuth(`${API_BASE_URL}/timetable`);
       const data = await response.json();
       if (response.ok && !data.message) setTimetable(data);
       else setTimetable(null);
@@ -39,7 +40,7 @@ const StudyPlanPage = () => {
     e.preventDefault();
     setCreating(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/create-timetable`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/create-timetable`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -60,7 +61,7 @@ const StudyPlanPage = () => {
 
   const handleUpdateProgress = async (taskId, currentCompleted) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/update-timetable-progress`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/update-timetable-progress`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

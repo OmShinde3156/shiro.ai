@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -32,7 +33,7 @@ const DocumentDetailsPage = () => {
     const fetchDocument = async () => {
       if (user && user.id) {
         try {
-          const response = await fetch(`${API_BASE_URL}/documents/${user.id}/${id}`);
+          const response = await fetchWithAuth(`${API_BASE_URL}/documents/${id}`);
           if (response.ok) {
             const data = await response.json();
             setDocument(data);
@@ -66,7 +67,7 @@ const DocumentDetailsPage = () => {
       formData.append('user_id', user.id);
       formData.append('num_questions', 10);
 
-      const response = await fetch(`${API_BASE_URL}/api/important-questions/generate`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/api/important-questions/generate`, {
         method: 'POST',
         body: formData,
       });
@@ -110,7 +111,7 @@ const DocumentDetailsPage = () => {
     setIsReading(true);
     try {
       const textToRead = document.text_content ? document.text_content.substring(0, 2000) : "No text available.";
-      const response = await fetch(`${API_BASE_URL}/speak`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/speak`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: textToRead }),

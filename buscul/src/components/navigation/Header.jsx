@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Context } from "../../context/Context";
@@ -25,7 +26,7 @@ const Header = () => {
     formData.append("image", file);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/upload-avatar/${user.id}`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/upload-avatar/${user.id}`, {
         method: "POST",
         body: formData,
       });
@@ -43,8 +44,8 @@ const Header = () => {
   const fetchUserQuickStats = async () => {
     try {
       const [progressRes, timetableRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/progress/${user.id}`),
-        fetch(`${API_BASE_URL}/timetable/${user.id}`)
+        fetchWithAuth(`${API_BASE_URL}/progress`),
+        fetchWithAuth(`${API_BASE_URL}/timetable`)
       ]);
       const progressData = await progressRes.json();
       const timetableData = await timetableRes.json();

@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -28,9 +29,9 @@ const ProgressReport = () => {
     setLoading(true);
     try {
       const [progressRes, dashboardRes, activityRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/progress/${user.id}`),
-        fetch(`${API_BASE_URL}/dashboard/${user.id}`),
-        fetch(`${API_BASE_URL}/activity/${user.id}`)
+        fetchWithAuth(`${API_BASE_URL}/progress`),
+        fetchWithAuth(`${API_BASE_URL}/dashboard`),
+        fetchWithAuth(`${API_BASE_URL}/activity`)
       ]);
 
       const progressData = await progressRes.json();

@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../api/fetchWithAuth';
 import API_BASE_URL from "../api/config.js";
 
 const CHAT_API_URL = `${API_BASE_URL}/chat`; // FastAPI URL
@@ -21,7 +22,7 @@ async function runChat(prompt, language = "en", userId = 1, documentIds = [], mo
       mode: mode
     };
 
-    const response = await fetch(CHAT_API_URL, {
+    const response = await fetchWithAuth(CHAT_API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

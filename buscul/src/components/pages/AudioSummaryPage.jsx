@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { usePodcasts } from "../../context/PodcastContext";
@@ -26,7 +27,7 @@ const AudioSummaryPage = () => {
   const fetchDocuments = async () => {
     if (!user || !user.id) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/documents/${user.id}`);
+      const response = await fetchWithAuth(`${API_BASE_URL}/documents`);
       if (response.ok) {
         const data = await response.json();
         setDocuments(data);
@@ -40,7 +41,7 @@ const AudioSummaryPage = () => {
   const fetchPodcasts = async () => {
     if (!user || !user.id) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/podcasts/${user.id}`);
+      const response = await fetchWithAuth(`${API_BASE_URL}/podcasts`);
       if (response.ok) {
         const data = await response.json();
         setPodcasts(data);
@@ -62,7 +63,7 @@ const AudioSummaryPage = () => {
     if (taskId) {
       const interval = setInterval(async () => {
         try {
-          const response = await fetch(`${API_BASE_URL}/podcast-status/${taskId}`);
+          const response = await fetchWithAuth(`${API_BASE_URL}/podcast-status/${taskId}`);
           if (response.ok) {
             const data = await response.json();
             setStatus(data.status);
@@ -90,7 +91,7 @@ const AudioSummaryPage = () => {
     setTaskId(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/generate-podcast`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/generate-podcast`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -115,7 +116,7 @@ const AudioSummaryPage = () => {
   const handleDelete = async (podcastId) => {
     if (!window.confirm("Are you sure you want to delete this audio cast?")) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/podcasts/${podcastId}`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/podcasts/${podcastId}`, {
         method: "DELETE",
       });
       if (response.ok) {

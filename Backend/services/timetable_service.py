@@ -7,7 +7,7 @@ from typing import Dict, Any, List
 
 class TimetableService:
     
-    async def create_timetable(self, request: TimetableRequest, db: Session):
+    async def create_timetable(self, request: TimetableRequest, db: Session, user_id: int):
         """Create personalized study timetable with Cognitive Peak Optimization"""
         
         # Calculate days until exam safely regardless of timezone info
@@ -19,7 +19,7 @@ class TimetableService:
 
         # Shiro v4.0: Get Cognitive Peaks
         from services.progress_service import ProgressService
-        peaks = await ProgressService().get_cognitive_peaks(request.user_id, db)
+        peaks = await ProgressService().get_cognitive_peaks(user_id, db)
         peak_hour = peaks['peak_start']
         
         # Calculate total available hours
@@ -55,7 +55,7 @@ class TimetableService:
         timetable_id = str(uuid.uuid4())
         timetable = StudyTimetable(
             id=timetable_id,
-            user_id=request.user_id,
+            user_id=user_id,
             exam_date=request.exam_date,
             daily_schedule=daily_schedule,
             subjects=request.subjects,
@@ -67,7 +67,7 @@ class TimetableService:
         
         return {
             "timetable_id": timetable_id,
-            "user_id": request.user_id,
+            "user_id": user_id,
             "exam_date": request.exam_date,
             "daily_schedule": daily_schedule,
             "created_at": timetable.created_at,
@@ -113,19 +113,19 @@ class TimetableService:
             "days_remaining": ((timetable.exam_date.replace(tzinfo=None) if hasattr(timetable.exam_date, 'tzinfo') and timetable.exam_date.tzinfo else timetable.exam_date) - datetime.utcnow()).days
         }
     
-    def update_task_progress(self, request: TimetableProgressRequest, db: Session):
+    def update_task_progress(self, request: TimetableProgressRequest, db: Session, user_id: int):
         """Update progress on timetable tasks"""
         
         # Get or create progress record
         progress = db.query(TimetableProgress).filter(
-            TimetableProgress.user_id == request.user_id,
+            TimetableProgress.user_id == user_id,
             TimetableProgress.timetable_id == request.timetable_id,
             TimetableProgress.task_id == request.task_id
         ).first()
         
         if not progress:
             progress = TimetableProgress(
-                user_id=request.user_id,
+                user_id=user_id,
                 timetable_id=request.timetable_id,
                 task_id=request.task_id
             )

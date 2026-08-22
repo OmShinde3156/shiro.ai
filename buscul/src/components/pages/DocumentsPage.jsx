@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -25,7 +26,7 @@ const DocumentsPage = () => {
     
     setDeletingId(id);
     try {
-      const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/documents/${id}`, {
         method: 'DELETE',
       });
       if (response.ok) {
@@ -44,7 +45,7 @@ const DocumentsPage = () => {
       const formData = new FormData();
       formData.append('subject', newSubject);
 
-      const response = await fetch(`${API_BASE_URL}/documents/${id}/subject`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/documents/${id}/subject`, {
         method: 'PUT',
         body: formData,
       });
