@@ -2,15 +2,20 @@ import sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 import os
-from fastapi.staticfiles import StaticFiles
 import uvicorn
-import os
+import time
+import logging
+import traceback
 from datetime import datetime
 from dotenv import load_dotenv
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 # Load .env file explicitly
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
@@ -38,6 +43,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = f"{process_time:.4f}"
+    if not request.url.path.startswith("/static"):
+        logger.info(f"{request.method} {request.url.path} completed in {process_time:.4f}s")
+    return response
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled Exception on {request.method} {request.url.path}: {exc}\n{traceback.format_exc()}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An unexpected internal server error occurred. Please try again later."}
+    )
 
 # ✅ Mount Static Files for PDF Serving
 os.makedirs("static/uploads", exist_ok=True)

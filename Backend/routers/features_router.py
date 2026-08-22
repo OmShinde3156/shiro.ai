@@ -54,7 +54,11 @@ def get_answer_planner_service(): return AnswerPlannerService()
 async def generate_quiz(request: QuizRequest, db: Session = Depends(get_db), quiz_service: QuizService = Depends(get_quiz_service)):
     try:
         return await quiz_service.generate_quiz_from_document(request.document_id, request.num_questions, request.difficulty, db)
+    except HTTPException:
+        raise
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/submit-quiz", response_model=QuizResultResponse, tags=["Quiz"])
@@ -63,7 +67,11 @@ async def submit_quiz(submission: QuizSubmissionRequest, db: Session = Depends(g
         result = quiz_service.evaluate_quiz(submission, db)
         await progress_service.update_quiz_progress(submission.user_id, submission.document_id, result, db)
         return result
+    except HTTPException:
+        raise
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/quiz-history/{user_id}", tags=["Quiz"])
@@ -78,14 +86,22 @@ async def get_quiz_history(user_id: int, db: Session = Depends(get_db), quiz_ser
 async def generate_flashcards(request: FlashcardRequest, db: Session = Depends(get_db), flashcard_service: FlashcardService = Depends(get_flashcard_service)):
     try:
         return await flashcard_service.generate_flashcards_from_document(request.document_id, request.num_cards, db)
+    except HTTPException:
+        raise
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/study-flashcard", response_model=FlashcardStudyResponse, tags=["Flashcards"])
 async def study_flashcard(study_request: FlashcardStudyRequest, db: Session = Depends(get_db), flashcard_service: FlashcardService = Depends(get_flashcard_service)):
     try:
         return flashcard_service.study_flashcard(study_request, db)
+    except HTTPException:
+        raise
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/flashcards/review/{user_id}", tags=["Flashcards"])
@@ -103,7 +119,11 @@ async def chat_with_tutor(chat_request: ChatRequest, db: Session = Depends(get_d
             chat_request.user_id, chat_request.message, chat_request.document_ids,
             chat_request.language, db, chat_request.mode
         )
+    except HTTPException:
+        raise
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/chat-history/{user_id}", tags=["Chat"])
@@ -118,7 +138,11 @@ async def get_chat_history(user_id: int, limit: int = 50, db: Session = Depends(
 async def summarize_document(request: SummaryRequest, db: Session = Depends(get_db), summarizer_service: SummarizerService = Depends(get_summarizer_service)):
     try:
         return await summarizer_service.generate_summary(request.document_id, request.summary_type, request.language, db)
+    except HTTPException:
+        raise
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/summaries/{user_id}", tags=["Summary"])
@@ -204,7 +228,11 @@ async def get_user_progress(user_id: int, db: Session = Depends(get_db), progres
 async def add_xp(user_id: int, request: AddXPRequest, db: Session = Depends(get_db), progress_service: ProgressService = Depends(get_progress_service)):
     try:
         return await progress_service.add_xp(user_id, request.xp_amount, db)
+    except HTTPException:
+        raise
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/dashboard/{user_id}", tags=["Progress"])
@@ -223,7 +251,11 @@ async def get_user_activity(user_id: int, db: Session = Depends(get_db), progres
 async def create_study_timetable(request: TimetableRequest, db: Session = Depends(get_db), timetable_service: TimetableService = Depends(get_timetable_service)):
     try:
         return await timetable_service.create_timetable(request, db)
+    except HTTPException:
+        raise
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/timetable/{user_id}", tags=["Timetable"])
@@ -234,7 +266,11 @@ async def get_user_timetable(user_id: int, db: Session = Depends(get_db), timeta
 async def update_timetable_progress(request: TimetableProgressRequest, db: Session = Depends(get_db), timetable_service: TimetableService = Depends(get_timetable_service)):
     try:
         return timetable_service.update_task_progress(request, db)
+    except HTTPException:
+        raise
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 # ==============================================
@@ -247,14 +283,22 @@ async def get_feynman_challenge(user_id: int = Form(...), document_ids: str = Fo
     try:
         doc_ids = json.loads(document_ids)
         return await feynman_service.get_challenge_concept(user_id, doc_ids, db)
+    except HTTPException:
+        raise
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/feynman/evaluate", tags=["Feynman"])
 async def evaluate_feynman_explanation(user_id: int = Form(...), concept_name: str = Form(...), explanation: str = Form(...), db: Session = Depends(get_db), feynman_service: FeynmanService = Depends(get_feynman_service)):
     try:
         return await feynman_service.evaluate_explanation(user_id, concept_name, explanation, db)
+    except HTTPException:
+        raise
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 # ==============================================
@@ -298,7 +342,11 @@ async def translate_content(request: TranslationRequest):
     from services.translation_service import TranslationService
     try:
         return await TranslationService().translate_content(request.content, request.target_language, request.content_type)
+    except HTTPException:
+        raise
     except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
 # ==============================================

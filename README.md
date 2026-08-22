@@ -10,6 +10,8 @@
 
 ## Description
 
+> **Live Demo — Coming Soon**
+
 Shiro.ai is an advanced, AI-powered study companion designed to transform any learning material into interactive, engaging, and dynamic study sessions. 
 It solves the problem of passive reading by automatically generating study aids like quizzes, flashcards, mind maps, and full audio podcasts from any uploaded document. 
 It is built for students, researchers, and professionals who want to maximize their learning efficiency and retention.
@@ -39,6 +41,13 @@ It is built for students, researchers, and professionals who want to maximize th
 - **Smart Flashcards & Quizzes**: Automatically generated active recall tools to test memory.
 - **RAG Chat Assistant (Shiro)**: Chat directly with your documents for deep dive explanations.
 - **Progress Tracking**: Analytics dashboard to track your study sessions and mastery.
+## Architecture Diagram
+
+<div align="center">
+  <a href="docs/RAG-Model Algorithm.jpg">
+    <img src="docs/RAG-Model Algorithm.jpg" alt="Shiro.ai Architecture" width="800"/>
+  </a>
+</div>
 
 ## Tech Stack
 
