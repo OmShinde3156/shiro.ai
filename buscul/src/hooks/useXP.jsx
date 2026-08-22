@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../api/fetchWithAuth';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import API_BASE_URL from '../api/config';
@@ -12,7 +13,7 @@ export const useXP = () => {
     
     setIsAwarding(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/progress/${user.id}/xp`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/progress/xp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ xp_amount: amount }),

@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -36,7 +37,7 @@ const PyqsPage = () => {
     formData.append("num_questions", 12);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/important-questions`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/important-questions`, {
         method: "POST",
         body: formData,
       });

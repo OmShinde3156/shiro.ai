@@ -41,14 +41,10 @@ It is built for students, researchers, and professionals who want to maximize th
 - **Smart Flashcards & Quizzes**: Automatically generated active recall tools to test memory.
 - **RAG Chat Assistant (Shiro)**: Chat directly with your documents for deep dive explanations.
 - **Progress Tracking**: Analytics dashboard to track your study sessions and mastery.
+
 ## Architecture Diagram
 
-<div align="center">
-  <a href="docs/RAG-Model Algorithm.jpg">
-    <img src="docs/RAG-Model Algorithm.jpg" alt="Shiro.ai Architecture" width="800"/>
-  </a>
-</div>
-
+<a href="docs/RAG-Model%20Algorithm.jpg">Architecture Diagram</a>
 ## Tech Stack
 
 Shiro is built on a modern, scalable architecture using the following technologies:
@@ -63,6 +59,7 @@ Shiro is built on a modern, scalable architecture using the following technologi
 **Backend (Server & Processing)**
 - **Python 3.11+**: The core language powering the AI logic and API.
 - **FastAPI**: High-performance asynchronous web framework for building the REST API.
+- **JWT Authentication**: Secure Bearer Token (OAuth2) based authentication for API security.
 - **Celery**: Distributed task queue handling heavy asynchronous jobs (like podcast generation).
 - **Redis**: In-memory data structure store, used as the message broker for Celery.
 
@@ -111,6 +108,9 @@ In the `Backend` directory, create a `.env` file containing the necessary API ke
 # AI APIs
 GEMINI_API_KEY=your_gemini_api_key_here
 GROQ_API_KEY=your_groq_api_key_here
+
+# Security
+JWT_SECRET=generate_a_secure_random_string_here
 
 # Redis / Celery (Optional depending on local setup)
 CELERY_BROKER_URL=redis://localhost:6379/0

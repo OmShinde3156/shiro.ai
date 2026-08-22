@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, Response
 from sqlalchemy.orm import Session
 import os, uuid
 
@@ -6,35 +6,58 @@ from database.database import get_db
 from services.user_service import UserService
 from models.schema import UserResponse, LoginRequest, UserCreate, UserOTPRequest, OTPVerifyRequest
 from models.database import User
+from utils.auth import create_access_token, get_current_user
 
 router = APIRouter(tags=["Authentication"])
 
 def get_user_service():
     return UserService()
 
-@router.post("/login", response_model=UserResponse)
+@router.post("/login")
 async def login(
     request: LoginRequest,
+    response: Response,
     db: Session = Depends(get_db),
     user_service: UserService = Depends(get_user_service)
 ):
-    """Login user (Auto-creates if not exists)"""
+    """Login user and return JWT token"""
     try:
         user = user_service.login(request, db)
-        return user
+        access_token = create_access_token(data={"sub": str(user.id)})
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/users", response_model=UserResponse)
+@router.post("/logout")
+async def logout(response: Response):
+    """Logout user"""
+    return {"message": "Logged out successfully"}
+
+@router.get("/users/me", response_model=UserResponse)
+async def get_current_logged_in_user(current_user: User = Depends(get_current_user)):
+    """Get the currently logged in user based on JWT cookie"""
+    return current_user
+
+@router.post("/users")
 async def create_user(
     request: UserCreate,
+    response: Response,
     db: Session = Depends(get_db),
     user_service: UserService = Depends(get_user_service)
 ):
-    """Create new user"""
+    """Create new user and return token"""
     try:
         user = user_service.create_user(request, db)
-        return user
+        access_token = create_access_token(data={"sub": str(user.id)})
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

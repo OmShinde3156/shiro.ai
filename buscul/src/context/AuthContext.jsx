@@ -1,49 +1,55 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import API_BASE_URL from '../api/config';
+import { fetchWithAuth } from '../api/fetchWithAuth';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchUser = async () => {
     try {
-      const storedUser = localStorage.getItem('user');
-      // If no user is stored, return a default guest user to bypass login requirements
-      return storedUser ? JSON.parse(storedUser) : { id: 1, name: "Guest", email: "guest@shiro.ai", role: "user" };
+      const res = await fetchWithAuth(`${API_BASE_URL}/users/me`);
+      if (res.ok) {
+        const userData = await res.json();
+        setUser(userData);
+      } else {
+        setUser(null);
+      }
     } catch (error) {
-      console.error("Failed to parse user from localStorage:", error);
-      localStorage.removeItem('user');
-      return { id: 1, name: "Guest", email: "guest@shiro.ai", role: "user" };
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
-  });
-
-  const login = (userData) => {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-  };
-
-  const updateUser = (data) => {
-    const updatedUser = { ...user, ...data };
-    setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
   };
 
   useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'user') {
-        setUser(e.newValue ? JSON.parse(e.newValue) : { id: 1, name: "Guest", email: "guest@shiro.ai", role: "user" });
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
+    fetchUser();
   }, []);
+
+  const login = (userData, token) => {
+    localStorage.setItem('token', token);
+    setUser(userData);
+  };
+
+  const logout = async () => {
+    try {
+      await fetchWithAuth(`${API_BASE_URL}/logout`, { method: 'POST' });
+    } catch (e) {
+      console.error(e);
+    }
+    localStorage.removeItem('token');
+    setUser(null);
+  };
+
+  const updateUser = (data) => {
+    setUser({ ...user, ...data });
+  };
+
+  if (loading) {
+    return <div>Loading session...</div>;
+  }
 
   return (
     <AuthContext.Provider value={{ user, login, logout, updateUser }}>

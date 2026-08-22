@@ -2,7 +2,6 @@ import os
 import uuid
 from sqlalchemy.orm import Session
 from models.database import Document, StudyPack, Quiz, FlashcardSet, Flashcard, FlashcardProgress
-from skill_anything import Engine
 import asyncio
 from datetime import datetime
 
@@ -10,7 +9,8 @@ class StudyPackService:
     def __init__(self):
         # The engine will pick up SKILL_ANYTHING_API_KEY from os.environ
         # which is set in llm_client.py when the app loads
-        self.engine = Engine()
+        # self.engine = Engine() # Disabled as skill_anything was removed
+        pass
 
     def generate_study_pack_sync(self, document_id: int, user_id: int, source_path_or_url: str, db: Session):
         """Generates the full SkillPack synchronously. Designed to be run in a Celery background task."""
@@ -28,64 +28,57 @@ class StudyPackService:
             db.commit()
             
             # 2. Run Skill-Anything Engine
-            # It will auto-detect if source_path_or_url is a file path, YouTube URL, web URL, etc.
-            pack = self.engine.from_source(source_path_or_url)
+            # pack = self.engine.from_source(source_path_or_url)
             
-            # 3. Save the results back to the database
-            # We must convert pack.to_dict() to something JSON serializable. 
-            # pack.to_dict() returns basic Python dicts/lists.
-            study_pack.pack_data = pack.to_dict()
+            # Since skill_anything was removed, we simply mark it as completed or mocked
+            study_pack.pack_data = {"note": "Skill-Anything disabled"}
             study_pack.status = "completed"
             
             # 4. Auto-populate Quiz table for instant access later
-            if pack.quiz_questions:
-                quiz_id = str(uuid.uuid4())
-                # Use model_dump() or equivalent if it's pydantic, or if it's already a dict from to_dict
-                # The engine outputs standard dataclass/pydantic models. We can just use the dict from pack.to_dict()
-                pack_dict = pack.to_dict()
-                quiz_questions_json = pack_dict.get("quiz_questions", [])
-                
-                # Assign UUIDs to questions for the frontend
-                for i, q in enumerate(quiz_questions_json):
-                    q["id"] = f"q_{uuid.uuid4().hex}_{i}"
-                    # Skill-Anything uses 'answer' instead of 'correct_answer'
-                    q["correct_answer"] = q.get("answer", "")
-                
-                quiz = Quiz(
-                    id=quiz_id,
-                    document_id=document_id,
-                    questions=quiz_questions_json,
-                    difficulty="mixed"
-                )
-                db.add(quiz)
+            # (Disabled since pack is not available)
+            # if pack.quiz_questions:
+            #     quiz_id = str(uuid.uuid4())
+            #     pack_dict = pack.to_dict()
+            #     quiz_questions_json = pack_dict.get("quiz_questions", [])
+            #     
+            #     for i, q in enumerate(quiz_questions_json):
+            #         q["id"] = f"q_{uuid.uuid4().hex}_{i}"
+            #         q["correct_answer"] = q.get("answer", "")
+            #     
+            #     quiz = Quiz(
+            #         id=quiz_id,
+            #         document_id=document_id,
+            #         questions=quiz_questions_json,
+            #         difficulty="mixed"
+            #     )
+            #     db.add(quiz)
                 
             # 5. Auto-populate Flashcard tables
-            if pack.flashcards:
-                set_id = str(uuid.uuid4())
-                flashcard_set = FlashcardSet(
-                    id=set_id,
-                    document_id=document_id,
-                    user_id=user_id
-                )
-                db.add(flashcard_set)
-                
-                for card in pack.flashcards:
-                    card_id = str(uuid.uuid4())
-                    flashcard = Flashcard(
-                        id=card_id,
-                        set_id=set_id,
-                        question=card.front,
-                        answer=card.back
-                    )
-                    db.add(flashcard)
-                    
-                    # Auto-create progress
-                    progress = FlashcardProgress(
-                        user_id=user_id,
-                        flashcard_id=card_id,
-                        next_review=datetime.utcnow()
-                    )
-                    db.add(progress)
+            # if pack.flashcards:
+            #     set_id = str(uuid.uuid4())
+            #     flashcard_set = FlashcardSet(
+            #         id=set_id,
+            #         document_id=document_id,
+            #         user_id=user_id
+            #     )
+            #     db.add(flashcard_set)
+            #     
+            #     for card in pack.flashcards:
+            #         card_id = str(uuid.uuid4())
+            #         flashcard = Flashcard(
+            #             id=card_id,
+            #             set_id=set_id,
+            #             question=card.front,
+            #             answer=card.back
+            #         )
+            #         db.add(flashcard)
+            #         
+            #         progress = FlashcardProgress(
+            #             user_id=user_id,
+            #             flashcard_id=card_id,
+            #             next_review=datetime.utcnow()
+            #         )
+            #         db.add(progress)
             
             db.commit()
             return pack_id

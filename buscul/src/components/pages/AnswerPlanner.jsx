@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 
 import React, { useState, useEffect, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,7 +45,7 @@ const AnswerPlanner = () => {
         setLoading(true);
         setResult(null);
         try {
-            const res = await fetch(`${API_BASE_URL}/features/answer-planner`, {
+            const res = await fetchWithAuth(`${API_BASE_URL}/features/answer-planner`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)

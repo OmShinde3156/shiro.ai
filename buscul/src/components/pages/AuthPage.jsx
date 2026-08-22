@@ -27,7 +27,7 @@ const AuthPage = () => {
 
   useEffect(() => {
     // Only redirect if it's a real user (not guest)
-    if (user && user.email !== 'guest@shiro.ai' && user.email !== 'guest@study.ai') {
+    if (user) {
       navigate('/home');
     }
   }, [user, navigate]);
@@ -54,8 +54,8 @@ const AuthPage = () => {
         const errData = await response.json();
         throw new Error(errData.detail || 'Authentication failed');
       }
-      const userData = await response.json();
-      contextLogin(userData);
+      const data = await response.json();
+      contextLogin(data.user, data.access_token);
       navigate('/home');
     } catch (err) {
       setError(err.message);

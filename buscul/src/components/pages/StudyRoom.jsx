@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -114,7 +115,7 @@ const StudyRoom = () => {
     setAiLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/chat`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -267,12 +268,12 @@ const StudyRoom = () => {
 
     try {
       const [fcRes, quizRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/generate-flashcards`, {
+        fetchWithAuth(`${API_BASE_URL}/generate-flashcards`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ document_id: parseInt(selectedDocId), num_cards: 5 })
         }),
-        fetch(`${API_BASE_URL}/generate-quiz`, {
+        fetchWithAuth(`${API_BASE_URL}/generate-quiz`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ document_id: parseInt(selectedDocId), num_questions: 5 })

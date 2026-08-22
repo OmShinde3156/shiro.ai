@@ -5,6 +5,8 @@ from typing import List, Optional
 from database.database import get_db
 from services.pdf_service import PDFService
 from models.schema import DocumentResponse
+from utils.auth import get_current_user
+from models.database import User
 
 from services.summarizer_service import SummarizerService
 from services.quiz_service import QuizService
@@ -22,13 +24,13 @@ def get_mindmap_service(): return MindMapService()
 async def upload_document(
     background_tasks: BackgroundTasks,
     files: List[UploadFile] = File(...),
-    user_id: Optional[int] = Form(None),
     subject: Optional[str] = Form(None),
     db: Session = Depends(get_db),
-    pdf_service: PDFService = Depends(get_pdf_service)
+    pdf_service: PDFService = Depends(get_pdf_service),
+    current_user: User = Depends(get_current_user)
 ):
     """Upload and process PDF/DOCX/Image files"""
-    effective_user_id = user_id or 1
+    effective_user_id = current_user.id
     try:
         results = []
         for file in files:
@@ -43,10 +45,10 @@ async def upload_document(
 async def upload_url(
     background_tasks: BackgroundTasks,
     url: str = Form(...),
-    user_id: int = Form(...),
     subject: str = Form("General"),
     db: Session = Depends(get_db),
-    pdf_service: PDFService = Depends(get_pdf_service)
+    pdf_service: PDFService = Depends(get_pdf_service),
+    current_user: User = Depends(get_current_user)
 ):
     """Ingest content from a URL (YouTube or Website)"""
     try:
@@ -61,13 +63,13 @@ async def upload_url(
             doc_type = "web"
 
         # Create Document record
-        document, is_new = pdf_service.save_document_to_db(user_id, title, content, subject, doc_type, db, source_url=source_url, video_id=video_id)
+        document, is_new = pdf_service.save_document_to_db(current_user.id, title, content, subject, doc_type, db, source_url=source_url, video_id=video_id)
         
         if is_new:
             # Trigger background embedding only for NEW documents
             background_tasks.add_task(
                 pdf_service.process_document_background,
-                document.id, content, user_id
+                document.id, content, current_user.id
             )
         else:
             print(f"DEBUG: Skipping background processing for existing document {document.id}")
@@ -76,24 +78,24 @@ async def upload_url(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/documents/{user_id}", response_model=List[DocumentResponse])
-async def get_user_documents(user_id: int, db: Session = Depends(get_db), pdf_service: PDFService = Depends(get_pdf_service)):
+@router.get("/documents", response_model=List[DocumentResponse])
+async def get_user_documents(db: Session = Depends(get_db), pdf_service: PDFService = Depends(get_pdf_service), current_user: User = Depends(get_current_user)):
     """Get all documents uploaded by a user"""
-    return pdf_service.get_user_documents(user_id, db)
+    return pdf_service.get_user_documents(current_user.id, db)
 
-@router.get("/documents/{user_id}/{document_id}", response_model=DocumentResponse)
+@router.get("/documents/{document_id}", response_model=DocumentResponse)
 async def get_document_details(
-    user_id: int, 
     document_id: int, 
     db: Session = Depends(get_db), 
     pdf_service: PDFService = Depends(get_pdf_service),
     summarizer_service: SummarizerService = Depends(get_summarizer_service),
     quiz_service: QuizService = Depends(get_quiz_service),
-    mindmap_service: MindMapService = Depends(get_mindmap_service)
+    mindmap_service: MindMapService = Depends(get_mindmap_service),
+    current_user: User = Depends(get_current_user)
 ):
     """Get specific document by ID with all associated study materials"""
     document = pdf_service.get_document_by_id(document_id, db)
-    if not document or document.user_id != user_id:
+    if not document or document.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Document not found")
     
     # Fetch latest study materials

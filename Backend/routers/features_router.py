@@ -45,6 +45,8 @@ def get_feynman_service(): return FeynmanService()
 def get_quiz_service(): return QuizService()
 def get_swarm_service(): return SwarmService()
 def get_answer_planner_service(): return AnswerPlannerService()
+from utils.auth import get_current_user
+from models.database import User
 
 # ==============================================
 # QUIZ ENDPOINTS
@@ -62,10 +64,10 @@ async def generate_quiz(request: QuizRequest, db: Session = Depends(get_db), qui
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/submit-quiz", response_model=QuizResultResponse, tags=["Quiz"])
-async def submit_quiz(submission: QuizSubmissionRequest, db: Session = Depends(get_db), quiz_service: QuizService = Depends(get_quiz_service), progress_service: ProgressService = Depends(get_progress_service)):
+async def submit_quiz(submission: QuizSubmissionRequest, db: Session = Depends(get_db), quiz_service: QuizService = Depends(get_quiz_service), progress_service: ProgressService = Depends(get_progress_service), current_user: User = Depends(get_current_user)):
     try:
         result = quiz_service.evaluate_quiz(submission, db)
-        await progress_service.update_quiz_progress(submission.user_id, submission.document_id, result, db)
+        await progress_service.update_quiz_progress(current_user.id, submission.document_id, result, db)
         return result
     except HTTPException:
         raise
@@ -74,9 +76,9 @@ async def submit_quiz(submission: QuizSubmissionRequest, db: Session = Depends(g
         logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/quiz-history/{user_id}", tags=["Quiz"])
-async def get_quiz_history(user_id: int, db: Session = Depends(get_db), quiz_service: QuizService = Depends(get_quiz_service)):
-    return quiz_service.get_quiz_history(user_id, db)
+@router.get("/quiz-history", tags=["Quiz"])
+async def get_quiz_history(db: Session = Depends(get_db), quiz_service: QuizService = Depends(get_quiz_service), current_user: User = Depends(get_current_user)):
+    return quiz_service.get_quiz_history(current_user.id, db)
 
 # ==============================================
 # FLASHCARD ENDPOINTS
@@ -94,9 +96,11 @@ async def generate_flashcards(request: FlashcardRequest, db: Session = Depends(g
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/study-flashcard", response_model=FlashcardStudyResponse, tags=["Flashcards"])
-async def study_flashcard(study_request: FlashcardStudyRequest, db: Session = Depends(get_db), flashcard_service: FlashcardService = Depends(get_flashcard_service)):
+async def study_flashcard(study_request: FlashcardStudyRequest, db: Session = Depends(get_db), flashcard_service: FlashcardService = Depends(get_flashcard_service), current_user: User = Depends(get_current_user)):
     try:
-        return flashcard_service.study_flashcard(study_request, db)
+        study_request.user_id = current_user.id # inject back for service if needed, wait, schema doesn't have it.
+        # Let's see if flashcard_service uses user_id. We'll pass current_user.id if needed, but wait, study_flashcard takes study_request.
+        return flashcard_service.study_flashcard(study_request, db, current_user.id)
     except HTTPException:
         raise
     except Exception as e:
@@ -104,19 +108,19 @@ async def study_flashcard(study_request: FlashcardStudyRequest, db: Session = De
         logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/flashcards/review/{user_id}", tags=["Flashcards"])
-async def get_flashcards_for_review(user_id: int, db: Session = Depends(get_db), flashcard_service: FlashcardService = Depends(get_flashcard_service)):
-    return flashcard_service.get_cards_for_review(user_id, db)
+@router.get("/flashcards/review", tags=["Flashcards"])
+async def get_flashcards_for_review(db: Session = Depends(get_db), flashcard_service: FlashcardService = Depends(get_flashcard_service), current_user: User = Depends(get_current_user)):
+    return flashcard_service.get_cards_for_review(current_user.id, db)
 
 # ==============================================
 # CHAT ENDPOINTS
 # ==============================================
 
 @router.post("/chat", response_model=ChatResponse, tags=["Chat"])
-async def chat_with_tutor(chat_request: ChatRequest, db: Session = Depends(get_db), chat_service: ChatService = Depends(get_chat_service)):
+async def chat_with_tutor(chat_request: ChatRequest, db: Session = Depends(get_db), chat_service: ChatService = Depends(get_chat_service), current_user: User = Depends(get_current_user)):
     try:
         return await chat_service.chat_with_documents(
-            chat_request.user_id, chat_request.message, chat_request.document_ids,
+            current_user.id, chat_request.message, chat_request.document_ids,
             chat_request.language, db, chat_request.mode
         )
     except HTTPException:
@@ -126,9 +130,9 @@ async def chat_with_tutor(chat_request: ChatRequest, db: Session = Depends(get_d
         logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/chat-history/{user_id}", tags=["Chat"])
-async def get_chat_history(user_id: int, limit: int = 50, db: Session = Depends(get_db), chat_service: ChatService = Depends(get_chat_service)):
-    return chat_service.get_chat_history(user_id, limit, db)
+@router.get("/chat-history", tags=["Chat"])
+async def get_chat_history(limit: int = 50, db: Session = Depends(get_db), chat_service: ChatService = Depends(get_chat_service), current_user: User = Depends(get_current_user)):
+    return chat_service.get_chat_history(current_user.id, limit, db)
 
 # ==============================================
 # SUMMARIZATION ENDPOINTS
@@ -145,26 +149,26 @@ async def summarize_document(request: SummaryRequest, db: Session = Depends(get_
         logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/summaries/{user_id}", tags=["Summary"])
-async def get_user_summaries(user_id: int, db: Session = Depends(get_db), summarizer_service: SummarizerService = Depends(get_summarizer_service)):
-    return summarizer_service.get_user_summaries(user_id, db)
+@router.get("/summaries", tags=["Summary"])
+async def get_user_summaries(db: Session = Depends(get_db), summarizer_service: SummarizerService = Depends(get_summarizer_service), current_user: User = Depends(get_current_user)):
+    return summarizer_service.get_user_summaries(current_user.id, db)
 
 # ==============================================
 # PODCAST ENDPOINTS
 # ==============================================
 
 @router.post("/generate-podcast", tags=["Podcast"])
-async def generate_podcast(request: PodcastRequest, db: Session = Depends(get_db), podcast_service: PodcastService = Depends(get_podcast_service)):
-    task_id = podcast_service.create_podcast_task(request.user_id, request.document_ids, request.episodes, request.language, request.topic, db)
+async def generate_podcast(request: PodcastRequest, db: Session = Depends(get_db), podcast_service: PodcastService = Depends(get_podcast_service), current_user: User = Depends(get_current_user)):
+    task_id = podcast_service.create_podcast_task(current_user.id, request.document_ids, request.episodes, request.language, request.topic, db)
     return {"task_id": task_id, "status": "processing"}
 
 @router.get("/podcast-status/{task_id}", tags=["Podcast"])
 async def get_podcast_status(task_id: str, db: Session = Depends(get_db), podcast_service: PodcastService = Depends(get_podcast_service)):
     return podcast_service.get_task_status(task_id, db)
 
-@router.get("/podcasts/{user_id}", tags=["Podcast"])
-async def get_user_podcasts(user_id: int, db: Session = Depends(get_db), podcast_service: PodcastService = Depends(get_podcast_service)):
-    return podcast_service.get_user_podcasts(user_id, db)
+@router.get("/podcasts", tags=["Podcast"])
+async def get_user_podcasts(db: Session = Depends(get_db), podcast_service: PodcastService = Depends(get_podcast_service), current_user: User = Depends(get_current_user)):
+    return podcast_service.get_user_podcasts(current_user.id, db)
 
 @router.delete("/podcasts/{podcast_id}", tags=["Podcast"])
 async def delete_podcast(podcast_id: str, db: Session = Depends(get_db), podcast_service: PodcastService = Depends(get_podcast_service)):
@@ -185,9 +189,9 @@ async def generate_mindmap(request: MindMapRequest, db: Session = Depends(get_db
         import traceback; traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/mindmaps/{user_id}", tags=["MindMap"])
-async def get_user_mindmaps(user_id: int, db: Session = Depends(get_db), mindmap_service: MindMapService = Depends(get_mindmap_service)):
-    return mindmap_service.get_user_mindmaps(user_id, db)
+@router.get("/mindmaps", tags=["MindMap"])
+async def get_user_mindmaps(db: Session = Depends(get_db), mindmap_service: MindMapService = Depends(get_mindmap_service), current_user: User = Depends(get_current_user)):
+    return mindmap_service.get_user_mindmaps(current_user.id, db)
 
 @router.get("/mindmap-details/{mindmap_id}", tags=["MindMap"])
 async def get_specific_mindmap(mindmap_id: str, db: Session = Depends(get_db)):
@@ -200,14 +204,14 @@ async def get_specific_mindmap(mindmap_id: str, db: Session = Depends(get_db)):
 # SWARM / INSIGHT ENDPOINTS
 # ==============================================
 
-@router.get("/insights/{user_id}", tags=["Swarm"])
-async def get_library_insights(user_id: int, db: Session = Depends(get_db), swarm_service: SwarmService = Depends(get_swarm_service)):
-    return swarm_service.get_user_insights(user_id, db)
+@router.get("/insights", tags=["Swarm"])
+async def get_library_insights(db: Session = Depends(get_db), swarm_service: SwarmService = Depends(get_swarm_service), current_user: User = Depends(get_current_user)):
+    return swarm_service.get_user_insights(current_user.id, db)
 
-@router.post("/insights/analyze/{user_id}", tags=["Swarm"])
-async def trigger_swarm_analysis(user_id: int, db: Session = Depends(get_db)):
+@router.post("/insights/analyze", tags=["Swarm"])
+async def trigger_swarm_analysis(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     from tasks import run_swarm_analysis_task
-    run_swarm_analysis_task.delay(user_id)
+    run_swarm_analysis_task.delay(current_user.id)
     return {"status": "analysis_triggered"}
 
 @router.post("/insights/read/{insight_id}", tags=["Swarm"])
@@ -220,14 +224,14 @@ async def mark_insight_as_read(insight_id: int, db: Session = Depends(get_db), s
 # PROGRESS ENDPOINTS
 # ==============================================
 
-@router.get("/progress/{user_id}", response_model=UserProgressResponse, tags=["Progress"])
-async def get_user_progress(user_id: int, db: Session = Depends(get_db), progress_service: ProgressService = Depends(get_progress_service)):
-    return await progress_service.get_user_progress(user_id, db)
+@router.get("/progress", response_model=UserProgressResponse, tags=["Progress"])
+async def get_user_progress(db: Session = Depends(get_db), progress_service: ProgressService = Depends(get_progress_service), current_user: User = Depends(get_current_user)):
+    return await progress_service.get_user_progress(current_user.id, db)
 
-@router.post("/progress/{user_id}/xp", tags=["Progress"])
-async def add_xp(user_id: int, request: AddXPRequest, db: Session = Depends(get_db), progress_service: ProgressService = Depends(get_progress_service)):
+@router.post("/progress/xp", tags=["Progress"])
+async def add_xp(request: AddXPRequest, db: Session = Depends(get_db), progress_service: ProgressService = Depends(get_progress_service), current_user: User = Depends(get_current_user)):
     try:
-        return await progress_service.add_xp(user_id, request.xp_amount, db)
+        return await progress_service.add_xp(current_user.id, request.xp_amount, db)
     except HTTPException:
         raise
     except Exception as e:
@@ -235,22 +239,22 @@ async def add_xp(user_id: int, request: AddXPRequest, db: Session = Depends(get_
         logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/dashboard/{user_id}", tags=["Progress"])
-async def get_dashboard_data(user_id: int, db: Session = Depends(get_db), progress_service: ProgressService = Depends(get_progress_service)):
-    return await progress_service.get_dashboard_data(user_id, db)
+@router.get("/dashboard", tags=["Progress"])
+async def get_dashboard_data(db: Session = Depends(get_db), progress_service: ProgressService = Depends(get_progress_service), current_user: User = Depends(get_current_user)):
+    return await progress_service.get_dashboard_data(current_user.id, db)
 
-@router.get("/activity/{user_id}", tags=["Progress"])
-async def get_user_activity(user_id: int, db: Session = Depends(get_db), progress_service: ProgressService = Depends(get_progress_service)):
-    return await progress_service.get_user_activity(user_id, db)
+@router.get("/activity", tags=["Progress"])
+async def get_user_activity(db: Session = Depends(get_db), progress_service: ProgressService = Depends(get_progress_service), current_user: User = Depends(get_current_user)):
+    return await progress_service.get_user_activity(current_user.id, db)
 
 # ==============================================
 # TIMETABLE ENDPOINTS
 # ==============================================
 
 @router.post("/create-timetable", response_model=TimetableResponse, tags=["Timetable"])
-async def create_study_timetable(request: TimetableRequest, db: Session = Depends(get_db), timetable_service: TimetableService = Depends(get_timetable_service)):
+async def create_study_timetable(request: TimetableRequest, db: Session = Depends(get_db), timetable_service: TimetableService = Depends(get_timetable_service), current_user: User = Depends(get_current_user)):
     try:
-        return await timetable_service.create_timetable(request, db)
+        return await timetable_service.create_timetable(request, db, current_user.id)
     except HTTPException:
         raise
     except Exception as e:
@@ -258,14 +262,14 @@ async def create_study_timetable(request: TimetableRequest, db: Session = Depend
         logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/timetable/{user_id}", tags=["Timetable"])
-async def get_user_timetable(user_id: int, db: Session = Depends(get_db), timetable_service: TimetableService = Depends(get_timetable_service)):
-    return timetable_service.get_user_timetable(user_id, db)
+@router.get("/timetable", tags=["Timetable"])
+async def get_user_timetable(db: Session = Depends(get_db), timetable_service: TimetableService = Depends(get_timetable_service), current_user: User = Depends(get_current_user)):
+    return timetable_service.get_user_timetable(current_user.id, db)
 
 @router.post("/update-timetable-progress", tags=["Timetable"])
-async def update_timetable_progress(request: TimetableProgressRequest, db: Session = Depends(get_db), timetable_service: TimetableService = Depends(get_timetable_service)):
+async def update_timetable_progress(request: TimetableProgressRequest, db: Session = Depends(get_db), timetable_service: TimetableService = Depends(get_timetable_service), current_user: User = Depends(get_current_user)):
     try:
-        return timetable_service.update_task_progress(request, db)
+        return timetable_service.update_task_progress(request, db, current_user.id)
     except HTTPException:
         raise
     except Exception as e:
@@ -278,11 +282,11 @@ async def update_timetable_progress(request: TimetableProgressRequest, db: Sessi
 # ==============================================
 
 @router.post("/feynman/challenge", tags=["Feynman"])
-async def get_feynman_challenge(user_id: int = Form(...), document_ids: str = Form("[]"), db: Session = Depends(get_db), feynman_service: FeynmanService = Depends(get_feynman_service)):
+async def get_feynman_challenge(document_ids: str = Form("[]"), db: Session = Depends(get_db), feynman_service: FeynmanService = Depends(get_feynman_service), current_user: User = Depends(get_current_user)):
     import json
     try:
         doc_ids = json.loads(document_ids)
-        return await feynman_service.get_challenge_concept(user_id, doc_ids, db)
+        return await feynman_service.get_challenge_concept(current_user.id, doc_ids, db)
     except HTTPException:
         raise
     except Exception as e:
@@ -291,9 +295,9 @@ async def get_feynman_challenge(user_id: int = Form(...), document_ids: str = Fo
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/feynman/evaluate", tags=["Feynman"])
-async def evaluate_feynman_explanation(user_id: int = Form(...), concept_name: str = Form(...), explanation: str = Form(...), db: Session = Depends(get_db), feynman_service: FeynmanService = Depends(get_feynman_service)):
+async def evaluate_feynman_explanation(concept_name: str = Form(...), explanation: str = Form(...), db: Session = Depends(get_db), feynman_service: FeynmanService = Depends(get_feynman_service), current_user: User = Depends(get_current_user)):
     try:
-        return await feynman_service.evaluate_explanation(user_id, concept_name, explanation, db)
+        return await feynman_service.evaluate_explanation(current_user.id, concept_name, explanation, db)
     except HTTPException:
         raise
     except Exception as e:

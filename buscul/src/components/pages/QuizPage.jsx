@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../../api/fetchWithAuth';
 import { useState, useEffect, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -49,7 +50,7 @@ const QuizPage = () => {
         difficulty: "medium",
       };
 
-      const response = await fetch(`${API_BASE_URL}/generate-quiz`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/generate-quiz`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -88,7 +89,7 @@ const QuizPage = () => {
 
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/submit-quiz`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/submit-quiz`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
