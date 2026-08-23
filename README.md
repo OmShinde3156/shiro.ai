@@ -95,7 +95,7 @@ Shiro is built on a modern, scalable architecture using the following technologi
 
 3. **Frontend Setup**
    ```bash
-   cd ../buscul
+   cd ../Frontend
    npm install
    ```
 
@@ -133,7 +133,7 @@ celery -A celery_app worker --loglevel=info -P gevent
 ```
 
 **3. Start the Frontend Development Server**
-In a separate terminal within the `buscul` directory:
+In a separate terminal within the `Frontend` directory:
 ```bash
 npm run dev
 ```
@@ -149,7 +149,7 @@ shiro.ai/
 │   ├── database/          # SQLite & ChromaDB setup
 │   ├── static/            # Generated audio podcasts
 │   └── main.py            # FastAPI application entry point
-├── buscul/                # React Vite frontend
+├── Frontend/              # React Vite frontend
 │   ├── src/
 │   │   ├── components/    # Reusable UI components & Pages
 │   │   ├── context/       # React Context (Auth, Theme, Podcasts)
@@ -180,10 +180,6 @@ Shiro.ai is load-tested and benchmarked for high-throughput asynchronous executi
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## License
-
-Distributed under the MIT License. See `LICENSE` for more information.
 
 ## Author / Contact
 
