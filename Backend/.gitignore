@@ -209,3 +209,13 @@ __marimo__/
 # Secrets / config files
 app/config/firebase_config.json
 app/config/gcloud_credentials.json
+user_credentials.txt
+*.db
+*.db*
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite3
+*.sqlite3*
+static/uploads/
+static/*.mp3

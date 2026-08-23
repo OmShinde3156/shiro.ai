@@ -35,10 +35,13 @@ app = FastAPI(title="Shiro AI: Personalized Study Guide Generator", version="0.2
 # ✅ Database Setup
 Base.metadata.create_all(bind=engine) 
 
-# ✅ Middleware
+# ✅ Middleware - Configurable CORS for Production and Local Dev
+raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000")
+allowed_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -79,17 +82,14 @@ async def startup_event():
     init_db()
     db = next(get_db())
     try:
-        from models.database import User
-        guest = db.query(User).filter(User.id == 1).first()
-        if not guest:
-            guest = User(id=1, name="Guest User", email="guest@study.ai", password="password123")
-            db.add(guest)
-            db.commit()
-            print("Created default Guest User (ID: 1)")
+        from utils.auth import get_guest_user
+        get_guest_user(db)
+        logger.info("Initialized default Guest User (ID: 1)")
     except Exception as e:
-        print(f"Error creating guest user: {e}")
+        logger.error(f"Error initializing guest user: {e}")
     finally:
         db.close()
+
 
 # ✅ Health Check
 @app.get("/health")

@@ -15,27 +15,42 @@ def get_user_service():
 
 @router.post("/login")
 async def login(
-    request: LoginRequest,
-    response: Response,
-    db: Session = Depends(get_db),
-    user_service: UserService = Depends(get_user_service)
+     request: LoginRequest,
+     response: Response,
+     db: Session = Depends(get_db),
+     user_service: UserService = Depends(get_user_service)
+ ):
+     """Login user and return JWT token"""
+     try:
+         user = user_service.login(request, db)
+         access_token = create_access_token(data={"sub": str(user.id)})
+         return {
+             "access_token": access_token,
+             "token_type": "bearer",
+             "user": user
+         }
+     except Exception as e:
+         raise HTTPException(status_code=401, detail=str(e))
+
+@router.post("/guest")
+async def guest_login(
+     db: Session = Depends(get_db)
 ):
-    """Login user and return JWT token"""
-    try:
-        user = user_service.login(request, db)
-        access_token = create_access_token(data={"sub": str(user.id)})
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "user": user
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    """Instant guest login providing a session for unauthenticated visitors"""
+    from utils.auth import get_guest_user
+    guest = get_guest_user(db)
+    access_token = create_access_token(data={"sub": str(guest.id), "is_guest": True})
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": guest
+    }
 
 @router.post("/logout")
 async def logout(response: Response):
     """Logout user"""
     return {"message": "Logged out successfully"}
+
 
 @router.get("/users/me", response_model=UserResponse)
 async def get_current_logged_in_user(current_user: User = Depends(get_current_user)):

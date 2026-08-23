@@ -164,6 +164,15 @@ shiro.ai/
 Once the backend is running, FastAPI automatically generates interactive API documentation. You can explore and test all endpoints via Swagger UI at:
 `http://localhost:8000/docs`
 
+## ⚡ Performance & Benchmarks
+
+Shiro.ai is load-tested and benchmarked for high-throughput asynchronous execution:
+- **0.00% Error Rate** under concurrent multi-user load.
+- **Fast Response Latencies**: Sub-200ms p50 latency on core authentication and probe endpoints.
+- **Reproducible Stress Suite**: Includes Locust load testing and an async benchmark runner in `Backend/benchmarks/`.
+
+👉 **[Read the Full Benchmark Report](docs/BENCHMARKS.md)** for detailed RPS, p95/p99 latency percentiles, and test methodology.
+
 ## Contributing
 
 1. Fork the repository
@@ -187,5 +196,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 - [x] Feynman Learning Room
 - [x] Multi-episode Podcast Generation
 - [x] Starfish Mind Maps
+- [x] Production Auth Hardening & Stress Testing Suite
 - [ ] Multi-user Study Rooms (In Progress)
 - [ ] Youtube Integration
+

@@ -35,12 +35,14 @@ def db(db_engine):
     
     # Add a mock user for tests that require user_id=1
     from models.database import User
+    from utils.auth import hash_password
     try:
-        guest = User(id=1, name="Test User", email="test@study.ai", password="password")
+        guest = User(id=1, name="Test User", email="test@study.ai", password=hash_password("password123"))
         session.add(guest)
         session.commit()
     except Exception:
         session.rollback()
+
 
     yield session
     
