@@ -19,56 +19,51 @@ class QuizService:
         if not document:
             raise Exception("Document not found")
         
-        # Check for pre-generated quiz
-        quiz = db.query(Quiz).filter(Quiz.document_id == document_id).order_by(Quiz.created_at.desc()).first()
+        # Always generate fresh, customized questions with requested count and difficulty
+        raw_questions = await self.llm_client.generate_quiz_questions(
+            content=document.text_content[:20000], 
+            num_questions=num_questions, 
+            difficulty=difficulty,
+            user_id=user_id or document.user_id,
+            db=db
+        )
         
-        if not quiz:
-            # Fallback to on-the-fly generation with Quality Gate
-            raw_questions = await self.llm_client.generate_quiz_questions(
-                content=document.text_content[:15000], 
-                num_questions=num_questions, 
-                difficulty=difficulty,
-                user_id=user_id or document.user_id,
-                db=db
-            )
-            
-            # AI-02 Quality Gate Validation (Structural, Duplicate, and Grounding validation)
-            questions = QualityGate.validate_quiz_quality(
-                questions=raw_questions,
-                source_text=document.text_content,
-                min_grounding_score=0.20
-            )
-            
-            # If all filtered out, use raw questions as fallback
-            if not questions:
-                questions = raw_questions
-            
-            # Add UUIDs
-            for i, q in enumerate(questions):
-                if 'id' not in q:
-                    q['id'] = f"q_{uuid.uuid4().hex}_{i}"
-            
-            quiz = Quiz(
-                id=str(uuid.uuid4()),
-                document_id=document_id,
-                questions=questions,
-                difficulty=difficulty
-            )
-            db.add(quiz)
-            db.commit()
-
-            
-        questions = quiz.questions
-        # Optionally slice to num_questions, though returning all is usually better for a study pack
+        # AI-02 Quality Gate Validation (Structural, Duplicate, and Grounding validation)
+        questions = QualityGate.validate_quiz_quality(
+            questions=raw_questions,
+            source_text=document.text_content,
+            min_grounding_score=0.20
+        )
+        
+        # If all filtered out, use raw questions as fallback
+        if not questions:
+            questions = raw_questions
+        
+        # Add UUIDs
+        for i, q in enumerate(questions):
+            if 'id' not in q:
+                q['id'] = f"q_{uuid.uuid4().hex}_{i}"
+        
+        # Ensure exact requested count if more were produced
         if len(questions) > num_questions:
-            import random
-            questions = random.sample(questions, num_questions)
+            questions = questions[:num_questions]
+            
+        quiz = Quiz(
+            id=str(uuid.uuid4()),
+            document_id=document_id,
+            questions=questions,
+            difficulty=difficulty
+        )
+        db.add(quiz)
+        db.commit()
+        db.refresh(quiz)
+
 
         
         return {
             "quiz_id": quiz.id,
             "document_id": document_id,
-            "questions": questions,
+            "questions": quiz.questions,
             "created_at": quiz.created_at
         }
     
