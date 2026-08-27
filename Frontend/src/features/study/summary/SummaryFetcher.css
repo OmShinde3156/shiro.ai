@@ -1,0 +1,77 @@
+.summary-container {
+  padding: 1.5rem;
+  max-width: 900px;
+  margin: auto;
+  color: var(--text-main);
+}
+
+.summary-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: serif;
+}
+
+.fetch-btn {
+  padding: 0.6rem 1.2rem;
+  margin-bottom: 1.5rem;
+  background: #3F6048;
+  color: #ffffff;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.fetch-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fetch-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.error-text {
+  color: #C96B62;
+  margin-top: 0.5rem;
+}
+
+.summary-box {
+  background: var(--bg-surface);
+  color: var(--text-main);
+  padding: 1.5rem;
+  border-radius: 16px;
+  line-height: 1.6;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(24, 25, 22, 0.04), 0 6px 20px -2px rgba(24, 25, 22, 0.04);
+}
+
+.summary-box h1,
+.summary-box h2,
+.summary-box h3 {
+  color: var(--text-main);
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-family: serif;
+}
+
+.summary-box p {
+  margin: 0.5rem 0;
+  color: var(--text-secondary);
+}
+
+.summary-box ul {
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+  color: var(--text-secondary);
+}
+
+.summary-box li {
+  margin-bottom: 0.3rem;
+}

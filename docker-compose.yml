@@ -7,11 +7,11 @@ services:
     container_name: shiro_db
     restart: always
     environment:
-      - POSTGRES_USER=shiro
-      - POSTGRES_PASSWORD=shiro_pass
-      - POSTGRES_DB=shiro_study
+      - POSTGRES_USER=${POSTGRES_USER:-shiro}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-shiro_pass}
+      - POSTGRES_DB=${POSTGRES_DB:-shiro_study}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -21,7 +21,7 @@ services:
     container_name: shiro_redis
     restart: always
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
 
   # Backend: FastAPI
   backend:
@@ -35,13 +35,16 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://shiro:shiro_pass@db:5432/shiro_study
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=${DATABASE_URL:-postgresql://shiro:shiro_pass@db:5432/shiro_study}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - JWT_SECRET=${JWT_SECRET:-shiro_jwt_super_secret_change_in_production}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     volumes:
       - ./Backend:/app
       - ./Backend/static:/app/static
 
-  # Celery Worker
+  # Celery Background Worker (OCR & Audio Casts)
   worker:
     build:
       context: ./Backend
@@ -52,8 +55,10 @@ services:
       - redis
       - db
     environment:
-      - DATABASE_URL=postgresql://shiro:shiro_pass@db:5432/shiro_study
-      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=${DATABASE_URL:-postgresql://shiro:shiro_pass@db:5432/shiro_study}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     volumes:
       - ./Backend:/app
       - ./Backend/static:/app/static

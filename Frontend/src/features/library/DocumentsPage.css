@@ -1,0 +1,17 @@
+.documents-page-container {
+  min-height: 100vh;
+}
+
+.document-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.document-card:hover {
+  transform: translateY(-4px);
+}
+
+.glass-card {
+  background: var(--bg-surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}

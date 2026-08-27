@@ -94,27 +94,27 @@ const RightSidebar = () => {
 
       <div className="flex-1 flex flex-col gap-6 px-3">
         {/* Real-time Stats Card */}
-        <div className="p-1 rounded-2xl bg-white/5 border border-white/5 group-hover:p-4 transition-all overflow-hidden min-h-[48px]">
+        <div className="p-1 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border)] group-hover:p-4 transition-all overflow-hidden min-h-[48px] shadow-xs">
           <div className="flex items-center gap-4">
-             <div className="min-w-[40px] h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+             <div className="min-w-[40px] h-10 rounded-xl bg-[#3F6048]/15 dark:bg-[#89A88D]/20 border border-[#3F6048]/20 dark:border-[#89A88D]/30 flex items-center justify-center text-[#3F6048] dark:text-[#89A88D]">
                 <span className="material-symbols-outlined text-lg">bolt</span>
              </div>
              <div className="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Session XP</p>
-                <p className="text-sm font-black text-white">+{user?.xp % 100 || 0} pts</p>
+                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest font-mono">Session XP</p>
+                <p className="text-sm font-bold text-[var(--text-main)]">+{user?.xp % 100 || 0} pts</p>
              </div>
           </div>
         </div>
 
         {/* Active Document Context */}
-        <div className="p-1 rounded-2xl bg-white/5 border border-white/5 group-hover:p-4 transition-all overflow-hidden min-h-[48px]">
+        <div className="p-1 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border)] group-hover:p-4 transition-all overflow-hidden min-h-[48px] shadow-xs">
           <div className="flex items-center gap-4">
-             <div className="min-w-[40px] h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+             <div className="min-w-[40px] h-10 rounded-xl bg-[#3F6048]/15 dark:bg-[#89A88D]/20 border border-[#3F6048]/20 dark:border-[#89A88D]/30 flex items-center justify-center text-[#3F6048] dark:text-[#89A88D]">
                 <span className="material-symbols-outlined text-lg">description</span>
              </div>
              <div className="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Active Library</p>
-                <p className="text-sm font-black text-white">{documents?.length || 0} Assets</p>
+                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest font-mono">Active Library</p>
+                <p className="text-sm font-bold text-[var(--text-main)]">{documents?.length || 0} Assets</p>
              </div>
           </div>
         </div>
@@ -123,22 +123,28 @@ const RightSidebar = () => {
         {activeNudge && (
           <div 
             onClick={activeNudge.action}
-            className={`mt-10 p-1 rounded-3xl border transition-all cursor-pointer group-hover:p-6 overflow-hidden
-              ${activeNudge.action ? 'border-primary/30 bg-primary/5 hover:bg-primary/10' : 'border-white/5 bg-white/5 opacity-40'}`}
+            className={`mt-6 p-1 rounded-3xl border transition-all cursor-pointer group-hover:p-5 overflow-hidden
+              ${activeNudge.action 
+                ? 'border-[#3F6048]/30 dark:border-[#89A88D]/30 bg-[#E8EFE9] dark:bg-[#89A88D]/10 hover:bg-[#E0EAE2] shadow-xs' 
+                : 'border-[var(--border)] bg-[var(--bg-surface)] opacity-60'}`}
           >
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-4">
-                <div className={`min-w-[40px] h-10 rounded-xl flex items-center justify-center ${activeNudge.action ? 'bg-primary/20 text-primary' : 'bg-white/10 text-white'}`}>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <div className={`min-w-[40px] h-10 rounded-xl flex items-center justify-center ${
+                  activeNudge.action 
+                    ? 'bg-[#3F6048]/15 dark:bg-[#89A88D]/20 text-[#3F6048] dark:text-[#89A88D]' 
+                    : 'bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)]'
+                }`}>
                   <span className="material-symbols-outlined text-lg">{activeNudge.icon}</span>
                 </div>
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                  <p className="text-xs font-black text-white tracking-tight">{activeNudge.title}</p>
+                  <p className="text-xs font-bold text-[var(--text-main)] tracking-tight font-serif">{activeNudge.title}</p>
                 </div>
               </div>
               <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                <p className="text-[11px] text-[var(--text-muted)] leading-relaxed mb-4">{activeNudge.desc}</p>
+                <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed mb-3">{activeNudge.desc}</p>
                 {activeNudge.action && (
-                  <div className="flex items-center gap-2 text-[10px] font-black uppercase text-primary">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#3F6048] dark:text-[#89A88D]">
                     Initiate Action <span className="material-symbols-outlined text-xs">arrow_forward</span>
                   </div>
                 )}
@@ -149,8 +155,8 @@ const RightSidebar = () => {
       </div>
 
       {/* Footer Branding */}
-      <div className="mt-auto py-8 px-4 flex flex-col items-center border-t border-white/5 bg-black/20">
-         <span className="text-[9px] font-bold text-white/20 uppercase tracking-[0.3em] [writing-mode:vertical-lr] rotate-180 group-hover:rotate-0 group-hover:[writing-mode:horizontal-tb] transition-all">
+      <div className="mt-auto py-6 px-4 flex flex-col items-center border-t border-[var(--border)] bg-[var(--bg-surface-elevated)]">
+         <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-[0.3em] font-mono [writing-mode:vertical-lr] rotate-180 group-hover:rotate-0 group-hover:[writing-mode:horizontal-tb] transition-all">
            Shiro v4.9
          </span>
       </div>

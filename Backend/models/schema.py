@@ -36,6 +36,12 @@ class OTPVerifyRequest(BaseModel):
     email: str
     code: str
 
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    preferred_language: Optional[Language] = None
+
+
 class UserResponse(BaseModel):
     id: int
     name: str
@@ -118,25 +124,71 @@ class FlashcardSetResponse(BaseModel):
 
 class FlashcardStudyRequest(BaseModel):
     flashcard_id: str
-    ease_rating: int = Field(ge=1, le=5)  # 1=hard, 5=easy
+    ease_rating: int = Field(ge=1, le=5)  # 1=Again, 2=Hard, 3/4=Good, 5=Easy
+    review_duration_ms: Optional[int] = 0
+    idempotency_key: Optional[str] = None
 
 class FlashcardStudyResponse(BaseModel):
     flashcard_id: str
     next_review_date: datetime
     interval_days: int
+    fsrs_state: Optional[int] = None
+    stability: Optional[float] = None
+    difficulty: Optional[float] = None
+
+class FlashcardReviewItem(BaseModel):
+    id: int
+    flashcard_id: str
+    rating: int
+    review_duration_ms: int
+    fsrs_state_before: int
+    fsrs_state_after: int
+    stability_after: float
+    difficulty_after: float
+    reviewed_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class FlashcardHistoryResponse(BaseModel):
+    flashcard_id: str
+    total_reviews: int
+    reviews: List[FlashcardReviewItem]
+
+class DocumentIngestionStatusResponse(BaseModel):
+    document_id: int
+    job_id: str
+    status: str
+    progress: int
+    current_step: str
+    attempt: int
+    max_attempts: int
+    queued_at: datetime
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    error_code: Optional[str] = None
+    error_message: Optional[str] = None
 
 # Chat Schemas
+
 class ChatRequest(BaseModel):
     message: str
-    document_ids: List[int]
+    document_ids: List[int] = []
     language: Language = Language.ENGLISH
-    mode: str = "human" # "human" or "surgical"
+    mode: Optional[str] = "human" # "tutor"/"human", "surgical"/"exam", "feynman"
+    response_style: Optional[str] = "balanced" # "concise", "balanced", "detailed"
+    use_examples: Optional[bool] = True
+    explain_terms: Optional[bool] = True
+    ask_followups: Optional[bool] = True
+    learning_goal: Optional[str] = None
+    current_level: Optional[str] = None
 
 class ChatResponse(BaseModel):
     response: str
     internal_thought: Optional[str] = None
     sources: List[Dict[str, Any]]
     language: str
+    suggested_action: Optional[str] = None
 
 # Summary Schemas
 class SummaryRequest(BaseModel):

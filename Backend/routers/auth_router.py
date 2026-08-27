@@ -4,7 +4,7 @@ import os, uuid
 
 from database.database import get_db
 from services.user_service import UserService
-from models.schema import UserResponse, LoginRequest, UserCreate, UserOTPRequest, OTPVerifyRequest
+from models.schema import UserResponse, LoginRequest, UserCreate, UserOTPRequest, OTPVerifyRequest, UserUpdate
 from models.database import User
 from utils.auth import create_access_token, get_current_user
 
@@ -46,6 +46,7 @@ async def guest_login(
         "user": guest
     }
 
+
 @router.post("/logout")
 async def logout(response: Response):
     """Logout user"""
@@ -56,6 +57,30 @@ async def logout(response: Response):
 async def get_current_logged_in_user(current_user: User = Depends(get_current_user)):
     """Get the currently logged in user based on JWT cookie"""
     return current_user
+
+@router.put("/users/me", response_model=UserResponse)
+async def update_current_user(
+    update_data: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    user_service: UserService = Depends(get_user_service)
+):
+    """Update the current user's profile information"""
+    update_dict = {}
+    if update_data.name is not None:
+        update_dict["name"] = update_data.name.strip()
+    if update_data.preferred_language is not None:
+        pref_lang = update_data.preferred_language
+        if hasattr(pref_lang, "value"):
+            pref_lang = pref_lang.value
+        update_dict["preferred_language"] = str(pref_lang)
+    
+    if not update_dict:
+        return current_user
+        
+    updated_user = user_service.update_user(current_user.id, update_dict, db)
+    return updated_user
+
 
 @router.post("/users")
 async def create_user(

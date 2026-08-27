@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Float, Boolean, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, DateTime, Text, Float, Boolean, ForeignKey, JSON, Numeric
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -16,6 +16,15 @@ class User(Base):
     preferred_language = Column(String, default="en")
     xp = Column(Integer, default=0)
     level = Column(Integer, default=1)
+    ai_quota_daily = Column(Integer, default=50) # Daily AI request quota (AI-01)
+    
+    # Personal BYOK API Keys (Server-Side Encrypted)
+    groq_api_key_encrypted = Column(Text, nullable=True)
+    gemini_api_key_encrypted = Column(Text, nullable=True)
+    openai_api_key_encrypted = Column(Text, nullable=True)
+    preferred_ai_provider = Column(String, default="auto") # "auto", "groq", "gemini", "openai"
+    byok_enabled = Column(Boolean, default=True)
+
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -37,11 +46,37 @@ class Document(Base):
     source_url = Column(String, nullable=True) # Original URL (YT/Web)
     video_id = Column(String, nullable=True) # Extracted YouTube ID
     content_hash = Column(String, nullable=True, index=True) # Hash of content for idempotence
+    version = Column(Integer, default=1, nullable=False) # Document version for provenance (RAG-01)
     upload_date = Column(DateTime, default=datetime.utcnow)
     user_id = Column(Integer, ForeignKey("users.id"))
     
     # Relationships
     user = relationship("User", back_populates="documents")
+
+class AIRequestLog(Base):
+    __tablename__ = "ai_request_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    request_id = Column(String, unique=True, index=True) # UUID
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    feature = Column(String, nullable=False, index=True) # "quiz", "flashcards", "chat", "summary", "mindmap"
+    provider = Column(String, nullable=False) # "groq", "gemini", "openai", "fallback"
+    model = Column(String, nullable=False)
+    rate_card_version = Column(String, default="2026-Q3")
+    prompt_version = Column(String, default="v1.0")
+    input_tokens = Column(Integer, default=0)
+    output_tokens = Column(Integer, default=0)
+    latency_ms = Column(Integer, default=0)
+    cost_usd = Column(Numeric(12, 8), default=0.0)
+    fallback_used = Column(Boolean, default=False)
+    billing_source = Column(String, default="platform") # "platform" | "personal"
+    success = Column(Boolean, default=True)
+    error_code = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    # Relationships
+    user = relationship("User")
+
 
 class Quiz(Base):
     __tablename__ = "quizzes"
@@ -119,7 +154,50 @@ class FlashcardProgress(Base):
     user = relationship("User", back_populates="flashcard_progress")
     flashcard = relationship("Flashcard", back_populates="progress")
 
+class FlashcardReview(Base):
+    __tablename__ = "flashcard_reviews"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    flashcard_id = Column(String, ForeignKey("flashcards.id"), nullable=False, index=True)
+    idempotency_key = Column(String, nullable=True, index=True)
+    rating = Column(Integer, nullable=False) # 1=Again, 2=Hard, 3=Good, 4=Easy
+    review_duration_ms = Column(Integer, default=0)
+    fsrs_state_before = Column(Integer, default=0)
+    fsrs_state_after = Column(Integer, default=0)
+    stability_after = Column(Float, default=0.0)
+    difficulty_after = Column(Float, default=0.0)
+    reviewed_at = Column(DateTime, default=datetime.utcnow, index=True)
+    
+    # Relationships
+    user = relationship("User")
+    flashcard = relationship("Flashcard")
+
+class DocumentIngestionJob(Base):
+    __tablename__ = "document_ingestion_jobs"
+    
+    id = Column(String, primary_key=True) # UUID
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    status = Column(String, default="QUEUED", index=True) # QUEUED, EXTRACTING, CHUNKING, EMBEDDING, GRAPH_BUILDING, INDEXED, FAILED
+    current_step = Column(String, default="INITIALIZED")
+    progress = Column(Integer, default=0) # 0-100%
+    attempt = Column(Integer, default=1)
+    max_attempts = Column(Integer, default=3)
+    error_code = Column(String, nullable=True) # e.g. CORRUPT_DOCUMENT, PROVIDER_TIMEOUT
+    error_message = Column(Text, nullable=True) # Sanitized user-safe message
+    celery_task_id = Column(String, nullable=True)
+    queued_at = Column(DateTime, default=datetime.utcnow)
+    started_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    document = relationship("Document", backref="ingestion_jobs")
+    user = relationship("User")
+
 class ChatHistory(Base):
+
     __tablename__ = "chat_history"
     
     id = Column(Integer, primary_key=True, index=True)
@@ -128,6 +206,8 @@ class ChatHistory(Base):
     response = Column(Text, nullable=False)
     document_ids = Column(JSON)  # List of document IDs used
     language = Column(String, default="en")
+    status = Column(String, default="completed")  # completed, stopped, failed
+    latency_ms = Column(Integer, default=0)
     timestamp = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
@@ -263,6 +343,8 @@ class RoomMessage(Base):
     id = Column(Integer, primary_key=True, index=True)
     room_id = Column(String, ForeignKey("study_rooms.id"))
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True) # None for AI
+    client_message_id = Column(String, index=True, nullable=True) # Client idempotency key (WS-01)
+    sequence = Column(Integer, default=1, index=True, nullable=False) # Total room ordering sequence (WS-01)
     is_ai = Column(Boolean, default=False)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -270,6 +352,7 @@ class RoomMessage(Base):
     # Relationships
     room = relationship("StudyRoom", back_populates="messages")
     user = relationship("User")
+
 
 class StudyPack(Base):
     __tablename__ = "study_packs"

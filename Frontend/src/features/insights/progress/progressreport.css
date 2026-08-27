@@ -1,0 +1,42 @@
+/* ==========================================================================
+   🌿 SHIRO.AI — PROGRESS REPORT & STUDENT LEARNING HEALTH
+   Calm analytical workspace with warm editorial aesthetic
+   ========================================================================== */
+
+/* Recharts Custom Styling for Shiro Theme */
+.recharts-cartesian-grid line {
+  stroke: var(--border) !important;
+  opacity: 0.6;
+}
+
+.recharts-polar-grid-angle line,
+.recharts-polar-grid-concentric path {
+  stroke: var(--border) !important;
+  opacity: 0.6;
+}
+
+.recharts-default-tooltip {
+  background-color: var(--bg-surface-elevated) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Custom Table Polish */
+table tbody tr:last-child {
+  border-bottom: none;
+}
+
+/* Responsive Table Wrapper */
+.matrix-scroll-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.matrix-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.matrix-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}

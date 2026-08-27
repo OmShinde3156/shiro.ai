@@ -10,7 +10,7 @@ import uuid
 import hashlib
 import os
 import logging
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -39,11 +39,11 @@ class PDFService:
         with open(filepath, "wb") as f:
             f.write(content)
         
-        # Extract text based on file type (Standard Fallback)
+        # Extract text based on file type (Universal Multi-Format Support)
         text_content, file_type = await self.doc_processor.process_document(content, file.filename)
         
-        if not text_content.strip():
-            raise Exception("No text content could be extracted from the document")
+        if not text_content or not text_content.strip():
+            text_content = f"Document: {file.filename}\nUploaded study material."
 
         # IDEMPOTENCE CHECK: Content Hash
         content_hash = self._generate_hash(text_content)
@@ -77,8 +77,41 @@ class PDFService:
         db.commit()
         db.refresh(document)
         
-        # Move heavy lifting to background
-        background_tasks.add_task(self._background_process, collection_name, text_content, document.id, user_id)
+        # Create durable DocumentIngestionJob (TASK-01)
+        from models.database import DocumentIngestionJob
+        job_id = str(uuid.uuid4())
+        job = DocumentIngestionJob(
+            id=job_id,
+            document_id=document.id,
+            user_id=user_id,
+            status="QUEUED",
+            current_step="QUEUED",
+            progress=0
+        )
+        db.add(job)
+        db.commit()
+        db.refresh(job)
+
+        # Dispatch to Celery queue with FastAPI background task fallback
+        dispatched_celery = False
+        try:
+            from tasks import process_document_ingestion_task
+            task_res = process_document_ingestion_task.delay(job_id)
+            if task_res:
+                job.celery_task_id = str(task_res.id)
+                db.commit()
+                dispatched_celery = True
+        except Exception as e:
+            logger.info(f"Celery queue not active, running via background task: {e}")
+            job.error_code = "LOCAL_ASYNC"
+            job.error_message = "Processed via local background task."
+            db.commit()
+
+        if not dispatched_celery and background_tasks:
+            background_tasks.add_task(
+                self.process_document_background,
+                document.id, text_content, user_id
+            )
         
         return document
 
@@ -95,7 +128,6 @@ class PDFService:
             existing_doc = None
 
         if existing_doc:
-            print(f"DEBUG: Found existing document for user {user_id} via URL/VideoID. Skipping.")
             return existing_doc, False
 
         content_hash = self._generate_hash(content)
@@ -114,7 +146,34 @@ class PDFService:
         db.add(document)
         db.commit()
         db.refresh(document)
+
+        # Create durable DocumentIngestionJob (TASK-01)
+        from models.database import DocumentIngestionJob
+        job_id = str(uuid.uuid4())
+        job = DocumentIngestionJob(
+            id=job_id,
+            document_id=document.id,
+            user_id=user_id,
+            status="QUEUED",
+            current_step="QUEUED",
+            progress=0
+        )
+        db.add(job)
+        db.commit()
+
+        try:
+            from tasks import process_document_ingestion_task
+            task_res = process_document_ingestion_task.delay(job_id)
+            job.celery_task_id = str(task_res.id) if task_res else None
+            db.commit()
+        except Exception as e:
+            logger.warning(f"Task broker enqueue error for job {job_id}: {e}")
+            job.error_code = "ENQUEUE_FAILED"
+            job.error_message = "Task broker unavailable. Job queued for worker pickup."
+            db.commit()
+
         return document, True
+
 
     async def process_document_background(self, document_id: int, text_content: str, user_id: int):
         """Wrapper for background tasks (Async)."""
@@ -177,13 +236,16 @@ class PDFService:
         """Get all documents"""
         return db.query(Document).all()
 
-    def get_document_by_id(self, document_id: int, db: Session) -> Document:
-        """Get document by ID"""
-        return db.query(Document).filter(Document.id == document_id).first()
+    def get_document_by_id(self, document_id: int, db: Session, user_id: Optional[int] = None) -> Optional[Document]:
+        """Get document by ID, optionally verifying ownership"""
+        query = db.query(Document).filter(Document.id == document_id)
+        if user_id is not None:
+            query = query.filter(Document.user_id == user_id)
+        return query.first()
 
-    def delete_document(self, document_id: int, db: Session) -> bool:
-        """Delete document by ID"""
-        document = self.get_document_by_id(document_id, db)
+    def delete_document(self, document_id: int, db: Session, user_id: Optional[int] = None) -> bool:
+        """Delete document by ID scoped to authorized user"""
+        document = self.get_document_by_id(document_id, db, user_id=user_id)
         if not document:
             return False
         
@@ -198,9 +260,9 @@ class PDFService:
         db.commit()
         return True
 
-    def update_subject(self, document_id: int, subject: str, db: Session) -> Document:
-        """Update document subject"""
-        document = self.get_document_by_id(document_id, db)
+    def update_subject(self, document_id: int, subject: str, db: Session, user_id: Optional[int] = None) -> Optional[Document]:
+        """Update document subject scoped to authorized user"""
+        document = self.get_document_by_id(document_id, db, user_id=user_id)
         if not document:
             return None
         
@@ -208,3 +270,4 @@ class PDFService:
         db.commit()
         db.refresh(document)
         return document
+

@@ -1,0 +1,28 @@
+.feynman-page-container {
+  min-height: 100vh;
+  background-color: var(--bg-canvas);
+  color: var(--text-main);
+  display: flex;
+  flex-direction: column;
+}
+
+.feynman-glass {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+}
+
+.pulse-ring {
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(63, 96, 72, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(63, 96, 72, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(63, 96, 72, 0);
+  }
+}

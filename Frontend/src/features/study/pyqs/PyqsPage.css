@@ -1,0 +1,40 @@
+.pyqs-container {
+  min-height: 100vh;
+}
+
+/* Prediction Probability Badges */
+.probability-high {
+  background: rgba(63, 96, 72, 0.15);
+  color: #3F6048;
+  border: 1px solid rgba(63, 96, 72, 0.3);
+}
+
+.probability-mid {
+  background: rgba(214, 168, 79, 0.15);
+  color: #D6A84F;
+  border: 1px solid rgba(214, 168, 79, 0.3);
+}
+
+/* Animations */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+/* Custom Scrollbar for results */
+.results-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.results-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+
+.form-group select:focus {
+  border-color: #3F6048;
+}

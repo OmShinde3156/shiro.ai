@@ -80,30 +80,39 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 # --- Guest & User Resolution ---
 
-_cached_guest_user = None
-
 def get_guest_user(db: Session) -> User:
-    """Retrieve or automatically initialize the default Guest User (ID: 1) with in-memory caching."""
-    global _cached_guest_user
-    if _cached_guest_user is not None:
-        return _cached_guest_user
-
+    """Retrieve or initialize the default Guest User (ID: 1) within the active DB session."""
     guest = db.query(User).filter(User.id == 1).first()
     if not guest:
         guest = User(
             id=1,
             name="Guest User",
             email="guest@study.ai",
-            password=hash_password("password123"),
+            password=hash_password("guest_secret_password_123"),
             preferred_language="en"
         )
         db.add(guest)
-        db.commit()
-        db.refresh(guest)
-    
-    _cached_guest_user = guest
+        try:
+            db.commit()
+            db.refresh(guest)
+        except Exception:
+            db.rollback()
+            guest = db.query(User).filter(User.id == 1).first()
     return guest
 
+
+def get_user_from_token(token: Optional[str], db: Session) -> Optional[User]:
+    """Decode token and return User object if valid, else None."""
+    if not token or token in ("guest", "null", "undefined", ""):
+        return get_guest_user(db)
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if user_id is None:
+            return None
+        return db.query(User).filter(User.id == int(user_id)).first()
+    except Exception:
+        return None
 
 
 def get_current_user(token: Optional[str] = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
@@ -113,29 +122,10 @@ def get_current_user(token: Optional[str] = Depends(oauth2_scheme), db: Session 
     - If no token or a guest token is provided: falls back to the Guest user (ID: 1).
     This ensures all users (guest or authenticated) have seamless access to features.
     """
-    if not token or token in ("guest", "null", "undefined", ""):
+    user = get_user_from_token(token, db)
+    if user is None:
         return get_guest_user(db)
-    
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-        if user_id is None:
-            return get_guest_user(db)
-        
-        user = db.query(User).filter(User.id == int(user_id)).first()
-        if user is None:
-            return get_guest_user(db)
-        return user
-        
-    except jwt.ExpiredSignatureError:
-        logger.debug("Token expired, falling back to guest session")
-        return get_guest_user(db)
-    except jwt.InvalidTokenError:
-        logger.debug("Invalid token, falling back to guest session")
-        return get_guest_user(db)
-    except Exception as e:
-        logger.warning(f"Unexpected token error: {e}")
-        return get_guest_user(db)
+    return user
 
 
 def get_required_current_user(token: Optional[str] = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
@@ -143,7 +133,7 @@ def get_required_current_user(token: Optional[str] = Depends(oauth2_scheme), db:
     Strict user authentication for account-level modifications (e.g. settings, password changes).
     Raises 401 if unauthenticated.
     """
-    if not token:
+    if not token or token in ("guest", "null", "undefined", ""):
         raise HTTPException(status_code=401, detail="Authentication required")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -158,4 +148,21 @@ def get_required_current_user(token: Optional[str] = Depends(oauth2_scheme), db:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+
+def get_authorized_document(document_id: int, user_id: int, db: Session):
+    """
+    Centralized authorization helper (SEC-01 & SEC-03).
+    Verifies that the document exists and belongs to the authenticated user.
+    Raises HTTPException(404) on not found or unauthorized access to prevent resource enumeration.
+    """
+    from models.database import Document
+    document = db.query(Document).filter(
+        Document.id == document_id,
+        Document.user_id == user_id
+    ).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found or access denied")
+    return document
+
 

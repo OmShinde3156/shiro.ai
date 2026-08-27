@@ -1,125 +1,395 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-/* --- THEME SYSTEM --- */
+/* ==========================================================================
+   🌿 SHIRO.AI — WARM EDITORIAL DESIGN SYSTEM
+   Theme: Warm Ivory & Deep Ink with Sage, Forest & Soft Gold Accents
+   Philosophy: Calm, focused, human-centered learning with restrained color.
+   ========================================================================== */
 
-/* 1. Dark Mode (formerly Neon Shiro) */
-body.theme-dark, :root {
-  --bg-main: #05070a;
-  --bg-card: rgba(13, 17, 28, 0.65);
-  --bg-card-light: #161b2c;
-  --primary: #00f0ff;
-  --secondary: #8b5cf6;
-  --tertiary: #10b981;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --border: rgba(0, 240, 255, 0.15);
-  --sidebar-bg: #030507;
-  --app-gradient: radial-gradient(ellipse at top, #0d1221, #020305);
+/* 🌙 WARM DARK MODE (Default) */
+:root, body.theme-dark {
+  --bg-canvas: #111210;
+  --bg-surface: #181916;
+  --bg-surface-elevated: #20221E;
+  --bg-card: #181916;
+  --bg-card-hover: #20221E;
+  --bg-card-light: #20221E;
+
+  /* Typography */
+  --text-main: #F4F1E9;
+  --text-secondary: #A6A49C;
+  --text-muted: #78766E;
+  --text-dim: #54524B;
+
+  /* Borders & Dividers */
+  --border: #2B2D28;
+  --border-hover: #3D4039;
+  --border-focus: #89A88D;
+  --border-subtle: #20221E;
+
+  /* Brand Accents */
+  --primary: #89A88D;          /* Sage */
+  --primary-hover: #9BB89F;
+  --primary-subtle: rgba(137, 168, 141, 0.12);
+  --secondary: #62816A;        /* Forest */
+  --accent-gold: #D6A84F;      /* Soft Gold */
+  --accent-gold-subtle: rgba(214, 168, 79, 0.12);
+  --accent-rose: #C96B62;      /* Muted Red */
+
+  /* Navigation & Canvas */
+  --sidebar-bg: #111210;
+  --header-bg: rgba(17, 18, 16, 0.92);
+  --app-gradient: #111210;
 }
 
-/* 2. Light Mode (Premium Modern Light) */
+/* 🌿 WARM IVORY LIGHT THEME */
 body.theme-light {
-  --bg-main: #f8fafc;
-  --bg-card: rgba(255, 255, 255, 0.8);
-  --bg-card-light: #ffffff;
-  --primary: #0ea5e9;
-  --secondary: #8b5cf6;
-  --tertiary: #10b981;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --border: rgba(0, 0, 0, 0.05);
-  --sidebar-bg: #ffffff;
-  --app-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  --bg-canvas: #F7F5F0;        /* Warm Ivory Canvas */
+  --bg-surface: #FFFFFF;       /* Crisp White Surface */
+  --bg-surface-elevated: #F0EEE8; /* Tactile Stone Elevated Surface */
+  --bg-surface-hover: #EAE7DF; /* Subtle Hover */
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #FAF9F6;
+  --bg-card-light: #F0EEE8;
+
+  /* High-Contrast Editorial Typography (WCAG AAA) */
+  --text-main: #181916;        /* Deep Charcoal Ink */
+  --text-secondary: #4A4D46;   /* Rich Slate-Stone */
+  --text-muted: #6E7268;       /* Subtle Warm Charcoal */
+  --text-dim: #989C92;
+
+  /* Crisp Stone Borders & Tactile Dividers */
+  --border: #DFDAD1;           /* Stone Border */
+  --border-strong: #CEC8BD;    /* Strong Stone */
+  --border-hover: #B8B2A5;
+  --border-focus: #3F6048;
+  --border-subtle: #EBE7DF;
+
+  /* Brand Accents */
+  --primary: #3F6048;          /* Forest / Deep Sage */
+  --primary-strong: #2D4534;   /* Deep Forest */
+  --primary-hover: #34523D;
+  --primary-subtle: #E8EFE9;   /* Soft Sage Background */
+  --secondary: #2D4534;        /* Deep Forest */
+  --accent-gold: #B88320;      /* Rich Deep Gold */
+  --accent-gold-soft: #F5ECCE; /* Soft Gold Pill */
+  --accent-gold-border: #E5D29E;
+  --accent-gold-text: #68490B;
+  --accent-gold-subtle: rgba(184, 131, 32, 0.12);
+  --accent-rose: #B8473B;      /* Muted Red */
+  --accent-rose-soft: #F9EAE7;
+  --accent-info: #3E6488;      /* Blue-Gray */
+  --accent-info-soft: #E5EDF4;
+
+  /* Navigation & Canvas */
+  --sidebar-bg: #F0EEE8;
+  --header-bg: rgba(247, 245, 240, 0.96);
+  --app-gradient: #F7F5F0;
 }
 
+/* 🎨 DYNAMIC ACCENT COLORS */
+/* Sage / Forest (Default) */
+body[data-accent="sage"] {
+  --primary: #89A88D;
+  --primary-hover: #9BB89F;
+  --primary-subtle: rgba(137, 168, 141, 0.14);
+  --border-focus: #89A88D;
+}
+body.theme-light[data-accent="sage"] {
+  --primary: #3F6048;
+  --primary-hover: #34523D;
+  --primary-subtle: #E8EFE9;
+  --border-focus: #3F6048;
+}
+
+/* Slate Blue */
+body[data-accent="blue"] {
+  --primary: #6892C8;
+  --primary-hover: #7FA5D9;
+  --primary-subtle: rgba(104, 146, 200, 0.15);
+  --border-focus: #6892C8;
+}
+body.theme-light[data-accent="blue"] {
+  --primary: #365B8C;
+  --primary-hover: #2B4A73;
+  --primary-subtle: #E5EDF6;
+  --border-focus: #365B8C;
+}
+
+/* Terracotta / Rose */
+body[data-accent="rose"] {
+  --primary: #D47B72;
+  --primary-hover: #E28F87;
+  --primary-subtle: rgba(212, 123, 114, 0.15);
+  --border-focus: #D47B72;
+}
+body.theme-light[data-accent="rose"] {
+  --primary: #B8473B;
+  --primary-hover: #A13C31;
+  --primary-subtle: #F9EAE7;
+  --border-focus: #B8473B;
+}
+
+/* Soft Gold / Amber */
+body[data-accent="amber"] {
+  --primary: #D6A84F;
+  --primary-hover: #E4B860;
+  --primary-subtle: rgba(214, 168, 79, 0.15);
+  --border-focus: #D6A84F;
+}
+body.theme-light[data-accent="amber"] {
+  --primary: #B88320;
+  --primary-hover: #9E6F18;
+  --primary-subtle: #F7EEDB;
+  --border-focus: #B88320;
+}
+
+/* 📐 DENSITY SCALING */
+body[data-density="compact"] {
+  --space-scale: 0.85;
+}
+body[data-density="comfortable"] {
+  --space-scale: 1;
+}
+body[data-density="spacious"] {
+  --space-scale: 1.15;
+}
+
+/* ⚡ REDUCED MOTION */
+body[data-reduced-motion="true"] *,
+body[data-reduced-motion="true"] *::before,
+body[data-reduced-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* Global Reset & Typography */
 * {
   padding: 0;
   margin: 0;
   box-sizing: border-box;
-  font-family: 'Outfit', sans-serif;
-  transition: background 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
-              background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
-              color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
-              border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+.font-serif, .font-editorial {
+  font-family: 'Newsreader', Georgia, serif;
+}
+
+code, pre, .font-mono {
+  font-family: 'JetBrains Mono', monospace;
 }
 
 #root {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 body {
-  background: var(--app-gradient);
+  background-color: var(--bg-canvas);
   color: var(--text-main);
-  background-attachment: fixed;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
-/* ✨ SMOOTH FADE */
-@keyframes fadeIn {
-  0% { opacity: 0; transform: translateY(15px) scale(0.98); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+body.theme-light {
+  background: radial-gradient(circle at 50% -20%, rgba(63, 96, 72, 0.04), transparent 40%), #F7F5F0;
 }
 
-/* 🔮 BREATHING ORB (AI THINKING) */
-@keyframes orbBreathe {
-  0% { transform: scale(0.85); opacity: 0.6; box-shadow: 0 0 10px var(--primary); }
-  50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 30px var(--secondary); }
-  100% { transform: scale(0.85); opacity: 0.6; box-shadow: 0 0 10px var(--primary); }
+body.theme-light ::selection {
+  background: #E8EFE9;
+  color: #181916;
 }
 
-.material-symbols-outlined {
-    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-}
-.material-symbols-outlined.fill {
-    font-variation-settings: 'FILL' 1;
-}
-
-.hide-scrollbar::-webkit-scrollbar {
-    display: none;
-}
-.hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-/* 🧊 GLASS CARD */
-.glass-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+/* 🏷️ REFINED EDITORIAL CARDS (No Harsh Glare, Multi-Elevation Depth) */
+.glass-panel, .glass-card {
+  background: var(--bg-surface);
   border: 1px solid var(--border);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.4);
-  border-radius: 24px;
-  padding: 24px;
-  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(24, 25, 22, 0.04), 0 6px 20px -2px rgba(24, 25, 22, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.glass-card:hover {
-  transform: translateY(-4px);
+.glass-panel:hover, .glass-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 2px 8px rgba(24, 25, 22, 0.06), 0 12px 28px -4px rgba(24, 25, 22, 0.07);
 }
 
-/* 🔘 NEON BUTTON */
-.neon-btn {
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  border: none;
-  padding: 12px 20px;
-  border-radius: 12px;
-  color: white;
+.spotlight-card {
+  position: relative;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: all 0.2s ease;
+}
+
+.spotlight-card:hover {
+  border-color: var(--border-hover);
+}
+
+/* 🔘 BUTTON PRIMITIVES (Sage & Stone) */
+.btn-primary {
+  background: var(--primary);
+  color: #111210;
   font-weight: 600;
-  transition: 0.3s;
+  padding: 9px 18px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
-.neon-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 20px var(--primary);
+body.theme-light .btn-primary {
+  color: #FFFFFF !important;
+  background: #3F6048;
 }
 
-/* 🧭 SCROLLBAR */
+body.theme-light .btn-primary:hover {
+  background: #34523D;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: var(--bg-surface-elevated);
+  color: var(--text-main);
+  font-weight: 500;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-ghost:hover {
+  background: var(--bg-surface-elevated);
+  color: var(--text-main);
+}
+
+/* 🏷️ CITATION PILLS */
+.citation-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--primary-subtle);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  vertical-align: baseline;
+  margin: 0 2px;
+}
+
+.citation-pill:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* 💬 CHAT COMPOSER STYLES */
+.chat-composer {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chat-composer:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* ⌨️ KEYBOARD BADGE (Kbd) */
+kbd, .kbd-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+/* 🧭 ELEGANT CLEAN SCROLLBAR */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--border);
-  border-radius: 10px;
+  border-radius: 999px;
 }
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* 🔒 CONTRAST & ACCESSIBILITY GUARD */
+body.theme-light input,
+body.theme-light textarea,
+body.theme-light select {
+  color: var(--text-main);
+}
+
+body.theme-light select option {
+  background-color: #FFFFFF;
+  color: #181916;
+}
+
+body.theme-dark select option {
+  background-color: #181916;
+  color: #F4F1E9;
+}
+

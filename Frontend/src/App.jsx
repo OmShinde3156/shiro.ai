@@ -1,35 +1,40 @@
 import React, { useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import Main from "./components/main/Main";
-import QuizPage from "./components/pages/QuizPage";
-import AudioSummaryPage from "./components/pages/AudioSummaryPage";
-import FlashcardApp from "./components/pages/FlashcardApp";
-import MindMapPage from "./components/pages/MindMapPage";
-import AnswerPlanner from "./components/pages/AnswerPlanner";
-import Sidebar from "./components/sidebar/Sidebar";
-import RightSidebar from "./components/rightsidebar/RightSidebar";
-import Header from "./components/navigation/Header";
-import SummaryFetcher from "./components/pages/SummaryFetcher";
-import PyqsPage from "./components/pages/PyqsPage";
-import ProgressReport from "./components/pages/ProgressReport";
-import StudyPlanPage from "./components/pages/StudyPlanPage";
-import DocumentsPage from "./components/pages/DocumentsPage";
-import AuthPage from "./components/pages/AuthPage";
-import DocumentDetailsPage from "./components/pages/DocumentDetailsPage";
-import SettingsPage from "./components/pages/SettingsPage";
-import FeynmanPage from "./components/pages/FeynmanPage";
-import LandingPage from "./components/pages/LandingPage";
-import { useAuth } from "./context/AuthContext";
-import { PodcastProvider } from "./context/PodcastContext";
-import StudyRoom from "./components/pages/StudyRoom";
-import StudyRoomLobby from "./components/pages/StudyRoomLobby";
-import BottomNavBar from "./components/navigation/BottomNavBar";
-import CommandPalette from "./components/navigation/CommandPalette";
-import './App.css';
-import { useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from 'react-hot-toast';
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
+
+// Feature Domains
+import { AuthPage, LandingPage } from "./features/auth";
+import { ChatPage } from "./features/chat";
+import { 
+  QuizPage, 
+  AudioSummaryPage, 
+  FlashcardApp, 
+  MindMapPage, 
+  SummaryFetcher, 
+  PyqsPage, 
+  FeynmanPage 
+} from "./features/study";
+import { DocumentsPage, DocumentDetailsPage } from "./features/library";
+import { StudyRoom, StudyRoomLobby } from "./features/collaboration";
+import { 
+  ProgressReport, 
+  AnswerPlanner, 
+  StudyPlanPage, 
+  SettingsPage 
+} from "./features/insights";
+
+// Global Layout & Contexts
+import Sidebar from "./components/sidebar/Sidebar";
+import RightSidebar from "./components/rightsidebar/RightSidebar";
+import Header from "./components/navigation/Header";
+import BottomNavBar from "./components/navigation/BottomNavBar";
+import CommandPalette from "./components/navigation/CommandPalette";
+import AuroraBackground from "./components/ui/AuroraBackground";
+import { useAuth } from "./context/AuthContext";
+import { PodcastProvider } from "./context/PodcastContext";
+import './App.css';
 
 function App() {
   const { user } = useAuth();
@@ -93,29 +98,31 @@ function App() {
         )}
         <div className={`flex flex-col flex-grow h-screen overflow-hidden ${!isFullScreenRoute ? 'md:ml-20 pb-24 md:pb-0' : ''}`}>
           {!isFullScreenRoute && <Header />}
-          <div id="scroll-container" className="flex-grow overflow-y-auto relative w-full h-full custom-scroll">
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<AuthPage />} />
-              <Route path="/home" element={<Main />} />
-              <Route path="/study-rooms" element={<StudyRoomLobby />} />
-              <Route path="/room/:roomId" element={<StudyRoom />} />
-              <Route path="/quiz" element={<QuizPage />} />
-              <Route path="/progress-report" element={<ProgressReport />} />
-              <Route path="/audio-summary" element={<AudioSummaryPage />} />
-              <Route path="/flashcards" element={<FlashcardApp />} />
-              <Route path="/mindmap" element={<MindMapPage />} />
-              <Route path="/answer-planner" element={<AnswerPlanner />} />
-              <Route path="/summary" element={<SummaryFetcher />} />
-              <Route path="/pyqs" element={<PyqsPage />} />
-              <Route path="/documents" element={<DocumentsPage />} />
-              <Route path="/documents/:id" element={<DocumentDetailsPage />} />
-              <Route path="/study-plan" element={<StudyPlanPage />} />
-              <Route path="/feynman" element={<FeynmanPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </div>
+          <AuroraBackground className="flex-grow h-full w-full overflow-hidden">
+            <div id="scroll-container" className="flex-grow overflow-y-auto relative w-full h-full custom-scroll">
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<AuthPage />} />
+                <Route path="/home" element={<ChatPage />} />
+                <Route path="/study-rooms" element={<StudyRoomLobby />} />
+                <Route path="/room/:roomId" element={<StudyRoom />} />
+                <Route path="/quiz" element={<QuizPage />} />
+                <Route path="/progress-report" element={<ProgressReport />} />
+                <Route path="/audio-summary" element={<AudioSummaryPage />} />
+                <Route path="/flashcards" element={<FlashcardApp />} />
+                <Route path="/mindmap" element={<MindMapPage />} />
+                <Route path="/answer-planner" element={<AnswerPlanner />} />
+                <Route path="/summary" element={<SummaryFetcher />} />
+                <Route path="/pyqs" element={<PyqsPage />} />
+                <Route path="/documents" element={<DocumentsPage />} />
+                <Route path="/documents/:id" element={<DocumentDetailsPage />} />
+                <Route path="/study-plan" element={<StudyPlanPage />} />
+                <Route path="/feynman" element={<FeynmanPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </div>
+          </AuroraBackground>
         </div>
       </div>
     </PodcastProvider>

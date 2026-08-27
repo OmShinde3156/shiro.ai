@@ -5,6 +5,7 @@ import os
 
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./study_guide.db")
+SQLALCHEMY_DATABASE_URL = DATABASE_URL
 
 # PostgreSQL specific tuning vs SQLite WAL concurrency tuning
 if DATABASE_URL.startswith("postgresql"):
@@ -44,7 +45,17 @@ def init_db():
         from sqlalchemy import text
         with engine.connect() as conn:
             # Users table migrations
-            for col, col_type in [("avatar_url", "TEXT"), ("xp", "INTEGER DEFAULT 0"), ("level", "INTEGER DEFAULT 1")]:
+            for col, col_type in [
+                ("avatar_url", "TEXT"),
+                ("xp", "INTEGER DEFAULT 0"),
+                ("level", "INTEGER DEFAULT 1"),
+                ("ai_quota_daily", "INTEGER DEFAULT 50"),
+                ("groq_api_key_encrypted", "TEXT"),
+                ("gemini_api_key_encrypted", "TEXT"),
+                ("openai_api_key_encrypted", "TEXT"),
+                ("preferred_ai_provider", "TEXT DEFAULT 'auto'"),
+                ("byok_enabled", "BOOLEAN DEFAULT 1")
+            ]:
                 try:
                     # Check if column exists
                     conn.execute(text(f"SELECT {col} FROM users LIMIT 1"))
@@ -55,6 +66,20 @@ def init_db():
                         conn.commit()
                     except Exception as e:
                         print(f"Migration for {col} on users failed: {e}")
+
+            # AIRequestLog table migrations
+            for col, col_type in [
+                ("billing_source", "TEXT DEFAULT 'platform'"),
+                ("latency_ms", "INTEGER DEFAULT 0")
+            ]:
+                try:
+                    conn.execute(text(f"SELECT {col} FROM ai_request_logs LIMIT 1"))
+                except Exception:
+                    try:
+                        conn.execute(text(f"ALTER TABLE ai_request_logs ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception as e:
+                        print(f"Migration for {col} on ai_request_logs failed: {e}")
 
             # Knowledge Edge migrations
             try:
@@ -68,7 +93,13 @@ def init_db():
                     print(f"Migration for confidence_score failed: {e}")
 
             # Documents table migrations
-            for col, col_type in [("source_url", "TEXT"), ("video_id", "TEXT"), ("content_hash", "TEXT")]:
+            for col, col_type in [
+                ("source_url", "TEXT"),
+                ("video_id", "TEXT"),
+                ("content_hash", "TEXT"),
+                ("version", "INTEGER DEFAULT 1"),
+                ("file_url", "TEXT")
+            ]:
                 try:
                     conn.execute(text(f"SELECT {col} FROM documents LIMIT 1"))
                 except Exception:
@@ -111,6 +142,18 @@ def init_db():
                         conn.commit()
                     except Exception as e:
                         print(f"Migration for {col} on summaries failed: {e}")
+
+            # ChatHistory table migrations
+            for col, col_type in [("status", "TEXT DEFAULT 'completed'"), ("latency_ms", "INTEGER DEFAULT 0")]:
+                try:
+                    conn.execute(text(f"SELECT {col} FROM chat_history LIMIT 1"))
+                except Exception:
+                    print(f"Adding missing {col} column to chat_history table...")
+                    try:
+                        conn.execute(text(f"ALTER TABLE chat_history ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception as e:
+                        print(f"Migration for {col} on chat_history failed: {e}")
 
 def get_db():
     """Database dependency"""

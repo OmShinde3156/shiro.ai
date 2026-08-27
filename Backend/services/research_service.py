@@ -87,22 +87,36 @@ class ResearchService:
                 raise Exception(f"Failed to fetch YouTube content: {str(e)}")
 
     async def get_web_content(self, url: str) -> Tuple[str, str]:
-        """Fetch and clean content from a website using trafilatura"""
+        """Fetch and clean content from a website with SSRF validation"""
+        from utils.network_security import validate_safe_url, safe_fetch_text
+        
+        # 1. Validate initial URL
+        validate_safe_url(url)
+        
         try:
-            downloaded = trafilatura.fetch_url(url)
-            if not downloaded:
-                # Fallback to requests
-                res = requests.get(url, timeout=10)
-                downloaded = res.text
+            # 2. Fetch safely with redirect & payload protection
+            final_url, html_content = safe_fetch_text(url)
             
-            content = trafilatura.extract(downloaded)
-            title = trafilatura.extract_metadata(downloaded).title if downloaded else "Web Page"
+            # 3. Extract text content
+            content = trafilatura.extract(html_content)
+            title = trafilatura.extract_metadata(html_content).title if html_content else "Web Page"
             
             if not content:
-                raise Exception("Could not extract content from the URL")
+                # Fallback to simple paragraph stripping if trafilatura fails
+                import bs4
+                soup = bs4.BeautifulSoup(html_content, "html.parser")
+                for s in soup(['script', 'style', 'nav', 'footer', 'header']):
+                    s.decompose()
+                content = soup.get_text(separator=' ', strip=True)
+                title = soup.title.string if soup.title else "Web Page"
                 
-            return title or "Web Page", content
+            if not content or not content.strip():
+                raise Exception("Could not extract readable text content from the URL")
+                
+            return title or "Web Page", content.strip()
         except Exception as e:
+            if isinstance(e, HTTPException):
+                raise e
             raise Exception(f"Failed to fetch web content: {str(e)}")
 
 research_service = ResearchService()

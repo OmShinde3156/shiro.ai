@@ -16,23 +16,29 @@ const BottomNavBar = () => {
   ];
 
   return (
-    <nav className="md:hidden flex justify-around items-center h-20 px-4 w-full bg-slate-950/90 backdrop-blur-2xl fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.5)] border-t border-cyan-400/10">
-      {navItems.map((item) => (
-        <button
-          key={item.path}
-          onClick={() => navigate(item.path)}
-          className={`flex flex-col items-center justify-center transition-all duration-300 relative ${
-            isActive(item.path) ? 'text-cyan-400 scale-110' : 'text-slate-500'
-          }`}
-        >
-          <span className={`material-symbols-outlined ${isActive(item.path) ? 'fill' : ''}`}>
-            {item.icon}
-          </span>
-          {isActive(item.path) && (
-            <span className="absolute -bottom-1 w-1 h-1 bg-cyan-400 rounded-full shadow-[0_0_8px_#72dcff]"></span>
-          )}
-        </button>
-      ))}
+    <nav className="md:hidden flex justify-around items-center h-16 px-4 w-full bg-[var(--sidebar-bg)] border-t border-[var(--border)] backdrop-blur-xl fixed bottom-0 left-0 right-0 z-50 shadow-lg">
+      {navItems.map((item) => {
+        const active = isActive(item.path);
+        return (
+          <button
+            key={item.path}
+            onClick={() => navigate(item.path)}
+            className={`flex flex-col items-center justify-center transition-all duration-200 relative p-2 rounded-xl ${
+              active
+                ? 'text-[#3F6048] dark:text-[#A8C5AC] font-bold scale-105'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+            }`}
+          >
+            <span className={`material-symbols-outlined text-xl ${active ? 'fill' : ''}`}>
+              {item.icon}
+            </span>
+            <span className="text-[10px] mt-0.5">{item.label}</span>
+            {active && (
+              <span className="absolute -bottom-0.5 w-1.5 h-1.5 bg-[#3F6048] dark:bg-[#89A88D] rounded-full"></span>
+            )}
+          </button>
+        );
+      })}
     </nav>
   );
 };

@@ -1,7 +1,8 @@
 import { fetchWithAuth } from '../api/fetchWithAuth';
-import { createContext, useState } from "react";
-import runChat from "../config/Gemini.js";
+import { createContext, useState, useEffect, useRef } from "react";
+import runChat, { streamChat } from "../config/Gemini.js";
 import API_BASE_URL from "../api/config.js";
+import { translations } from "../utils/translations.js";
 
 export const Context = createContext();
 
@@ -13,13 +14,57 @@ export const ContextProvider = ({ children }) => {
   const [showResults, setShowResults] = useState(false);
   const [documents, setDocuments] = useState([]);
   const [prevPrompts, setPrevPrompts] = useState([]);
-  const [messages, setMessages] = useState([]); // {text: string, isUser: boolean, isLoading?: boolean}
+  const [messages, setMessages] = useState([]);
   const [isFeynmanMode, setIsFeynmanMode] = useState(false);
   const [feynmanConcept, setFeynmanConcept] = useState(null);
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguageState] = useState(localStorage.getItem('shiro_language') || "en");
+  const [studyStats, setStudyStats] = useState({ streak: 1, avgScore: 75, xp: 140, level: 2 });
+  const [activeHandoffContext, setActiveHandoffContext] = useState(null);
+
+  const abortControllerRef = useRef(null);
+
+  const setLanguage = (lang) => {
+    setLanguageState(lang);
+    localStorage.setItem('shiro_language', lang);
+  };
+
+  const t = (key, fallback = "") => {
+    return translations[language]?.[key] || translations['en']?.[key] || fallback || key;
+  };
+
+  const stopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setLoading(false);
+  };
+
+  const triggerStudyTool = (tool, handoffObject) => {
+    setActiveHandoffContext(handoffObject);
+    return tool;
+  };
+
+  const fetchUserStats = async (userId) => {
+    try {
+      const response = await fetchWithAuth(`${API_BASE_URL}/progress`);
+      if (response.ok) {
+        const data = await response.json();
+        setStudyStats({
+          streak: data.study_streak || 1,
+          avgScore: data.average_score || 75,
+          xp: data.xp || 140,
+          level: data.level || 2,
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching study stats:", err);
+    }
+  };
 
   const fetchDocuments = async (userId) => {
     if (userId) {
+      fetchUserStats(userId);
       try {
         const response = await fetchWithAuth(`${API_BASE_URL}/documents`);
         if (response.ok) {
@@ -82,12 +127,24 @@ export const ContextProvider = ({ children }) => {
     setRecentPrompt(currentInput);
     setPrevPrompts(prev => [...prev, currentInput]);
 
-    setMessages(prev => [...prev, { text: currentInput, isUser: true }, { text: "", isUser: false, isLoading: true }]);
+    // Append user message + initial streaming placeholder
+    setMessages(prev => [
+      ...prev,
+      { text: currentInput, isUser: true },
+      { 
+        text: "", 
+        isUser: false, 
+        isLoading: true, 
+        statusText: "Searching notes & documents...",
+        citations: [],
+        sources: [],
+        suggestedAction: null,
+        actionHandoff: null
+      }
+    ]);
 
     try {
-      let data;
       if (isFeynmanMode && feynmanConcept) {
-        // Evaluate Feynman Explanation
         const formData = new FormData();
         formData.append('user_id', userId);
         formData.append('concept_name', feynmanConcept);
@@ -99,45 +156,113 @@ export const ContextProvider = ({ children }) => {
         });
         const evalData = await response.json();
         
-        data = {
-          response: evalData.shiro_response,
-          internal_thought: evalData.feedback
-        };
-        
-        if (evalData.score > 80) {
-           // Successfully explained!
-           // We keep the mode if user wants to keep chatting or we can reset
-        }
+        setMessages(prev => {
+          const next = [...prev];
+          next[next.length - 1] = {
+            text: evalData.shiro_response,
+            thought: evalData.feedback,
+            score: evalData.score,
+            isUser: false,
+            isLoading: false
+          };
+          return next;
+        });
+        setResultData(evalData.shiro_response);
       } else {
-        data = await runChat(currentInput, language, userId, documentIds, mode); 
+        // SSE Real-Time Streaming
+        abortControllerRef.current = new AbortController();
+
+        await streamChat({
+          prompt: currentInput,
+          language,
+          userId,
+          documentIds,
+          mode,
+          abortSignal: abortControllerRef.current.signal,
+          onStatus: (statusPayload) => {
+            setMessages(prev => {
+              const next = [...prev];
+              const last = next[next.length - 1];
+              if (last && !last.isUser) {
+                last.statusText = statusPayload.step;
+              }
+              return next;
+            });
+          },
+          onCitation: (citation) => {
+            setMessages(prev => {
+              const next = [...prev];
+              const last = next[next.length - 1];
+              if (last && !last.isUser) {
+                const existing = last.citations || [];
+                if (!existing.some(c => c.id === citation.id)) {
+                  last.citations = [...existing, citation];
+                  last.sources = last.citations;
+                }
+              }
+              return next;
+            });
+          },
+          onToken: (tokenDelta) => {
+            setMessages(prev => {
+              const next = [...prev];
+              const last = next[next.length - 1];
+              if (last && !last.isUser) {
+                last.text = (last.text || "") + tokenDelta;
+                last.isLoading = false;
+              }
+              return next;
+            });
+          },
+          onAction: (actionHandoff) => {
+            setMessages(prev => {
+              const next = [...prev];
+              const last = next[next.length - 1];
+              if (last && !last.isUser) {
+                last.suggestedAction = actionHandoff.tool || actionHandoff.action;
+                last.actionHandoff = actionHandoff;
+              }
+              return next;
+            });
+          },
+          onError: (err) => {
+            setMessages(prev => {
+              const next = [...prev];
+              const last = next[next.length - 1];
+              if (last && !last.isUser && !last.text) {
+                last.text = `Error: ${err.message || "Failed to generate response."}`;
+                last.isLoading = false;
+              }
+              return next;
+            });
+          },
+          onDone: (donePayload) => {
+            setMessages(prev => {
+              const next = [...prev];
+              const last = next[next.length - 1];
+              if (last && !last.isUser) {
+                last.isLoading = false;
+                last.status = donePayload.status || "completed";
+              }
+              return next;
+            });
+          }
+        });
       }
-
-      setResultData(data.response); 
-
-      setMessages(prev => {
-        const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = { 
-          text: data.response, 
-          thought: data.internal_thought,
-          citations: data.citations || [],
-          isUser: false, 
-          isLoading: false 
-        };
-        return newMessages;
-      });
-      
-      return data.response; 
     } catch (error) {
       console.error("Error in onSent:", error);
-      setResultData("Something went wrong. Please try again.");
-      
       setMessages(prev => {
-        const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = { text: "Something went wrong. Please try again.", isUser: false, isLoading: false };
-        return newMessages;
+        const next = [...prev];
+        const last = next[next.length - 1];
+        if (last && !last.isUser && !last.text) {
+          last.text = "Something went wrong. Please try again.";
+          last.isLoading = false;
+        }
+        return next;
       });
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -153,6 +278,7 @@ export const ContextProvider = ({ children }) => {
         showResults,
         setShowResults,
         onSent,
+        stopGeneration,
         documents,
         setDocuments,
         fetchDocuments,
@@ -165,7 +291,14 @@ export const ContextProvider = ({ children }) => {
         startFeynmanChallenge,
         feynmanConcept,
         language,
-        setLanguage
+        setLanguage,
+        studyStats,
+        setStudyStats,
+        fetchUserStats,
+        activeHandoffContext,
+        setActiveHandoffContext,
+        triggerStudyTool,
+        t
       }}
     >
       {children}

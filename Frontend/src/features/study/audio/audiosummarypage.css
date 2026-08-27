@@ -1,0 +1,67 @@
+/* Audio Summary Styles scoped to theme variables */
+.audio-summary-page {
+    padding: 30px;
+    max-width: 1000px;
+    margin: auto;
+    color: var(--text-main);
+}
+
+/* Header */
+.header-section {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.page-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--text-main);
+}
+
+.page-subtitle {
+    font-size: 16px;
+    color: var(--text-secondary);
+}
+
+/* Form */
+.summary-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 600px;
+    margin: 0 auto 50px auto;
+    padding: 25px;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group select {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background-color: var(--bg-surface-elevated);
+    color: var(--text-main);
+    font-size: 15px;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--primary);
+    outline: none;
+}

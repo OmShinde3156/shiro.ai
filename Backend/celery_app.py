@@ -1,6 +1,11 @@
 import os
-from celery import Celery
 from dotenv import load_dotenv
+
+try:
+    from celery import Celery
+except ImportError:
+    Celery = None
+
 try:
     import redis
 except ImportError:
@@ -21,7 +26,7 @@ def is_redis_available():
 
 HAS_REDIS = is_redis_available()
 
-if HAS_REDIS:
+if HAS_REDIS and Celery is not None:
     celery_app = Celery(
         "shiro_tasks",
         broker=REDIS_URL,
@@ -42,14 +47,25 @@ if HAS_REDIS:
         task_time_limit=3600,
     )
 else:
-    # Minimal mock for when Redis is offline
-    print("[!] REDIS OFFLINE: Shiro will fall back to FastAPI BackgroundTasks.")
+    # Minimal mock for when Redis/Celery is offline in local environment
     class DummyTask:
         def __init__(self, func):
             self.func = func
+        def __call__(self, *args, **kwargs):
+            import inspect
+            sig = inspect.signature(self.func)
+            if "self" in sig.parameters and (len(args) == 0 or args[0] is not self):
+                return self.func(self, *args, **kwargs)
+            return self.func(*args, **kwargs)
         def delay(self, *args, **kwargs):
             import threading
-            threading.Thread(target=self.func, args=args, kwargs=kwargs).start()
+            t = threading.Thread(target=self.__call__, args=args, kwargs=kwargs)
+            t.start()
+            class DummyAsyncResult:
+                id = "mock-task-id-1234"
+            return DummyAsyncResult()
+        def retry(self, *args, **kwargs):
+            pass
     
     class DummyCelery:
         def task(self, *args, **kwargs):
@@ -61,3 +77,4 @@ else:
 
 if __name__ == "__main__" and celery_app and hasattr(celery_app, "start"):
     celery_app.start()
+
