@@ -54,6 +54,7 @@ const ChatPage = () => {
     studyStats,
     language,
     triggerStudyTool,
+    clearChat,
     t
   } = useContext(Context);
 
@@ -72,17 +73,23 @@ const ChatPage = () => {
     }
   }, [user]);
 
-  // Auto scroll to latest message in chat view
+  // Auto scroll to latest message in chat view (see where we left off)
   useEffect(() => {
     if (showResults && chatBottomRef.current) {
-      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+      const timer = setTimeout(() => {
+        chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [messages, loading, showResults]);
 
   const handleSend = () => {
     if (!input.trim() || loading) return;
-    const docIdsToSend = selectedDocIds.length > 0 ? selectedDocIds : documents.map(d => d.id);
-    onSent(language, user?.id, docIdsToSend, mode, input);
+    const textToSend = input.trim();
+    setInput(""); // Clear textarea and reset input immediately!
+    const docIdsToSend = selectedDocIds.length > 0 ? selectedDocIds : [];
+    const scope = selectedDocIds.length > 0 ? "LIBRARY" : "GLOBAL";
+    onSent(language, user?.id, docIdsToSend, mode, textToSend, scope);
   };
 
   const handleToggleDoc = (docId) => {
@@ -98,7 +105,13 @@ const ChatPage = () => {
     if (triggerStudyTool) {
       triggerStudyTool(tool, handoffPayload);
     }
-    const navState = { state: { handoff: handoffPayload, documentId: handoffPayload?.document_ids?.[0] } };
+    const navState = { 
+      state: { 
+        handoff: handoffPayload, 
+        documentId: handoffPayload?.document_ids?.[0],
+        autoStart: true 
+      } 
+    };
     if (tool === 'quiz') {
       navigate('/quiz', navState);
     } else if (tool === 'flashcards') {
@@ -145,8 +158,9 @@ const ChatPage = () => {
 
   const handleSuggestionClick = (prompt) => {
     setInput(prompt);
-    const docIdsToSend = selectedDocIds.length > 0 ? selectedDocIds : documents.map(d => d.id);
-    onSent(language, user?.id, docIdsToSend, mode, prompt);
+    const docIdsToSend = selectedDocIds.length > 0 ? selectedDocIds : [];
+    const scope = selectedDocIds.length > 0 ? "LIBRARY" : "GLOBAL";
+    onSent(language, user?.id, docIdsToSend, mode, prompt, scope);
   };
 
   const userName = user?.name || "Scholar";
@@ -171,27 +185,44 @@ const ChatPage = () => {
       {showResults ? (
         <div className="flex flex-col h-full w-full overflow-hidden">
           {/* Top Chat Subheader */}
-          <div className="w-full max-w-5xl mx-auto px-4 md:px-6 flex items-center justify-between pb-3 border-b border-[var(--border)] mb-2 shrink-0 pt-3">
+          <div className="w-full max-w-5xl mx-auto px-3.5 sm:px-6 flex items-center justify-between pb-2.5 sm:pb-3 border-b border-[var(--border)] mb-2 shrink-0 pt-2.5 sm:pt-3">
             <div className="flex items-center gap-2">
               <Badge variant="sage" size="md">
                 Shiro AI Tutor
               </Badge>
-              <span className="text-xs text-[var(--text-secondary)]">
+              <span className="text-xs text-[var(--text-secondary)] hidden xs:inline">
                 {mode === 'human' ? t("humanTutor", "Human Tutor") : t("surgicalMode", "Surgical Exam Mode")}
               </span>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowResults(false)}
-            >
-              Back to Overview
-            </Button>
+            <div className="flex items-center gap-2">
+              {messages.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (window.confirm("Start a new conversation?")) {
+                      clearChat();
+                    }
+                  }}
+                  title="Clear conversation"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                  <span>New Chat</span>
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowResults(false)}
+              >
+                Back to Overview
+              </Button>
+            </div>
           </div>
 
           {/* Messages Stream Container (Scrollbar on Right Edge) */}
-          <div className="flex-1 w-full overflow-y-auto custom-scroll">
-            <div className="max-w-4xl mx-auto px-4 md:px-6 py-2 space-y-2">
+          <div className="flex-1 w-full overflow-y-auto custom-scroll touch-scroll">
+            <div className="max-w-4xl mx-auto px-3.5 sm:px-6 py-2 space-y-2">
               {messages.map((msg, index) => (
                 <ChatMessage
                   key={index}
@@ -214,7 +245,7 @@ const ChatPage = () => {
           </div>
 
           {/* Floating Bottom Composer */}
-          <div className="w-full max-w-4xl mx-auto px-4 md:px-6 pt-3 pb-4 shrink-0">
+          <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 pt-2 sm:pt-3 pb-3 sm:pb-4 shrink-0">
             <ChatComposer
               input={input}
               setInput={setInput}
@@ -231,14 +262,14 @@ const ChatPage = () => {
         </div>
       ) : (
         /* VIEW B: HIGH-IMPACT STUDENT INTELLIGENCE DASHBOARD */
-        <div className="flex-1 w-full overflow-y-auto custom-scroll">
-          <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 space-y-6 pb-20">
+        <div className="flex-1 w-full overflow-y-auto custom-scroll touch-scroll">
+          <div className="max-w-6xl mx-auto px-3.5 sm:px-6 py-4 sm:py-6 space-y-5 sm:space-y-6 pb-20">
             {/* 1. Hero Header Banner */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4"
             >
             <div>
               <div className="flex items-center gap-2 text-[11px] font-bold text-[#3F6048] dark:text-[#A8C5AC] mb-1 tracking-widest uppercase font-mono">
@@ -278,6 +309,42 @@ const ChatPage = () => {
             transition={{ duration: 0.3, delay: 0.05 }}
             className="w-full space-y-3"
           >
+            {/* Active Conversation In Progress Banner (Click to Expand and see where you left off) */}
+            {messages.length > 0 && (
+              <div
+                onClick={() => setShowResults(true)}
+                className="p-3.5 sm:p-4 rounded-2xl bg-linear-to-r from-[#3F6048]/15 via-[var(--bg-surface-elevated)] to-[var(--bg-surface)] border border-[#3F6048]/30 hover:border-[#3F6048] cursor-pointer transition-all shadow-xs flex items-center justify-between gap-3 group"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl bg-[#3F6048] dark:bg-[#89A88D] text-white dark:text-black flex items-center justify-center flex-shrink-0 shadow-xs">
+                    <Sparkles className="w-5 h-5 animate-pulse" />
+                  </div>
+                  <div className="min-w-0 flex flex-col gap-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs sm:text-sm font-bold text-[var(--text-main)] font-serif truncate">
+                        Active Conversation in Progress
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-[#3F6048]/20 text-[#3F6048] dark:text-[#A8C5AC] text-[9px] font-mono font-bold shrink-0">
+                        {messages.filter(m => m.isUser).length} turns
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[var(--text-secondary)] truncate max-w-lg">
+                      Last: {messages[messages.length - 1]?.text?.slice(0, 100) || "Continue where you left off..."}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={(e) => { e.stopPropagation(); setShowResults(true); }}
+                  className="shrink-0 group-hover:scale-105 transition-transform"
+                >
+                  <span>Resume Chat</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            )}
+
             <ChatComposer
               input={input}
               setInput={setInput}
@@ -289,6 +356,11 @@ const ChatPage = () => {
               onUploadFile={handleUploadFile}
               mode={mode}
               setMode={setMode}
+              onFocusExpand={() => {
+                if (messages.length > 0) {
+                  setShowResults(true);
+                }
+              }}
               placeholder={t("composerPlaceholder", "Ask Shiro anything about your notes, or type / for commands...")}
             />
 
@@ -299,10 +371,10 @@ const ChatPage = () => {
                 {t("quickActions", "Quick actions:")}
               </span>
               {[
-                { label: t("summarizeFormulas", "Summarize key formulas"), icon: FileText },
+                { label: "What documents do I have in my library?", icon: BookOpen },
+                { label: "What should I study today based on my progress?", icon: Target },
                 { label: t("explainIntuitively", "Explain concept intuitively"), icon: BrainCircuit },
-                { label: t("generateMcqs", "Generate 5 practice MCQs"), icon: HelpCircle },
-                { label: t("testWeakest", "Test my weakest topic"), icon: Target },
+                { label: t("summarizeFormulas", "Summarize key formulas"), icon: FileText },
               ].map((item, idx) => {
                 const Icon = item.icon;
                 return (

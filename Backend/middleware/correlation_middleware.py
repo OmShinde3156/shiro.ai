@@ -56,6 +56,20 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
             request_id = str(uuid.uuid4())
 
         request.state.request_id = request_id
+        
+        # Resolve user_id from Authorization header if present
+        request.state.user_id = None
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.startswith("Bearer "):
+            try:
+                token = auth_header.split(" ", 1)[1].strip()
+                if token and token not in ("guest", "null", "undefined"):
+                    import jwt
+                    payload = jwt.decode(token, options={"verify_signature": False})
+                    request.state.user_id = payload.get("sub")
+            except Exception:
+                pass
+
         start_time = time.time()
 
         try:

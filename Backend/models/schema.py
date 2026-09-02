@@ -174,6 +174,11 @@ class DocumentIngestionStatusResponse(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     document_ids: List[int] = []
+    active_document_id: Optional[int] = None
+    context_scope: Optional[str] = "GLOBAL" # "GLOBAL", "LIBRARY", "DOCUMENT", "ROOM"
+    room_id: Optional[str] = None
+    selected_text: Optional[str] = None
+    tool_request: Optional[str] = None # "profile", "study_time", "important_topics", "summarize_notes"
     language: Language = Language.ENGLISH
     mode: Optional[str] = "human" # "tutor"/"human", "surgical"/"exam", "feynman"
     response_style: Optional[str] = "balanced" # "concise", "balanced", "detailed"
@@ -189,6 +194,17 @@ class ChatResponse(BaseModel):
     sources: List[Dict[str, Any]]
     language: str
     suggested_action: Optional[str] = None
+    context_scope: Optional[str] = "GLOBAL"
+
+class DocumentProfileResponse(BaseModel):
+    document_id: int
+    filename: str
+    word_count: int
+    reading_time_mins: int
+    deep_study_time_mins: int
+    difficulty: str
+    key_topics: List[str]
+    summary_preview: str
 
 # Summary Schemas
 class SummaryRequest(BaseModel):
@@ -210,6 +226,11 @@ class PodcastRequest(BaseModel):
     episodes: int = Field(default=1, ge=1, le=10)
     language: Language = Language.ENGLISH
     topic: Optional[str] = None
+    mode: str = Field(default="dialogue", description="Audio style: 'dialogue' (Pocket FM dual-host) or 'narrator' (GIGL/Kuku FM audiobook)")
+    narrator_voice: Optional[str] = Field(default=None, description="Preferred voice for solo narrator mode ('en-US-AndrewNeural' or 'en-US-AvaNeural')")
+    duration: str = Field(default="standard", description="Episode duration tier: 'quick' (3-5 min), 'standard' (8-12 min), 'masterclass' (15-20 min)")
+    custom_title: Optional[str] = Field(default=None, description="Optional custom series title")
+    subject: Optional[str] = Field(default=None, description="Optional subject/topic category for library grouping")
 
 # Mind Map Schemas
 class MindMapRequest(BaseModel):
@@ -220,9 +241,9 @@ class MindMapRequest(BaseModel):
 class MindMapNode(BaseModel):
     id: str
     label: str
-    x: float
-    y: float
-    level: int
+    x: float = 0.0
+    y: float = 0.0
+    level: int = 0
     score: Optional[float] = 0.8
 
 class MindMapEdge(BaseModel):

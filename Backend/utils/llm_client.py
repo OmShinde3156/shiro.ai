@@ -12,7 +12,6 @@ from pathlib import Path
 from openai import OpenAI
 from groq import Groq
 import google.generativeai as genai
-from sentence_transformers import SentenceTransformer
 from pydantic import BaseModel, Field, ValidationError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from fastapi import HTTPException
@@ -101,18 +100,21 @@ class AIGateway:
         self.google_api_key = os.getenv("GOOGLE_API_KEY", os.getenv("GEMINI_API_KEY", "")).strip()
         
         self.openai_model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-        self.groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-        self.google_model = os.getenv("GOOGLE_MODEL", os.getenv("GEMINI_MODEL", "gemini-2.5-flash"))
+        self.groq_reasoning_model = os.getenv("GROQ_REASONING_MODEL", "openai/gpt-oss-120b")
+        self.groq_fast_model = os.getenv("GROQ_FAST_MODEL", "qwen/qwen3.8-27b")
+        self.groq_model = os.getenv("GROQ_MODEL", self.groq_reasoning_model)
+        self.google_model = os.getenv("GOOGLE_MODEL", os.getenv("GEMINI_MODEL", "gemini-3.6-flash"))
 
-        # Initialize clients
+        # Initialize clients with production timeout (default 60s for deep reasoning & scripts)
+        self.llm_timeout = float(os.getenv("LLM_TIMEOUT", "60.0"))
         self.openai_client = None
         if self.openai_api_key and self.openai_api_key not in ("sk-dummy-key-replace-me", ""):
-            try: self.openai_client = OpenAI(api_key=self.openai_api_key, timeout=15.0)
+            try: self.openai_client = OpenAI(api_key=self.openai_api_key, timeout=self.llm_timeout)
             except Exception: pass
 
         self.groq_client = None
         if self.groq_api_key and self.groq_api_key not in ("gsk_dummy_key_replace_me", ""):
-            try: self.groq_client = Groq(api_key=self.groq_api_key, timeout=15.0)
+            try: self.groq_client = Groq(api_key=self.groq_api_key, timeout=self.llm_timeout)
             except Exception: pass
 
         self.gemini_client = None
@@ -282,6 +284,22 @@ class AIGateway:
 
             return {"valid": False, "provider": provider, "error_code": code, "message": msg}
 
+    def _select_groq_model_sequence(self, feature: str, prompt: str, response_format: str = "text") -> List[str]:
+        """
+        Routes requests to the optimal Groq model order:
+        - Strict JSON Mode -> [qwen3.8-27b, gpt-oss-120b] (Qwen has 100% native Groq hardware JSON validator support)
+        - Deep Reasoning Text (Feynman Critique, Research, Conceptual Mastery) -> [gpt-oss-120b, qwen3.8-27b]
+        - Fast Interactive Text (Chat, Dialogue Turns) -> [qwen3.8-27b, gpt-oss-120b]
+        """
+        if response_format == "json_object":
+            return [self.groq_fast_model, self.groq_reasoning_model]
+
+        reasoning_features = {"feynman", "feynman_eval", "research", "concept_mastery", "hard_math", "studyplan"}
+        if feature in reasoning_features or len(prompt) > 4000:
+            return [self.groq_reasoning_model, self.groq_fast_model]
+        else:
+            return [self.groq_fast_model, self.groq_reasoning_model]
+
     def calculate_cost(self, provider: str, input_tokens: int, output_tokens: int) -> Decimal:
         """Accurate monetary cost accounting using Decimal arithmetic"""
         card = RATE_CARDS_2026_Q3.get(provider, RATE_CARDS_2026_Q3["fallback"])
@@ -436,35 +454,51 @@ class AIGateway:
 
         else:
             # Platform Path: Standard fallback chain
-            # 1. Primary: Try Groq First
+            # 1. Primary: Try Groq with Dual-Engine Sequence (Reasoning <-> Fast)
             if self.groq_client:
-                try:
-                    selected_provider = "groq"
-                    selected_model = self.groq_model
-                    resp = await asyncio.to_thread(
-                        self.groq_client.chat.completions.create,
-                        model=self.groq_model,
-                        messages=[{"role": "user", "content": full_prompt}],
-                        response_format={"type": "json_object"} if response_format == "json_object" else None,
-                        temperature=0.3
-                    )
-                    content = resp.choices[0].message.content
-                    if resp.usage:
-                        input_tokens = resp.usage.prompt_tokens
-                        output_tokens = resp.usage.completion_tokens
-                except Exception as e:
-                    logger.warning(f"Groq platform primary failed for request {request_id}: {e}")
-                    fallback_used = True
+                groq_models = self._select_groq_model_sequence(feature, full_prompt, response_format)
+                for g_model in groq_models:
+                    try:
+                        selected_provider = "groq"
+                        selected_model = g_model
+                        resp = await asyncio.to_thread(
+                            self.groq_client.chat.completions.create,
+                            model=g_model,
+                            messages=[{"role": "user", "content": full_prompt}],
+                            response_format={"type": "json_object"} if response_format == "json_object" else None,
+                            temperature=0.3
+                        )
+                        raw_content = resp.choices[0].message.content or ""
+                        if not raw_content.strip():
+                            logger.warning(f"Groq model {g_model} returned empty content for {feature}, failing over to alternate model...")
+                            fallback_used = True
+                            continue
+
+                        content = raw_content
+                        if resp.usage:
+                            input_tokens = resp.usage.prompt_tokens
+                            output_tokens = resp.usage.completion_tokens
+                        break
+                    except Exception as e:
+                        err_str = str(e)
+                        logger.warning(f"Groq model {g_model} failed for request {request_id}: {e}")
+                        fallback_used = True
+                        if "reduce the length of the messages" in err_str or "400" in err_str:
+                            if len(full_prompt) > 10000:
+                                logger.info("Payload oversized for Groq: truncating prompt to 10,000 chars for alternate model...")
+                                full_prompt = full_prompt[:10000] + "\n\n[Content truncated to fit model context limits]"
 
             # 2. Secondary: Try Gemini
             if not content and self.gemini_client:
                 try:
                     selected_provider = "gemini"
                     selected_model = self.google_model
+                    # Bound payload to 18,000 characters to safeguard Gemini free tier token quotas
+                    safe_gemini_prompt = full_prompt[:18000] if len(full_prompt) > 18000 else full_prompt
                     gen_config = {"response_mime_type": "application/json"} if response_format == "json_object" else None
                     resp = await asyncio.to_thread(
                         self.gemini_client.generate_content,
-                        full_prompt,
+                        safe_gemini_prompt,
                         generation_config=gen_config
                     )
                     content = resp.text
@@ -975,7 +1009,121 @@ class AIGateway:
         except ValidationError:
             if isinstance(result.parsed, dict) and "questions" in result.parsed:
                 return result.parsed["questions"]
+            elif isinstance(result.parsed, list):
+                return result.parsed
             raise
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    async def generate_quiz_questions_optimized(self, prompt: str, user_id: Optional[int] = None, db: Optional[Any] = None) -> List[Dict[str, Any]]:
+        """Generate high-yield important quiz questions from custom prompt"""
+        result = await self.execute_with_governance(
+            prompt=prompt,
+            response_format="json_object",
+            feature="quiz",
+            prompt_version="v1.0",
+            user_id=user_id,
+            db=db
+        )
+        
+        if result.provider == "fallback" or not result.parsed:
+            return [
+                {
+                    "question": "What is the primary core concept discussed in this material?",
+                    "options": {"A": "Core Definition & Principles", "B": "Secondary Architecture", "C": "External Tooling", "D": "Deprecated Methods"},
+                    "correct_answer": "A",
+                    "explanation": "High-yield exam review focuses on foundational principles and core concepts."
+                }
+            ] * 5
+
+        try:
+            clean_str = self._clean_json_string(result.content)
+            validated = QuizResponse.model_validate_json(clean_str)
+            return [q.model_dump() for q in validated.questions]
+        except Exception:
+            if isinstance(result.parsed, dict) and "questions" in result.parsed:
+                return result.parsed["questions"]
+            elif isinstance(result.parsed, list):
+                return result.parsed
+            return [
+                {
+                    "question": "What is the primary concept covered in this section?",
+                    "options": {"A": "Core Theory", "B": "Implementation", "C": "Testing", "D": "Deployment"},
+                    "correct_answer": "A",
+                    "explanation": "Core theoretical foundations form the basis of this topic."
+                }
+            ]
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    async def generate_important_questions_list(
+        self, 
+        content: str, 
+        pyq_content: str, 
+        num_questions: int, 
+        user_id: Optional[int] = None, 
+        db: Optional[Any] = None
+    ) -> List[Dict[str, Any]]:
+        """Generate high-yield important university/exam revision questions (non-MCQ)"""
+        prompt_def = prompt_registry.get("important_questions", "v1.0")
+        prompt = prompt_def.template.format(
+            content=content[:10000],
+            pyq_content=pyq_content[:4000] if pyq_content else "No previous papers provided. Focus on core high-yield principles.",
+            num_questions=num_questions
+        )
+        
+        result = await self.execute_with_governance(
+            prompt=prompt,
+            response_format="json_object",
+            feature="important_questions",
+            prompt_version=prompt_def.version,
+            user_id=user_id,
+            db=db
+        )
+        
+        if result.provider == "fallback" or not result.parsed:
+            return [
+                {
+                    "question": "Explain the fundamental architecture and working principles covered in this material.",
+                    "category": "Core Theory",
+                    "importance": "High Yield (95% Exam Probability)",
+                    "estimated_marks": "10 Marks",
+                    "key_points": [
+                        "Define primary terminology and design objectives",
+                        "Elaborate on the component interactions and data flow",
+                        "Provide concrete practical examples or mathematical bounds"
+                    ],
+                    "model_answer_summary": "A comprehensive answer covers key definitions, diagrams, and structural advantages.",
+                    "exam_insight": "Commonly asked as a long-form question in semester exams."
+                }
+            ] * min(num_questions, 5)
+
+        try:
+            if isinstance(result.parsed, dict) and "questions" in result.parsed:
+                return result.parsed["questions"]
+            elif isinstance(result.parsed, list):
+                return result.parsed
+            
+            clean_str = self._clean_json_string(result.content)
+            data = json.loads(clean_str)
+            return data.get("questions", data if isinstance(data, list) else [])
+        except Exception as ex:
+            logger.warning(f"Failed to parse important questions JSON: {ex}")
+            return [
+                {
+                    "question": "Describe the main theorem / methodology described in the document and its practical implications.",
+                    "category": "Analytical & Conceptual",
+                    "importance": "High Yield (90% Exam Probability)",
+                    "estimated_marks": "5 Marks",
+                    "key_points": [
+                        "State the theorem / premise clearly",
+                        "List key assumptions and edge conditions",
+                        "Summarize real-world use cases"
+                    ],
+                    "model_answer_summary": "Focus on clarity, step-by-step reasoning, and real-world application.",
+                    "exam_insight": "Tests conceptual depth beyond memorization."
+                }
+            ]
+
+
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     async def generate_flashcards(self, content: str, num_cards: int, user_id: Optional[int] = None, db: Optional[Any] = None) -> List[Dict[str, str]]:

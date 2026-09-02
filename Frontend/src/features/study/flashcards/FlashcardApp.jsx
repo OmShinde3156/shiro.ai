@@ -41,6 +41,7 @@ export const FlashcardApp = () => {
   const [selectedDocId, setSelectedDocId] = useState(initialDocId);
   const [numCards, setNumCards] = useState(10);
   const [scoreStats, setScoreStats] = useState({ again: 0, hard: 0, good: 0, easy: 0 });
+  const autoStartedRef = React.useRef(false);
 
   useEffect(() => {
     if (user?.id) fetchDocuments(user.id);
@@ -51,6 +52,14 @@ export const FlashcardApp = () => {
       setSelectedDocId(location.state?.documentId || documents[0].id);
     }
   }, [documents, selectedDocId, location.state]);
+
+  // Seamless Handoff Auto-Start
+  useEffect(() => {
+    if (location.state?.autoStart && selectedDocId && !autoStartedRef.current && !loading && flashcards.length === 0) {
+      autoStartedRef.current = true;
+      fetchGeneratedCards();
+    }
+  }, [selectedDocId, location.state]);
 
   const fetchGeneratedCards = async () => {
     if (!selectedDocId) {
@@ -321,30 +330,30 @@ export const FlashcardApp = () => {
           {/* 3D Flip Card Container */}
           <div 
             onClick={() => setIsFlipped(!isFlipped)}
-            className="w-full min-h-[320px] rounded-3xl cursor-pointer select-none perspective-1000"
+            className="w-full min-h-[260px] sm:min-h-[320px] rounded-3xl cursor-pointer select-none perspective-1000 active:scale-[0.99] transition-transform"
           >
             <motion.div
               animate={{ rotateY: isFlipped ? 180 : 0 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               style={{ transformStyle: 'preserve-3d' }}
-              className="relative w-full min-h-[320px] rounded-3xl p-8 flex flex-col justify-between glass-panel border-[var(--border)] shadow-md hover:border-[#3F6048]/40 dark:hover:border-[#89A88D]/40 transition-colors bg-[var(--bg-surface)]"
+              className="relative w-full min-h-[260px] sm:min-h-[320px] rounded-3xl p-5 sm:p-8 flex flex-col justify-between glass-panel border-[var(--border)] shadow-md hover:border-[#3F6048]/40 dark:hover:border-[#89A88D]/40 transition-colors bg-[var(--bg-surface)]"
             >
               {/* Card Front */}
               <div 
                 style={{ backfaceVisibility: 'hidden' }}
-                className={`absolute inset-0 p-8 flex flex-col justify-between ${isFlipped ? 'pointer-events-none' : ''}`}
+                className={`absolute inset-0 p-5 sm:p-8 flex flex-col justify-between ${isFlipped ? 'pointer-events-none' : ''}`}
               >
                 <div className="flex items-center justify-between">
                   <Badge variant="sage" size="sm">Question / Prompt</Badge>
                   <span className="text-xs text-[var(--text-muted)] font-mono">Tap to reveal</span>
                 </div>
-                <div className="my-auto text-center">
-                  <h3 className="text-xl md:text-2xl font-bold text-[var(--text-main)] leading-relaxed font-serif">
+                <div className="my-auto text-center py-2">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[var(--text-main)] leading-relaxed font-serif">
                     {currentCard?.question || currentCard?.front || "What is this concept?"}
                   </h3>
                 </div>
                 <div className="text-center text-xs text-[var(--text-muted)]">
-                  Click or press Space to see answer
+                  Click or tap to see answer
                 </div>
               </div>
 
@@ -354,14 +363,14 @@ export const FlashcardApp = () => {
                   backfaceVisibility: 'hidden',
                   transform: 'rotateY(180deg)'
                 }}
-                className={`absolute inset-0 p-8 flex flex-col justify-between bg-[var(--bg-surface-elevated)] rounded-3xl ${!isFlipped ? 'pointer-events-none' : ''}`}
+                className={`absolute inset-0 p-5 sm:p-8 flex flex-col justify-between bg-[var(--bg-surface-elevated)] rounded-3xl ${!isFlipped ? 'pointer-events-none' : ''}`}
               >
                 <div className="flex items-center justify-between">
                   <Badge variant="gold" size="sm">Answer & Explanation</Badge>
                   {currentCard?.category && <span className="text-xs text-[var(--text-muted)] font-mono">{currentCard.category}</span>}
                 </div>
-                <div className="my-auto text-center">
-                  <p className="text-lg md:text-xl font-medium text-[var(--text-main)] leading-relaxed">
+                <div className="my-auto text-center py-2 overflow-y-auto max-h-[160px] custom-scroll">
+                  <p className="text-base sm:text-lg md:text-xl font-medium text-[var(--text-main)] leading-relaxed">
                     {currentCard?.answer || currentCard?.back || "Explanation text."}
                   </p>
                 </div>
@@ -379,37 +388,37 @@ export const FlashcardApp = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2"
+                className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-2"
               >
                 <button
                   onClick={() => handleRating(1)}
-                  className="p-3 rounded-2xl border border-[#C96B62]/40 bg-[#F7E8E5] dark:bg-[#C96B62]/15 text-[#9E352B] dark:text-[#E58B82] hover:scale-[1.01] transition-transform text-center"
+                  className="p-2.5 sm:p-3 rounded-2xl border border-[#C96B62]/40 bg-[#F7E8E5] dark:bg-[#C96B62]/15 text-[#9E352B] dark:text-[#E58B82] hover:scale-[1.01] active:scale-95 transition-transform text-center"
                 >
-                  <span className="font-bold text-sm block">Again (1)</span>
+                  <span className="font-bold text-xs sm:text-sm block">Again (1)</span>
                   <span className="text-[10px] text-[var(--text-muted)]">Forgot / Blackout</span>
                 </button>
 
                 <button
                   onClick={() => handleRating(2)}
-                  className="p-3 rounded-2xl border border-[#E9D8AE] dark:border-[#D6A84F]/30 bg-[#F4E9CC] dark:bg-[#D6A84F]/15 text-[#7B5E20] dark:text-[#E8C278] hover:scale-[1.01] transition-transform text-center"
+                  className="p-2.5 sm:p-3 rounded-2xl border border-[#E9D8AE] dark:border-[#D6A84F]/30 bg-[#F4E9CC] dark:bg-[#D6A84F]/15 text-[#7B5E20] dark:text-[#E8C278] hover:scale-[1.01] active:scale-95 transition-transform text-center"
                 >
-                  <span className="font-bold text-sm block">Hard (2)</span>
+                  <span className="font-bold text-xs sm:text-sm block">Hard (2)</span>
                   <span className="text-[10px] text-[var(--text-muted)]">Struggled</span>
                 </button>
 
                 <button
                   onClick={() => handleRating(3)}
-                  className="p-3 rounded-2xl border border-[#3F6048]/30 dark:border-[#89A88D]/30 bg-[#E8EFE9] dark:bg-[#89A88D]/15 text-[#3F6048] dark:text-[#A8C5AC] hover:scale-[1.01] transition-transform text-center"
+                  className="p-2.5 sm:p-3 rounded-2xl border border-[#3F6048]/30 dark:border-[#89A88D]/30 bg-[#E8EFE9] dark:bg-[#89A88D]/15 text-[#3F6048] dark:text-[#A8C5AC] hover:scale-[1.01] active:scale-95 transition-transform text-center"
                 >
-                  <span className="font-bold text-sm block">Good (3)</span>
+                  <span className="font-bold text-xs sm:text-sm block">Good (3)</span>
                   <span className="text-[10px] text-[var(--text-muted)]">Recalled cleanly</span>
                 </button>
 
                 <button
                   onClick={() => handleRating(4)}
-                  className="p-3 rounded-2xl border border-[#3F6048] bg-[#3F6048] hover:bg-[#34523D] text-white font-semibold hover:scale-[1.01] transition-transform text-center shadow-sm"
+                  className="p-2.5 sm:p-3 rounded-2xl border border-[#3F6048] bg-[#3F6048] hover:bg-[#34523D] text-white font-semibold hover:scale-[1.01] active:scale-95 transition-transform text-center shadow-sm"
                 >
-                  <span className="font-bold text-sm block">Easy (4)</span>
+                  <span className="font-bold text-xs sm:text-sm block">Easy (4)</span>
                   <span className="text-[10px] text-white/80">Instant recall</span>
                 </button>
               </motion.div>

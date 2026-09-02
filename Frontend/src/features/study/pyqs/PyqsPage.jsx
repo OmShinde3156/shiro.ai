@@ -136,22 +136,57 @@ const PyqsPage = () => {
                    </h2>
                    <span className="px-3 py-1 bg-[#3F6048]/10 text-[#3F6048] dark:text-[#A8C5AC] text-[10px] font-bold rounded-full">{importantQuestions.length} Found</span>
                 </div>
-                
                 <div className="grid gap-4">
-                  {importantQuestions.map((q, i) => (
-                    <div key={i} className="group glass-card p-6 rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] hover:border-[#3F6048]/40 transition-all">
-                       <div className="flex justify-between items-start mb-3">
-                          <span className="px-2 py-0.5 bg-[#3F6048]/10 text-[#3F6048] dark:text-[#A8C5AC] text-[9px] font-black uppercase tracking-tighter rounded">Probability: {95 - (i * 2)}%</span>
-                          <span className="text-[10px] font-bold text-[var(--text-muted)] italic">#{i+1}</span>
-                       </div>
-                       <p className="text-[var(--text-main)] font-medium leading-relaxed mb-4">{q.question || q}</p>
-                       <div className="flex gap-2">
-                          <span className="px-2 py-0.5 bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-[9px] text-[var(--text-muted)] rounded capitalize">Category: {q.type || 'Core Concept'}</span>
-                          <span className="px-2 py-0.5 bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-[9px] text-[var(--text-muted)] rounded">Difficulty: {q.difficulty || 'High'}</span>
-                       </div>
-                    </div>
-                  ))}
-                </div>
+                   {importantQuestions.map((q, i) => (
+                     <div key={q.id || i} className="group glass-card p-6 rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] hover:border-[#3F6048]/40 transition-all space-y-3">
+                        <div className="flex justify-between items-start">
+                           <div className="flex flex-wrap items-center gap-2">
+                             <span className="px-2.5 py-0.5 bg-[#D6A84F]/15 text-[#D6A84F] border border-[#D6A84F]/30 text-[9px] font-black uppercase tracking-tighter rounded">
+                               {q.importance || `Probability: ${95 - (i * 2)}%`}
+                             </span>
+                             <span className="px-2 py-0.5 bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-[9px] text-[var(--text-muted)] rounded capitalize">
+                               {q.category || q.type || 'Core Concept'}
+                             </span>
+                             <span className="px-2 py-0.5 bg-[#3F6048]/10 text-[#3F6048] dark:text-[#A8C5AC] text-[9px] font-mono rounded">
+                               {q.estimated_marks || '5-10 Marks'}
+                             </span>
+                           </div>
+                           <span className="text-[10px] font-bold text-[var(--text-muted)] italic">#{i+1}</span>
+                        </div>
+
+                        <p className="text-[var(--text-main)] font-semibold leading-relaxed text-sm">
+                          {q.question || q}
+                        </p>
+
+                        {q.key_points && Array.isArray(q.key_points) && q.key_points.length > 0 && (
+                          <div className="p-3 bg-[var(--bg-surface-elevated)] rounded-xl border border-[var(--border)]">
+                            <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] font-mono tracking-wider block mb-1">
+                              Key Points for Full Marks:
+                            </span>
+                            <ul className="space-y-1 text-xs text-[var(--text-secondary)] list-disc list-inside">
+                              {q.key_points.map((pt, pIdx) => (
+                                <li key={pIdx}>{pt}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {q.model_answer_summary && (
+                          <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                            <strong className="text-[var(--text-main)]">Model Answer: </strong>
+                            {q.model_answer_summary}
+                          </p>
+                        )}
+
+                        {q.exam_insight && (
+                          <div className="flex items-start gap-1.5 text-[11px] text-[#D6A84F] bg-[#D6A84F]/10 p-2.5 rounded-lg border border-[#D6A84F]/20">
+                            <span className="material-symbols-outlined text-sm shrink-0 mt-0.5">tips_and_updates</span>
+                            <span><strong>Examiner Insight: </strong>{q.exam_insight}</span>
+                          </div>
+                        )}
+                     </div>
+                   ))}
+                 </div>
              </div>
            ) : (
              <div className="flex flex-col items-center justify-center h-[50vh] text-center opacity-40">

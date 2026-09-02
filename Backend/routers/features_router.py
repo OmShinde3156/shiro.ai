@@ -20,7 +20,7 @@ from utils.tts_client import tts_client
 from utils.stt_client import stt_client
 from models.schema import (
     FlashcardRequest, FlashcardSetResponse, FlashcardStudyRequest, FlashcardStudyResponse, FlashcardHistoryResponse,
-    ChatRequest, ChatResponse,
+    ChatRequest, ChatResponse, DocumentProfileResponse,
     SummaryRequest, SummaryResponse,
     PodcastRequest,
     MindMapRequest, MindMapResponse,
@@ -75,7 +75,7 @@ async def generate_quiz(
 @router.post("/submit-quiz", response_model=QuizResultResponse, tags=["Quiz"])
 async def submit_quiz(submission: QuizSubmissionRequest, db: Session = Depends(get_db), quiz_service: QuizService = Depends(get_quiz_service), progress_service: ProgressService = Depends(get_progress_service), current_user: User = Depends(get_current_user)):
     try:
-        result = quiz_service.evaluate_quiz(submission, db)
+        result = quiz_service.evaluate_quiz(submission, db, user_id=current_user.id)
         await progress_service.update_quiz_progress(current_user.id, submission.document_id, result, db)
         return result
     except HTTPException:
@@ -151,7 +151,7 @@ async def stream_chat_with_tutor(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Real-Time Server-Sent Events (SSE) Streaming Chat Endpoint.
+    Real-Time Server-Sent Events (SSE) Streaming Chat Endpoint across all Context Scopes.
     Yields typed SSE events: status -> citation -> token -> action -> done.
     """
     try:
@@ -159,6 +159,8 @@ async def stream_chat_with_tutor(
         if chat_request.document_ids:
             for doc_id in chat_request.document_ids:
                 get_authorized_document(doc_id, current_user.id, db)
+        if chat_request.active_document_id:
+            get_authorized_document(chat_request.active_document_id, current_user.id, db)
 
         lang_val = chat_request.language.value if hasattr(chat_request.language, 'value') else (chat_request.language or "en")
 
@@ -167,6 +169,10 @@ async def stream_chat_with_tutor(
                 user_id=current_user.id,
                 message=chat_request.message,
                 document_ids=chat_request.document_ids or [],
+                active_document_id=chat_request.active_document_id,
+                context_scope=chat_request.context_scope or "GLOBAL",
+                room_id=chat_request.room_id,
+                selected_text=chat_request.selected_text,
                 language=str(lang_val),
                 db=db,
                 mode=chat_request.mode or "human",
@@ -192,17 +198,28 @@ async def stream_chat_with_tutor(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/chat", response_model=ChatResponse, tags=["Chat"])
-async def chat_with_tutor(chat_request: ChatRequest, db: Session = Depends(get_db), chat_service: ChatService = Depends(get_chat_service), current_user: User = Depends(get_current_user)):
+async def chat_with_tutor(
+    chat_request: ChatRequest, 
+    db: Session = Depends(get_db), 
+    chat_service: ChatService = Depends(get_chat_service), 
+    current_user: User = Depends(get_current_user)
+):
     try:
         # Verify ownership of all requested documents
         if chat_request.document_ids:
             for doc_id in chat_request.document_ids:
                 get_authorized_document(doc_id, current_user.id, db)
+        if chat_request.active_document_id:
+            get_authorized_document(chat_request.active_document_id, current_user.id, db)
 
         return await chat_service.chat_with_documents(
             user_id=current_user.id,
             message=chat_request.message,
             document_ids=chat_request.document_ids or [],
+            active_document_id=chat_request.active_document_id,
+            context_scope=chat_request.context_scope or "GLOBAL",
+            room_id=chat_request.room_id,
+            selected_text=chat_request.selected_text,
             language=chat_request.language,
             db=db,
             mode=chat_request.mode or "human",
@@ -219,6 +236,17 @@ async def chat_with_tutor(chat_request: ChatRequest, db: Session = Depends(get_d
         import logging
         logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/documents/{document_id}/profile", response_model=DocumentProfileResponse, tags=["Documents"])
+async def get_document_profile(
+    document_id: int,
+    db: Session = Depends(get_db),
+    chat_service: ChatService = Depends(get_chat_service),
+    current_user: User = Depends(get_current_user)
+):
+    """Get study time estimation, word count, difficulty, and key topics for a document"""
+    get_authorized_document(document_id, current_user.id, db)
+    return chat_service.get_document_profile(document_id, current_user.id, db)
 
 @router.get("/chat-history", tags=["Chat"])
 async def get_chat_history(limit: int = 50, db: Session = Depends(get_db), chat_service: ChatService = Depends(get_chat_service), current_user: User = Depends(get_current_user)):
@@ -261,7 +289,19 @@ async def generate_podcast(request: PodcastRequest, db: Session = Depends(get_db
         for doc_id in request.document_ids:
             get_authorized_document(doc_id, current_user.id, db)
             
-    task_id = podcast_service.create_podcast_task(current_user.id, request.document_ids, request.episodes, request.language, request.topic, db)
+    task_id = podcast_service.create_podcast_task(
+        user_id=current_user.id, 
+        document_ids=request.document_ids, 
+        episodes=request.episodes, 
+        language=request.language, 
+        topic=request.topic, 
+        db=db,
+        mode=request.mode,
+        narrator_voice=request.narrator_voice,
+        duration=request.duration,
+        custom_title=request.custom_title,
+        subject=request.subject
+    )
     return {"task_id": task_id, "status": "processing"}
 
 @router.get("/podcast-status/{task_id}", tags=["Podcast"])
@@ -561,21 +601,40 @@ async def update_timetable_progress(request: TimetableProgressRequest, db: Sessi
 # FEYNMAN ENDPOINTS
 # ==============================================
 
+@router.get("/feynman/concepts", tags=["Feynman"])
+async def get_feynman_concepts(
+    document_id: int,
+    db: Session = Depends(get_db),
+    feynman_service: FeynmanService = Depends(get_feynman_service),
+    current_user: User = Depends(get_current_user)
+):
+    """Fetch available conceptual topics for a document to allow student selection."""
+    get_authorized_document(document_id, current_user.id, db)
+    return await feynman_service.get_available_concepts(current_user.id, document_id, db)
+
 @router.post("/feynman/challenge", tags=["Feynman"])
 async def get_feynman_challenge(
     document_ids: str = Form("[]"), 
+    concept_name: Optional[str] = Form(None),
+    challenge_type: Optional[str] = Form(None),
     db: Session = Depends(get_db), 
     feynman_service: FeynmanService = Depends(get_feynman_service), 
     current_user: User = Depends(get_current_user)
 ):
-    """Get Feynman challenge concept with document authorization"""
+    """Get pedagogical Feynman challenge with customizable concept and challenge type"""
     import json
     try:
-        doc_ids = json.loads(document_ids)
+        doc_ids = json.loads(document_ids) if document_ids else []
         if doc_ids:
             for d_id in doc_ids:
                 get_authorized_document(d_id, current_user.id, db)
-        return await feynman_service.get_challenge_concept(current_user.id, doc_ids, db)
+        return await feynman_service.get_challenge_concept(
+            user_id=current_user.id, 
+            document_ids=doc_ids, 
+            concept_name=concept_name,
+            challenge_type=challenge_type,
+            db=db
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -584,9 +643,27 @@ async def get_feynman_challenge(
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/feynman/evaluate", tags=["Feynman"])
-async def evaluate_feynman_explanation(concept_name: str = Form(...), explanation: str = Form(...), db: Session = Depends(get_db), feynman_service: FeynmanService = Depends(get_feynman_service), current_user: User = Depends(get_current_user)):
+async def evaluate_feynman_explanation(
+    concept_name: str = Form(...), 
+    explanation: str = Form(...), 
+    challenge_title: Optional[str] = Form(None),
+    challenge_prompt: Optional[str] = Form(None),
+    previous_gaps: Optional[str] = Form(None),
+    db: Session = Depends(get_db), 
+    feynman_service: FeynmanService = Depends(get_feynman_service), 
+    current_user: User = Depends(get_current_user)
+):
+    """Evaluate student explanation across 5 diagnostic dimensions with follow-up generation"""
     try:
-        return await feynman_service.evaluate_explanation(current_user.id, concept_name, explanation, db)
+        return await feynman_service.evaluate_explanation(
+            user_id=current_user.id, 
+            concept_name=concept_name, 
+            explanation=explanation, 
+            challenge_title=challenge_title,
+            challenge_prompt=challenge_prompt,
+            previous_gaps=previous_gaps,
+            db=db
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -605,13 +682,34 @@ async def text_to_speech_endpoint(
 ):
     text = request.get("text", "")
     lang = request.get("lang", "en")
+    voice = request.get("voice", None)
+    rate = request.get("rate", None)
+    pitch = request.get("pitch", None)
     filename = f"shiro_{uuid.uuid4().hex}.mp3"
     filepath = os.path.join("static", filename)
     try:
-        tts_client.text_to_speech(text, filepath, lang=lang)
+        await tts_client.text_to_speech_async(text, filepath, lang=lang, voice=voice, rate=rate, pitch=pitch)
         return {"url": f"{os.getenv('BASE_URL', 'http://127.0.0.1:8000')}/static/{filename}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/voice-samples", tags=["Voice"])
+async def list_voice_benchmark_samples():
+    """Returns generated candidate voice benchmark samples for auditory evaluation."""
+    samples_dir = os.path.join("static", "voice_samples")
+    if not os.path.exists(samples_dir):
+        return {"samples": []}
+    files = [f for f in os.listdir(samples_dir) if f.endswith(".mp3")]
+    base_url = os.getenv("BASE_URL", "http://127.0.0.1:8000")
+    return {
+        "samples": [
+            {
+                "filename": f,
+                "url": f"{base_url}/static/voice_samples/{f}"
+            }
+            for f in sorted(files)
+        ]
+    }
 
 @router.post("/stt", tags=["Voice"])
 async def speech_to_text(
@@ -657,6 +755,7 @@ async def translate_content(
 # ANSWER PLANNER ENDPOINT
 # ==============================================
 
+@router.post("/features/answer-planner", response_model=AnswerPlannerResponse, tags=["Answer Planner"])
 @router.post("/answer-planner", response_model=AnswerPlannerResponse, tags=["Answer Planner"])
 async def plan_answer(
     request: AnswerPlannerRequest, 

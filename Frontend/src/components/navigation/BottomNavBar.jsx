@@ -16,25 +16,30 @@ const BottomNavBar = () => {
   ];
 
   return (
-    <nav className="md:hidden flex justify-around items-center h-16 px-4 w-full bg-[var(--sidebar-bg)] border-t border-[var(--border)] backdrop-blur-xl fixed bottom-0 left-0 right-0 z-50 shadow-lg">
+    <nav 
+      aria-label="Mobile Navigation"
+      className="md:hidden flex justify-around items-center h-[calc(3.85rem+env(safe-area-inset-bottom,0px))] pb-[env(safe-area-inset-bottom,0px)] px-2 w-full bg-[var(--sidebar-bg)] border-t border-[var(--border)] backdrop-blur-xl fixed bottom-0 left-0 right-0 z-50 shadow-lg select-none"
+    >
       {navItems.map((item) => {
         const active = isActive(item.path);
         return (
           <button
             key={item.path}
             onClick={() => navigate(item.path)}
-            className={`flex flex-col items-center justify-center transition-all duration-200 relative p-2 rounded-xl ${
+            aria-label={item.label}
+            aria-current={active ? "page" : undefined}
+            className={`flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-xl touch-target transition-all duration-150 relative active:scale-95 ${
               active
-                ? 'text-[#3F6048] dark:text-[#A8C5AC] font-bold scale-105'
+                ? 'text-[#3F6048] dark:text-[#A8C5AC] font-bold'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
-            <span className={`material-symbols-outlined text-xl ${active ? 'fill' : ''}`}>
+            <span className={`material-symbols-outlined text-[22px] transition-transform ${active ? 'fill scale-105' : ''}`}>
               {item.icon}
             </span>
-            <span className="text-[10px] mt-0.5">{item.label}</span>
+            <span className="text-[10px] tracking-tight font-medium mt-0.5">{item.label}</span>
             {active && (
-              <span className="absolute -bottom-0.5 w-1.5 h-1.5 bg-[#3F6048] dark:bg-[#89A88D] rounded-full"></span>
+              <span className="absolute bottom-1 w-1.5 h-1.5 bg-[#3F6048] dark:bg-[#89A88D] rounded-full"></span>
             )}
           </button>
         );

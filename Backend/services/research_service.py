@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 import re
 import requests
 import trafilatura
@@ -103,6 +104,7 @@ class ResearchService:
             
             if not content:
                 # Fallback to simple paragraph stripping if trafilatura fails
+                # pyrefly: ignore [missing-import]
                 import bs4
                 soup = bs4.BeautifulSoup(html_content, "html.parser")
                 for s in soup(['script', 'style', 'nav', 'footer', 'header']):

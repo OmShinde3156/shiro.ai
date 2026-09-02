@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 export const Sidebar = () => {
-  const { setInput, setShowResults, t } = useContext(Context);
+  const { setInput, setShowResults, messages, t } = useContext(Context);
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,7 +30,11 @@ export const Sidebar = () => {
 
   const handleHomeClick = () => {
     setShowResults(false);
-    setInput("");
+    navigate("/home");
+  };
+
+  const handleChatClick = () => {
+    setShowResults(true);
     navigate("/home");
   };
 
@@ -38,7 +42,14 @@ export const Sidebar = () => {
     {
       title: null,
       items: [
-        { label: t("home", "Home / Chat"), icon: Home, path: "/home", action: handleHomeClick }
+        { label: t("home", "Dashboard"), icon: Home, path: "/home", action: handleHomeClick },
+        { 
+          label: t("aiChat", "AI Tutor Chat"), 
+          icon: Sparkles, 
+          path: "/home", 
+          action: handleChatClick,
+          badge: messages && messages.length > 0 ? `${messages.filter(m => m.isUser).length}` : null
+        }
       ]
     },
     {

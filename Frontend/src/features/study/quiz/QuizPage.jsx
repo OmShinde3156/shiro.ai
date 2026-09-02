@@ -43,6 +43,7 @@ export const QuizPage = () => {
   const [numQuestions, setNumQuestions] = useState(5);
   const [difficulty, setDifficulty] = useState(handoff?.difficulty || 'medium');
   const [isConfiguring, setIsConfiguring] = useState(true);
+  const autoStartedRef = React.useRef(false);
 
   // Active Quiz State
   const [quizData, setQuizData] = useState(null);
@@ -62,6 +63,14 @@ export const QuizPage = () => {
       setSelectedDocId(location.state?.documentId || documents[0].id);
     }
   }, [documents, selectedDocId, location.state]);
+
+  // Seamless Handoff Auto-Start
+  useEffect(() => {
+    if (location.state?.autoStart && selectedDocId && !autoStartedRef.current && !loading && !quizData) {
+      autoStartedRef.current = true;
+      handleGenerateQuiz();
+    }
+  }, [selectedDocId, location.state]);
 
   // Explicit Generator - Only fires when user clicks "Generate Quiz"
   const handleGenerateQuiz = async () => {
@@ -332,7 +341,7 @@ export const QuizPage = () => {
                   <Brain className="w-3.5 h-3.5 text-[#3F6048] dark:text-[#89A88D]" />
                   <span>Cognitive Difficulty Level</span>
                 </label>
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
                   {[
                     { id: 'easy', label: 'Easy (Recall)', desc: 'Core facts & direct terminology' },
                     { id: 'medium', label: 'Medium (Applied)', desc: 'Conceptual reasoning & application' },
@@ -342,7 +351,7 @@ export const QuizPage = () => {
                       key={level.id}
                       type="button"
                       onClick={() => setDifficulty(level.id)}
-                      className={`p-3 rounded-xl border text-left transition-all ${
+                      className={`p-3 rounded-xl border text-left transition-all active:scale-98 ${
                         difficulty === level.id
                           ? 'bg-[#3F6048]/10 dark:bg-[#89A88D]/20 border-[#3F6048] dark:border-[#89A88D] shadow-xs'
                           : 'bg-[var(--bg-surface-elevated)] border-[var(--border)] hover:border-[#89A88D]/40 text-[var(--text-secondary)]'

@@ -124,9 +124,9 @@ export const DocumentsPage = () => {
   });
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-3.5 sm:p-6 md:p-8 max-w-7xl mx-auto space-y-5 sm:space-y-6">
       {/* Header Row */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-[#89A88D] mb-1 font-mono">
             <FolderOpen className="w-3.5 h-3.5" />
@@ -153,6 +153,7 @@ export const DocumentsPage = () => {
           <Button
             variant="primary"
             size="md"
+            className="w-full sm:w-auto justify-center"
             onClick={() => document.getElementById('doc-upload-input')?.click()}
             disabled={isUploading}
           >
@@ -170,7 +171,7 @@ export const DocumentsPage = () => {
           if (e.dataTransfer.files?.length > 0) handleFileUpload(e.dataTransfer.files);
         }}
         onClick={() => document.getElementById('doc-upload-input')?.click()}
-        className="p-6 rounded-2xl border-2 border-dashed border-[var(--border)] hover:border-[#89A88D] bg-[var(--bg-surface)] hover:bg-[#89A88D]/5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all text-center shadow-xs"
+        className="p-4 sm:p-6 rounded-2xl border-2 border-dashed border-[var(--border)] hover:border-[#89A88D] bg-[var(--bg-surface)] hover:bg-[#89A88D]/5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all text-center shadow-xs active:scale-[0.99]"
       >
         <div className="p-3 rounded-full bg-[#89A88D]/15 text-[#89A88D] border border-[#89A88D]/30">
           <UploadCloud className="w-6 h-6" />
@@ -200,12 +201,12 @@ export const DocumentsPage = () => {
         </div>
 
         {/* Filter Pills */}
-        <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto no-scrollbar touch-scroll pb-1">
           {subjects.map((subj) => (
             <button
               key={subj}
               onClick={() => setSelectedSubject(subj)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0 active:scale-95 ${
                 selectedSubject === subj
                   ? 'bg-[#89A88D] text-black font-semibold shadow-sm'
                   : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-main)] border border-[var(--border)]'
@@ -219,7 +220,7 @@ export const DocumentsPage = () => {
 
       {/* Documents Grid */}
       {filteredDocs.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
           {filteredDocs.map((doc) => (
             <Card
               key={doc.id}

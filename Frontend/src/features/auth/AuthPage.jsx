@@ -1,14 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import API_BASE_URL from '../../api/config.js';
-import './LandingPage.css';
+import './authpage.css';
 
-const AuthPage = () => {
+const AuthPage = ({ initialMode }) => {
   const { user, login: contextLogin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(() => {
+    if (initialMode === 'register' || (typeof window !== 'undefined' && window.location.pathname === '/register')) {
+      return false;
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    if (location.pathname === '/register') {
+      setIsLogin(false);
+    } else if (location.pathname === '/login') {
+      setIsLogin(true);
+    }
+  }, [location.pathname]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -178,7 +192,20 @@ const AuthPage = () => {
           {isLogin ? 'Welcome Back' : 'Create Account'}
         </h1>
         <p className="text-center text-[#71717a] text-sm mb-8">
-          {isLogin ? "Don't have an account yet?" : "Already have an account?"} <button type="button" onClick={() => { setIsLogin(!isLogin); setError(null); setMessage(null); }} className="text-[#e4e4e7] font-medium hover:underline ml-1">{isLogin ? 'Sign up' : 'Login'}</button>
+          {isLogin ? "Don't have an account yet?" : "Already have an account?"}{' '}
+          <button 
+            type="button" 
+            onClick={() => { 
+              const nextMode = !isLogin;
+              setIsLogin(nextMode); 
+              setError(null); 
+              setMessage(null); 
+              navigate(nextMode ? '/login' : '/register', { replace: true });
+            }} 
+            className="text-[#e4e4e7] font-medium hover:underline ml-1 cursor-pointer"
+          >
+            {isLogin ? 'Sign up' : 'Login'}
+          </button>
         </p>
 
         {error && (

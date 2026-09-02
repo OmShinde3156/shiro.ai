@@ -41,7 +41,11 @@ async def generate_important_questions(
             pyq_document_id = pyq_doc_result.id
 
         questions = await quiz_service.generate_optimized_important_questions(
-            document_id, pyq_document_id, num_questions, db
+            document_id=document_id,
+            pyq_document_id=pyq_document_id,
+            num_questions=num_questions,
+            db=db,
+            user_id=current_user.id
         )
         return questions
     except HTTPException:

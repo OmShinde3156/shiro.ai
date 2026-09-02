@@ -1,0 +1,999 @@
+/* ==========================================================================
+   SHIRO.AI — THE OXFORD PRESS DESIGN SYSTEM
+   Warm Ivory (#F7F5F0) · Deep Carbon Ink (#151618) · British Forest (#2D5A3D) · Heritage Gold (#C8973E)
+   Typography: Instrument Serif (Editorial) + Plus Jakarta Sans + JetBrains Mono
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* Warm Archival Ivory Canvas */
+  --ox-bg-root: #F7F5F0;
+  --ox-bg-subtle: #EFECE4;
+  --ox-bg-card: #FFFFFF;
+  --ox-bg-card-elevated: #FBFAF7;
+  --ox-bg-nav: rgba(247, 245, 240, 0.88);
+  
+  /* Ink & Typography */
+  --ox-text-main: #151618;
+  --ox-text-secondary: #5A5E64;
+  --ox-text-muted: #828790;
+  --ox-text-faint: #C8CCD3;
+  
+  /* Forest, Sage & Heritage Gold */
+  --ox-forest: #2D5A3D;
+  --ox-forest-hover: #234931;
+  --ox-forest-soft: #E6EEE7;
+  --ox-sage: #6B8F71;
+  --ox-gold: #C8973E;
+  --ox-gold-soft: #F5EBCF;
+  
+  /* Hairline Borders */
+  --ox-border: #E3DFD5;
+  --ox-border-light: #EAE6DC;
+  --ox-border-forest: rgba(45, 90, 61, 0.25);
+  
+  /* Soft Architectural Shadows */
+  --ox-shadow-card: 0 12px 36px -8px rgba(21, 22, 24, 0.05), 0 0 0 1px rgba(21, 22, 24, 0.04);
+  --ox-shadow-elevated: 0 24px 60px -15px rgba(21, 22, 24, 0.09), 0 0 0 1px rgba(21, 22, 24, 0.05);
+
+  /* Fonts */
+  --ox-font-serif: 'Instrument Serif', Georgia, serif;
+  --ox-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ox-font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Dark Mode: Warm Charcoal Forest */
+.oxford-landing.theme-dark {
+  --ox-bg-root: #111311;
+  --ox-bg-subtle: #161A16;
+  --ox-bg-card: #1A1D1A;
+  --ox-bg-card-elevated: #202420;
+  --ox-bg-nav: rgba(17, 19, 17, 0.88);
+  
+  --ox-text-main: #F4F2EB;
+  --ox-text-secondary: #A2A89F;
+  --ox-text-muted: #6D746A;
+  --ox-text-faint: #3B4239;
+  
+  --ox-forest: #7DA288;
+  --ox-forest-hover: #8EB299;
+  --ox-forest-soft: rgba(125, 162, 136, 0.16);
+  --ox-sage: #89A88D;
+  --ox-gold: #D8AA56;
+  --ox-gold-soft: rgba(216, 170, 86, 0.15);
+  
+  --ox-border: rgba(255, 255, 255, 0.08);
+  --ox-border-light: rgba(255, 255, 255, 0.12);
+  --ox-border-forest: rgba(125, 162, 136, 0.3);
+  
+  --ox-shadow-card: 0 20px 50px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --ox-shadow-elevated: 0 30px 70px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* Base Canvas */
+.oxford-landing {
+  min-height: 100vh;
+  background-color: var(--ox-bg-root);
+  color: var(--ox-text-main);
+  font-family: var(--ox-font-sans);
+  overflow-x: hidden;
+  position: relative;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle Paper Texture Overlay */
+.oxford-paper-texture {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* --- Header / Navigation --- */
+.ox-header-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--ox-bg-nav);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid transparent;
+  transition: all 0.25s ease;
+}
+
+.ox-header-wrap.scrolled {
+  border-bottom-color: var(--ox-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.ox-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ox-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--ox-text-main);
+  font-weight: 800;
+  font-size: 1.2rem;
+  letter-spacing: -0.03em;
+}
+
+.ox-brand-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ox-forest);
+}
+
+.ox-nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ox-nav-menu a {
+  text-decoration: none;
+  color: var(--ox-text-secondary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: color 0.15s ease;
+}
+
+.ox-nav-menu a:hover {
+  color: var(--ox-text-main);
+}
+
+.ox-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ox-theme-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--ox-border);
+  color: var(--ox-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ox-theme-toggle:hover {
+  color: var(--ox-text-main);
+  border-color: var(--ox-forest);
+}
+
+.ox-btn-login {
+  color: var(--ox-text-main);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 8px 16px;
+}
+
+.ox-btn-forest {
+  background: var(--ox-forest);
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 10px 22px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(45, 90, 61, 0.2);
+  transition: all 0.2s ease;
+}
+
+.ox-btn-forest:hover {
+  background: var(--ox-forest-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(45, 90, 61, 0.28);
+}
+
+.ox-btn-secondary {
+  background: transparent;
+  color: var(--ox-text-main);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 10px 22px;
+  border-radius: 12px;
+  border: 1px solid var(--ox-border);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.ox-btn-secondary:hover {
+  background: var(--ox-bg-card);
+  border-color: var(--ox-text-secondary);
+}
+
+.ox-btn-login {
+  background: transparent;
+  color: var(--ox-text-main);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ox-btn-login:hover {
+  background: var(--ox-bg-subtle);
+  border-color: var(--ox-border);
+}
+
+/* --- Hero Section (Asymmetrical Editorial 2-Column) --- */
+.ox-hero {
+  padding-top: 150px;
+  padding-bottom: 120px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.ox-hero-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 64px;
+  align-items: center;
+}
+
+@media (max-width: 960px) {
+  .ox-hero-grid {
+    grid-template-columns: 1fr;
+    gap: 48px;
+    text-align: center;
+  }
+}
+
+.ox-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: var(--ox-forest-soft);
+  color: var(--ox-forest);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-family: var(--ox-font-mono);
+  margin-bottom: 24px;
+}
+
+.ox-hero-h1 {
+  font-family: var(--ox-font-sans);
+  font-size: clamp(2.6rem, 5vw, 4.4rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  color: var(--ox-text-main);
+  margin-bottom: 24px;
+}
+
+.ox-hero-h1 em {
+  font-family: var(--ox-font-serif);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ox-forest);
+  padding-right: 4px;
+}
+
+.ox-hero-p {
+  font-size: 1.12rem;
+  color: var(--ox-text-secondary);
+  line-height: 1.65;
+  margin-bottom: 36px;
+  max-width: 540px;
+}
+
+@media (max-width: 960px) {
+  .ox-hero-p {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.ox-hero-ctas {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 960px) {
+  .ox-hero-ctas {
+    justify-content: center;
+  }
+}
+
+/* --- Hero Right Preview Stage (Real Shiro Workspace UI) --- */
+.ox-preview-frame {
+  background: var(--ox-bg-card);
+  border-radius: 20px;
+  border: 1px solid var(--ox-border);
+  box-shadow: var(--ox-shadow-elevated);
+  overflow: hidden;
+  text-align: left;
+  transition: transform 0.3s ease;
+}
+
+.ox-preview-frame:hover {
+  transform: translateY(-3px);
+}
+
+.ox-frame-header {
+  padding: 14px 18px;
+  background: var(--ox-bg-subtle);
+  border-bottom: 1px solid var(--ox-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ox-frame-title {
+  font-family: var(--ox-font-mono);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--ox-text-main);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ox-frame-body {
+  padding: 24px;
+}
+
+/* --- Section Container Generic --- */
+.ox-section {
+  padding: 120px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.ox-section-header {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 64px;
+}
+
+.ox-section-title {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--ox-text-main);
+  margin-bottom: 16px;
+}
+
+.ox-section-title em {
+  font-family: var(--ox-font-serif);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ox-forest);
+}
+
+.ox-section-p {
+  font-size: 1.08rem;
+  color: var(--ox-text-secondary);
+  line-height: 1.65;
+}
+
+/* --- The Problem Section (Editorial Statement) --- */
+.ox-problem-box {
+  background: var(--ox-bg-card);
+  border: 1px solid var(--ox-border);
+  border-radius: 24px;
+  padding: 56px 48px;
+  box-shadow: var(--ox-shadow-card);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+@media (max-width: 860px) {
+  .ox-problem-box {
+    grid-template-columns: 1fr;
+    padding: 36px 24px;
+  }
+}
+
+.ox-problem-statement {
+  font-family: var(--ox-font-serif);
+  font-size: clamp(2rem, 3.8vw, 3rem);
+  line-height: 1.15;
+  color: var(--ox-text-main);
+}
+
+.ox-problem-statement span {
+  color: var(--ox-forest);
+  font-style: italic;
+}
+
+.ox-problem-points {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ox-problem-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.ox-point-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ox-forest-soft);
+  color: var(--ox-forest);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ox-problem-point h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: var(--ox-text-main);
+}
+
+.ox-problem-point p {
+  font-size: 0.9rem;
+  color: var(--ox-text-secondary);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* --- How Shiro Works (3-Step Large Numbers) --- */
+.ox-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+@media (max-width: 860px) {
+  .ox-steps-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ox-step-card {
+  background: var(--ox-bg-card);
+  border: 1px solid var(--ox-border);
+  border-radius: 20px;
+  padding: 36px 30px;
+  box-shadow: var(--ox-shadow-card);
+  transition: all 0.25s ease;
+}
+
+.ox-step-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--ox-forest);
+}
+
+.ox-step-num {
+  font-family: var(--ox-font-serif);
+  font-size: 3.5rem;
+  line-height: 1;
+  color: var(--ox-forest);
+  margin-bottom: 16px;
+  font-style: italic;
+}
+
+.ox-step-card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--ox-text-main);
+}
+
+.ox-step-card p {
+  font-size: 0.92rem;
+  color: var(--ox-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* --- Large Showcase Sections (Alternating) --- */
+.ox-showcase-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+  margin-bottom: 120px;
+}
+
+.ox-showcase-row.reversed {
+  direction: rtl;
+}
+
+.ox-showcase-row.reversed > * {
+  direction: ltr;
+}
+
+@media (max-width: 900px) {
+  .ox-showcase-row, .ox-showcase-row.reversed {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    margin-bottom: 80px;
+  }
+}
+
+.ox-showcase-tag {
+  font-family: var(--ox-font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ox-forest);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.ox-showcase-h3 {
+  font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  color: var(--ox-text-main);
+  margin-bottom: 16px;
+}
+
+.ox-showcase-desc {
+  font-size: 1rem;
+  color: var(--ox-text-secondary);
+  line-height: 1.65;
+  margin-bottom: 24px;
+}
+
+.ox-showcase-frame {
+  background: var(--ox-bg-card);
+  border-radius: 20px;
+  border: 1px solid var(--ox-border);
+  padding: 28px;
+  box-shadow: var(--ox-shadow-elevated);
+}
+
+/* --- The Learning Loop Section --- */
+.ox-loop-cycle {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .ox-loop-cycle {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.ox-loop-item {
+  background: var(--ox-bg-card);
+  border: 1px solid var(--ox-border);
+  border-radius: 16px;
+  padding: 22px 16px;
+  text-align: center;
+  box-shadow: var(--ox-shadow-card);
+}
+
+.ox-loop-item .badge {
+  font-family: var(--ox-font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ox-forest);
+  margin-bottom: 6px;
+}
+
+.ox-loop-item h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.ox-loop-item p {
+  font-size: 0.76rem;
+  color: var(--ox-text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* --- Editorial Student Testimonials --- */
+.ox-reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
+
+.ox-review-card {
+  background: var(--ox-bg-card);
+  border: 1px solid var(--ox-border);
+  border-radius: 20px;
+  padding: 36px 30px;
+  box-shadow: var(--ox-shadow-card);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.ox-review-quote {
+  font-family: var(--ox-font-serif);
+  font-size: 1.25rem;
+  line-height: 1.45;
+  color: var(--ox-text-main);
+  margin-bottom: 24px;
+}
+
+.ox-review-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ox-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ox-forest-soft);
+  color: var(--ox-forest);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+/* --- FAQ Accordion --- */
+.ox-faq-wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ox-faq-card {
+  background: var(--ox-bg-card);
+  border: 1px solid var(--ox-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.ox-faq-btn {
+  width: 100%;
+  padding: 20px 24px;
+  background: transparent;
+  border: none;
+  color: var(--ox-text-main);
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.ox-faq-answer {
+  padding: 0 24px 20px;
+  color: var(--ox-text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+/* --- Final Call To Action --- */
+.ox-final-cta {
+  padding: 120px 24px 100px;
+  text-align: center;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.ox-final-box {
+  background: var(--ox-bg-card);
+  border-radius: 28px;
+  border: 1px solid var(--ox-border);
+  padding: 70px 36px;
+  box-shadow: var(--ox-shadow-elevated);
+}
+
+.ox-final-h2 {
+  font-size: clamp(2.2rem, 4.5vw, 3.6rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--ox-text-main);
+  margin-bottom: 16px;
+}
+
+.ox-final-h2 em {
+  font-family: var(--ox-font-serif);
+  font-style: italic;
+  color: var(--ox-forest);
+}
+
+/* --- Minimal Clean Footer --- */
+.ox-footer {
+  border-top: 1px solid var(--ox-border);
+  padding: 60px 24px 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.ox-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 48px;
+}
+
+@media (max-width: 768px) {
+  .ox-footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.ox-footer-col h5 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--ox-font-mono);
+  margin-bottom: 16px;
+  color: var(--ox-text-main);
+}
+
+.ox-footer-col ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ox-footer-col a {
+  color: var(--ox-text-secondary);
+  text-decoration: none;
+  font-size: 0.86rem;
+  transition: color 0.15s ease;
+}
+
+.ox-footer-col a:hover {
+  color: var(--ox-forest);
+}
+
+.ox-footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 24px;
+  border-top: 1px solid var(--ox-border);
+  font-size: 0.8rem;
+  color: var(--ox-text-muted);
+}
+
+/* ==========================================================================
+   INTERACTIVE PRODUCT DEMO (SANDBOX)
+   ========================================================================== */
+.ox-sandbox-card {
+  background: var(--ox-bg-card);
+  border: 1px solid var(--ox-border);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: var(--ox-shadow-elevated);
+}
+
+@media (max-width: 768px) {
+  .ox-sandbox-card {
+    padding: 24px 18px;
+  }
+}
+
+.ox-sandbox-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.ox-sample-picker {
+  display: flex;
+  gap: 6px;
+  background: var(--ox-bg-subtle);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--ox-border);
+  flex-wrap: wrap;
+}
+
+.ox-sample-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ox-text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.ox-sample-btn.active {
+  background: var(--ox-bg-card);
+  color: var(--ox-text-main);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.ox-sandbox-source-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  background: var(--ox-bg-subtle);
+  border-radius: 12px;
+  border: 1px solid var(--ox-border);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ox-sandbox-unopened {
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.ox-sandbox-stage-wrap {
+  border: 1px solid var(--ox-border);
+  border-radius: 16px;
+  background: var(--ox-bg-card-elevated);
+  overflow: hidden;
+}
+
+.ox-sandbox-nav-tabs {
+  display: flex;
+  background: var(--ox-bg-subtle);
+  border-bottom: 1px solid var(--ox-border);
+  padding: 4px;
+  gap: 4px;
+}
+
+.ox-sandbox-nav-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ox-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.ox-sandbox-nav-btn.active {
+  background: var(--ox-bg-card);
+  color: var(--ox-forest);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.ox-sandbox-content {
+  padding: 24px;
+}
+
+/* --- Reading Progress Bar --- */
+.ox-nav-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--ox-forest);
+  transform-origin: 0% 50%;
+  transition: transform 0.1s linear;
+  width: 100%;
+}
+
+/* --- Mobile Navigation Drawer --- */
+.ox-hamburger-btn {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--ox-border);
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  color: var(--ox-text-main);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+@media (max-width: 860px) {
+  .ox-nav-menu {
+    display: none;
+  }
+  .ox-hamburger-btn {
+    display: flex;
+  }
+}
+
+.ox-mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+}
+
+.ox-mobile-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 280px;
+  background: var(--ox-bg-card);
+  border-left: 1px solid var(--ox-border);
+  padding: 24px;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+}

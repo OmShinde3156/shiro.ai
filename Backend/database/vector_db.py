@@ -89,6 +89,7 @@ import threading
 _embedding_fn_lock = threading.Lock()
 _shared_embedding_fn = None
 _shared_chroma_client = None
+_shared_vector_db_instance = None
 
 
 def get_shared_embedding_fn():
@@ -115,10 +116,29 @@ def get_shared_chroma_client():
 
 
 class VectorDB:
+    """
+    Singleton Vector Database Manager (RAG-01):
+    Maintains a single process-wide in-memory instance of SentenceTransformer and ChromaDB client.
+    """
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super(VectorDB, cls).__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self):
+        if getattr(self, "_initialized", False):
+            return
         self.client = get_shared_chroma_client()
         self.embedding_fn = get_shared_embedding_fn()
+        self.collections_cache: Dict[str, Any] = {}
         self.bm25_indices: Dict[str, BM25Index] = {}
+        self._initialized = True
 
     def warm_up(self):
         """Warm up embedding model and ChromaDB client during application startup"""
@@ -134,18 +154,34 @@ class VectorDB:
             return False
 
     def create_collection(self, collection_name: str):
-        """Create or get a collection with cosine similarity"""
+        """Get or create collection with cosine similarity and singleton embedding function"""
+        if collection_name in self.collections_cache:
+            return self.collections_cache[collection_name]
+            
         try:
-            return self.client.create_collection(
+            col = self.client.get_or_create_collection(
                 name=collection_name,
                 metadata={"hnsw:space": "cosine"},
                 embedding_function=self.embedding_fn
             )
+            self.collections_cache[collection_name] = col
+            return col
         except Exception:
-            return self.client.get_collection(
-                name=collection_name, 
-                embedding_function=self.embedding_fn
-            )
+            try:
+                col = self.client.get_collection(
+                    name=collection_name, 
+                    embedding_function=self.embedding_fn
+                )
+                self.collections_cache[collection_name] = col
+                return col
+            except Exception:
+                col = self.client.create_collection(
+                    name=collection_name,
+                    metadata={"hnsw:space": "cosine"},
+                    embedding_function=self.embedding_fn
+                )
+                self.collections_cache[collection_name] = col
+                return col
 
     def add_documents(self, collection_name: str, documents: List[str], metadatas: List[Dict[str, Any]], ids: Optional[List[str]] = None):
         """Add documents and update in-memory BM25 index"""

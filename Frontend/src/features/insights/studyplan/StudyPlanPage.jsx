@@ -201,11 +201,11 @@ export const StudyPlanPage = () => {
         </div>
 
         {/* View Switcher Tabs */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-xl bg-[var(--bg-surface-elevated)] p-1 border border-[var(--border)]">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar touch-scroll w-full sm:w-auto">
+          <div className="flex items-center rounded-xl bg-[var(--bg-surface-elevated)] p-1 border border-[var(--border)] shrink-0">
             <button
               onClick={() => setActiveView('roadmap')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap active:scale-95 ${
                 activeView === 'roadmap'
                   ? 'bg-[#89A88D] text-black font-semibold shadow-sm'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
@@ -216,7 +216,7 @@ export const StudyPlanPage = () => {
             </button>
             <button
               onClick={() => setActiveView('blueprint')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap active:scale-95 ${
                 activeView === 'blueprint'
                   ? 'bg-[#89A88D] text-black font-semibold shadow-sm'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
@@ -227,7 +227,7 @@ export const StudyPlanPage = () => {
             </button>
             <button
               onClick={() => setActiveView('create')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap active:scale-95 ${
                 activeView === 'create'
                   ? 'bg-[#89A88D] text-black font-semibold shadow-sm'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
@@ -241,8 +241,8 @@ export const StudyPlanPage = () => {
       </div>
 
       {/* 2. Main Body Container (Scrollbar on Right Edge) */}
-      <div className="flex-1 w-full overflow-y-auto custom-scroll">
-        <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 space-y-6 pb-20">
+      <div className="flex-1 w-full overflow-y-auto custom-scroll touch-scroll">
+        <div className="max-w-6xl mx-auto px-3.5 sm:px-6 py-4 sm:py-6 space-y-5 sm:space-y-6 pb-20">
 
           {/* VIEW A: DAILY ADAPTIVE STUDY ROADMAP */}
           {activeView === 'roadmap' && (

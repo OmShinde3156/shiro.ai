@@ -250,4 +250,11 @@ async def prometheus_metrics():
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "main:app", 
+        host="0.0.0.0", 
+        port=8000, 
+        reload=True,
+        reload_dirs=["routers", "services", "utils", "models", "database", "middleware", "prompts"],
+        reload_excludes=["*.mp3", "*.wav", "static/*", "venv/*", ".venv/*", "*\\venv\\*", "*\\.venv\\*", "*.log", "__pycache__/*"]
+    )

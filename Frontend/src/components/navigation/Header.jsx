@@ -84,14 +84,14 @@ export const Header = () => {
   ];
 
   return (
-    <header className="w-full bg-[var(--header-bg)] backdrop-blur-md flex items-center justify-between px-6 py-3 border-b border-[var(--border)] sticky top-0 z-40 select-none">
+    <header className="w-full bg-[var(--header-bg)] backdrop-blur-md flex items-center justify-between px-3.5 sm:px-6 py-2.5 sm:py-3 border-b border-[var(--border)] sticky top-0 z-40 select-none">
       {/* Left: View Breadcrumb */}
-      <div className="flex items-center gap-2.5">
-        <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest font-mono">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+        <span className="text-[10px] sm:text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest font-mono shrink-0">
           Shiro
         </span>
-        <span className="text-[var(--border)] text-sm">/</span>
-        <span className="text-base font-bold text-[var(--text-main)] font-serif">
+        <span className="text-[var(--border)] text-xs sm:text-sm shrink-0">/</span>
+        <span className="text-sm sm:text-base font-bold text-[var(--text-main)] font-serif truncate">
           {getRouteTitle()}
         </span>
       </div>
@@ -102,10 +102,10 @@ export const Header = () => {
           const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true });
           document.dispatchEvent(event);
         }}
-        className="hidden md:flex items-center justify-between w-72 lg:w-96 px-3.5 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border)] hover:border-[#6B8F71] text-[var(--text-secondary)] hover:text-[var(--text-main)] text-xs transition-all shadow-sm group"
+        className="hidden md:flex items-center justify-between w-64 lg:w-96 px-3.5 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border)] hover:border-[#6B8F71] text-[var(--text-secondary)] hover:text-[var(--text-main)] text-xs transition-all shadow-sm group mx-3"
       >
         <div className="flex items-center gap-2.5 truncate">
-          <Search className="w-3.5 h-3.5 text-[#3F6048] dark:text-[#89A88D] group-hover:scale-105 transition-transform" />
+          <Search className="w-3.5 h-3.5 text-[#3F6048] dark:text-[#89A88D] group-hover:scale-105 transition-transform shrink-0" />
           <span className="truncate">{t("searchPlaceholder", "Search notes, tools, or type a command...")}</span>
         </div>
         <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-surface-elevated)] border border-[var(--border)] font-mono text-[10px] text-[var(--text-muted)] shrink-0">
@@ -114,9 +114,9 @@ export const Header = () => {
       </button>
 
       {/* Right: Quick Controls & Profile */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* Streak Flame Badge */}
-        <Badge variant="gold" size="md" icon={Flame} className="hidden sm:inline-flex font-semibold">
+        <Badge variant="gold" size="md" icon={Flame} className="hidden sm:inline-flex font-semibold text-xs">
           {studyStats?.streak || 1} {t("streak", "d Streak")}
         </Badge>
 
@@ -124,7 +124,8 @@ export const Header = () => {
         <button
           onClick={toggleTheme}
           title={theme === 'dark' ? "Switch to Warm Ivory Light" : "Switch to Deep Dark"}
-          className="p-2 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors"
+          aria-label="Toggle theme"
+          className="p-1.5 sm:p-2 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors active:scale-95 touch-target"
         >
           {theme === 'dark' ? (
             <Sun className="w-3.5 h-3.5 text-[#D6A84F]" />
@@ -134,12 +135,13 @@ export const Header = () => {
         </button>
 
         {/* Language Selector */}
-        <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors">
-          <Globe className="w-3.5 h-3.5 text-[#89A88D]" />
+        <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors">
+          <Globe className="w-3.5 h-3.5 text-[#89A88D] hidden xs:block" />
           <select 
             value={language} 
             onChange={(e) => setLanguage(e.target.value)} 
-            className="bg-[var(--bg-surface-elevated)] border border-[var(--border)] rounded-lg px-2 py-1 text-xs font-medium outline-none cursor-pointer text-[var(--text-main)]"
+            aria-label="Language selector"
+            className="bg-[var(--bg-surface-elevated)] border border-[var(--border)] rounded-lg px-1.5 sm:px-2 py-1 text-[11px] sm:text-xs font-medium outline-none cursor-pointer text-[var(--text-main)] max-w-[85px] sm:max-w-none"
           >
             {popularLanguages.map((lang) => (
               <option key={lang.code} value={lang.code} className="bg-[var(--bg-surface)] text-[var(--text-main)]">
@@ -151,20 +153,21 @@ export const Header = () => {
 
         {/* Profile Avatar & Dropdown Menu */}
         <div className="relative" ref={menuRef}>
-          <div 
+          <button 
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="w-9 h-9 rounded-xl border border-[var(--border)] overflow-hidden cursor-pointer shadow-sm hover:border-[#89A88D] transition-all p-0.5 bg-[var(--bg-surface-elevated)]"
+            aria-label="User profile menu"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border border-[var(--border)] overflow-hidden cursor-pointer shadow-sm hover:border-[#89A88D] transition-all p-0.5 bg-[var(--bg-surface-elevated)] flex items-center justify-center active:scale-95"
           >
             <img 
               src={user?.avatar_url || getAvatarUrl(user?.name)} 
               alt="User" 
               className="w-full h-full object-cover rounded-[10px]" 
             />
-          </div>
+          </button>
 
           {/* Profile Dropdown Sheet */}
           {showProfileMenu && (
-            <div className="absolute right-0 mt-2 w-72 p-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl shadow-xl z-50 space-y-3">
+            <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1.5rem)] p-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl shadow-xl z-50 space-y-3">
               {/* User Identity Header */}
               <div className="flex items-center gap-3 p-2 bg-[var(--bg-surface-elevated)] rounded-xl border border-[var(--border)]">
                 <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#89A88D]/20 border border-[#89A88D]/30 flex items-center justify-center text-[#89A88D] font-bold text-sm">

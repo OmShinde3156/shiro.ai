@@ -74,7 +74,7 @@ class MindMapService:
         if not hierarchy or "children" not in hierarchy:
             print("  LLM hierarchy failed, falling back to root-only")
             mindmap_data = {
-                "nodes": [{"id": "root", "label": topic, "level": 0, "score": 1.0}],
+                "nodes": [{"id": "root", "label": topic, "level": 0, "score": 1.0, "x": 0.0, "y": 0.0}],
                 "edges": [],
             }
             return self._persist_and_return(document, topic, mindmap_data, db)
@@ -328,13 +328,17 @@ class MindMapService:
     def _persist_and_return(self, document, topic: str, mindmap_data: Dict[str, Any], db: Session):
         print(" Persisting mindmap to database...")
         mindmap_id = str(uuid.uuid4())
+        normalized_nodes = self._normalize_nodes(mindmap_data.get("nodes", []), topic)
+        raw_edges = mindmap_data.get("edges", [])
+        normalized_edges = self._normalize_edges(raw_edges)
+
         m = MindMap(
             id=mindmap_id,
             document_id=document.id,
             user_id=document.user_id,
             topic=topic,
-            nodes=mindmap_data.get("nodes", []),
-            edges=mindmap_data.get("edges", []),
+            nodes=normalized_nodes,
+            edges=normalized_edges,
         )
         db.add(m)
         db.commit()
@@ -342,8 +346,8 @@ class MindMapService:
         result = {
             "mindmap_id": mindmap_id,
             "document_id": document.id,
-            "nodes": mindmap_data.get("nodes", []),
-            "edges": mindmap_data.get("edges", []),
+            "nodes": normalized_nodes,
+            "edges": normalized_edges,
             "topic": topic,
             "created_at": m.created_at,
         }
@@ -351,6 +355,50 @@ class MindMapService:
         print(f" Mindmap saved with ID: {mindmap_id}")
         print(f" Returning data with {len(result['nodes'])} nodes")
         return result
+
+    def _normalize_nodes(self, raw_nodes: List[Any], default_topic: str = "Topic") -> List[Dict[str, Any]]:
+        """Guarantee all nodes conform to MindMapNode schema with x, y, level, and score"""
+        normalized = []
+        for i, n in enumerate(raw_nodes):
+            if isinstance(n, dict):
+                normalized.append({
+                    "id": str(n.get("id", f"node_{i}")),
+                    "label": str(n.get("label", default_topic)),
+                    "x": float(n.get("x", 0.0)),
+                    "y": float(n.get("y", 0.0)),
+                    "level": int(n.get("level", 0)),
+                    "score": float(n.get("score", 0.8))
+                })
+            elif hasattr(n, "id"):
+                normalized.append({
+                    "id": str(getattr(n, "id", f"node_{i}")),
+                    "label": str(getattr(n, "label", default_topic)),
+                    "x": float(getattr(n, "x", 0.0)),
+                    "y": float(getattr(n, "y", 0.0)),
+                    "level": int(getattr(n, "level", 0)),
+                    "score": float(getattr(n, "score", 0.8))
+                })
+        if not normalized:
+            normalized = [{"id": "root", "label": default_topic, "x": 0.0, "y": 0.0, "level": 0, "score": 1.0}]
+        return normalized
+
+    def _normalize_edges(self, raw_edges: List[Any]) -> List[Dict[str, Any]]:
+        """Guarantee all edges conform to MindMapEdge schema"""
+        normalized = []
+        for e in raw_edges:
+            if isinstance(e, dict):
+                normalized.append({
+                    "source": str(e.get("source", "root")),
+                    "target": str(e.get("target", "root")),
+                    "label": e.get("label", None)
+                })
+            elif hasattr(e, "source"):
+                normalized.append({
+                    "source": str(getattr(e, "source", "root")),
+                    "target": str(getattr(e, "target", "root")),
+                    "label": getattr(e, "label", None)
+                })
+        return normalized
 
     def get_user_mindmaps(self, user_id: int, db: Session) -> List[Dict[str, Any]]:
         """List mind maps overview for a user."""
@@ -375,7 +423,7 @@ class MindMapService:
             "mindmap_id": mindmap.id,
             "document_id": mindmap.document_id,
             "topic": mindmap.topic,
-            "nodes": mindmap.nodes,
-            "edges": mindmap.edges,
+            "nodes": self._normalize_nodes(mindmap.nodes or [], mindmap.topic),
+            "edges": self._normalize_edges(mindmap.edges or []),
             "created_at": mindmap.created_at
         }

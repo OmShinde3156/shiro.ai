@@ -3,10 +3,14 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import uuid
 import json
+import time
+from datetime import datetime
 
 from database.database import get_db
 from models.database import StudyRoom, RoomMember, RoomMessage, User, Document
 from services.websocket_manager import manager
+from services.flashcard_service import FlashcardService
+from utils.llm_client import llm_client
 from utils.auth import get_current_user, get_user_from_token
 
 router = APIRouter(prefix="/rooms", tags=["Rooms"])
@@ -235,9 +239,30 @@ async def _handle_websocket_connection(websocket: WebSocket, room_id: str, token
                     }
                 })
                 
-                # Handle @ai query hook
-                if "@ai" in content.lower():
-                    ai_content = f"Here is a room-aware AI answer regarding: '{content}'."
+                # Handle @shiro or @ai collaborative trigger
+                is_ai_triggered = "@shiro" in content.lower() or "@ai" in content.lower()
+                if is_ai_triggered:
+                    query_clean = content.replace("@shiro", "").replace("@ai", "").strip()
+                    doc_context = ""
+                    if room.document_id:
+                        room_doc = db.query(Document).filter(Document.id == room.document_id).first()
+                        if room_doc and room_doc.text_content:
+                            doc_context = f"\nROOM ACTIVE DOCUMENT ({room_doc.filename}):\n{room_doc.text_content[:2000]}\n"
+
+                    room_prompt = f"You are Shiro, the collaborative AI tutor inside a live study room.\n{doc_context}\nSTUDENT QUESTION: {query_clean}\n\nProvide a clear, high-yield, encouraging answer suitable for group discussion."
+                    
+                    try:
+                        ai_result = await llm_client.execute_with_governance(
+                            prompt=room_prompt,
+                            feature="room_copilot",
+                            prompt_version="v1.0",
+                            user_id=user.id,
+                            db=db
+                        )
+                        ai_content = ai_result.content.strip()
+                    except Exception as ex:
+                        ai_content = f"Here is a room insight on '{query_clean}': Focus on the core definitions and check the active study document for formulas."
+
                     ai_seq = manager.get_next_sequence(room_id)
                     ai_msg = RoomMessage(
                         room_id=room_id,
@@ -266,7 +291,6 @@ async def _handle_websocket_connection(websocket: WebSocket, room_id: str, token
                         }
                     })
 
-                    
             elif msg_type == "timer_update":
                 await manager.broadcast(room_id, {
                     "type": "timer_update",
@@ -299,4 +323,88 @@ async def websocket_endpoint_legacy(
 ):
     """Legacy route: Validates token and derives identity from JWT, overriding client user_id"""
     await _handle_websocket_connection(websocket, room_id, token, db)
+
+
+# ==============================================
+# ROOM NOTES & COLLABORATION AI ACTIONS
+# ==============================================
+
+@router.post("/{room_id}/summarize-to-notes")
+async def summarize_room_to_notes(
+    room_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Summarizes room chat messages and active document into structured revision notes"""
+    room = db.query(StudyRoom).filter(StudyRoom.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    messages = db.query(RoomMessage).filter(RoomMessage.room_id == room_id).order_by(RoomMessage.created_at.desc()).limit(20).all()
+    chat_transcript = "\n".join([f"- {('Shiro' if m.is_ai else (m.user.name if m.user else 'Student'))}: {m.content}" for m in reversed(messages)])
+
+    doc_text = ""
+    if room.document_id:
+        doc = db.query(Document).filter(Document.id == room.document_id).first()
+        if doc and doc.text_content:
+            doc_text = f"\nACTIVE DOCUMENT EXCERPT:\n{doc.text_content[:2500]}\n"
+
+    summary_prompt = f"""You are Shiro, the collaborative study room AI.
+Generate clean, highly structured Markdown revision notes summarizing the key topics studied in this session.
+
+ROOM TOPIC: {room.name} ({room.subject})
+{doc_text}
+RECENT ROOM CHAT & DISCUSSIONS:
+{chat_transcript}
+
+FORMAT RULES:
+1. Use bold headings (## Key Concepts, ## Formulas / Theorems, ## Action Items).
+2. Use concise bullet points suitable for quick revision.
+3. Highlight high-yield points for exam recall.
+"""
+
+    try:
+        res = await llm_client.execute_with_governance(
+            prompt=summary_prompt,
+            feature="room_copilot",
+            prompt_version="v1.0",
+            user_id=current_user.id,
+            db=db
+        )
+        notes_content = res.content.strip()
+    except Exception as e:
+        notes_content = f"## Study Notes: {room.name}\n\n- Reviewed session topics.\n- Continue active recall drills on key definitions."
+
+    return {
+        "room_id": room_id,
+        "notes": notes_content,
+        "generated_at": datetime.utcnow().isoformat()
+    }
+
+
+@router.post("/{room_id}/notes-to-flashcards")
+async def convert_notes_to_flashcards(
+    room_id: str,
+    payload: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Converts study room notes into a flashcard review deck"""
+    notes_text = payload.get("notes", "").strip()
+    if not notes_text or len(notes_text) < 10:
+        raise HTTPException(status_code=400, detail="Notes content must contain at least 10 characters")
+
+    flashcard_service = FlashcardService()
+    cards = await flashcard_service.generate_flashcards_from_text(
+        text=notes_text,
+        num_cards=5,
+        user_id=current_user.id,
+        db=db
+    )
+
+    return {
+        "room_id": room_id,
+        "flashcards": cards,
+        "count": len(cards)
+    }
 

@@ -143,6 +143,21 @@ def init_db():
                     except Exception as e:
                         print(f"Migration for {col} on summaries failed: {e}")
 
+            # Podcasts table migrations
+            for col, col_type in [
+                ("title", "TEXT"),
+                ("subject", "TEXT DEFAULT 'General'")
+            ]:
+                try:
+                    conn.execute(text(f"SELECT {col} FROM podcasts LIMIT 1"))
+                except Exception:
+                    print(f"Adding missing {col} column to podcasts table...")
+                    try:
+                        conn.execute(text(f"ALTER TABLE podcasts ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception as e:
+                        print(f"Migration for {col} on podcasts failed: {e}")
+
             # ChatHistory table migrations
             for col, col_type in [("status", "TEXT DEFAULT 'completed'"), ("latency_ms", "INTEGER DEFAULT 0")]:
                 try:

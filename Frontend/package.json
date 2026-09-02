@@ -1,7 +1,7 @@
 {
-  "name": "gemini_clone",
+  "name": "shiro-app",
   "private": true,
-  "version": "0.2.7",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.2.1",
     "@xyflow/react": "^12.10.2",
     "axios": "^1.11.0",
     "dagre": "^0.8.5",
@@ -20,7 +19,6 @@
     "lucide-react": "^0.562.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-force-graph-3d": "^1.29.1",
     "react-hot-toast": "^2.6.0",
     "react-markdown": "^10.1.0",
     "react-pdf": "^10.4.1",
@@ -28,8 +26,7 @@
     "recharts": "^3.1.2",
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
-    "remark-math": "^6.0.0",
-    "three": "^0.184.0"
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.56",

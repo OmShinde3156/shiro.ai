@@ -164,7 +164,15 @@ body[data-reduced-motion="true"] *::after {
   transition-duration: 0.001ms !important;
 }
 
-/* Global Reset & Typography */
+/* Global Reset & Universal Device Optimization */
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --app-height: 100dvh;
+}
+
 * {
   padding: 0;
   margin: 0;
@@ -174,6 +182,19 @@ body[data-reduced-motion="true"] *::after {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Touch & tap target ergonomics for mobile/tablet */
+button, a, input, select, textarea, [role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Remove default appearance quirks on iOS */
+input[type="text"],
+input[type="search"],
+textarea {
+  -webkit-appearance: none;
+  border-radius: 0;
+}
 
 .font-serif, .font-editorial {
   font-family: 'Newsreader', Georgia, serif;
@@ -185,6 +206,7 @@ code, pre, .font-mono {
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -193,7 +215,9 @@ body {
   background-color: var(--bg-canvas);
   color: var(--text-main);
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
 }
 
 body.theme-light {
@@ -392,4 +416,67 @@ body.theme-dark select option {
   background-color: #181916;
   color: #F4F1E9;
 }
+
+/* 📱 UNIVERSAL DEVICE RESPONSIVE UTILITIES */
+.h-dvh {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.min-h-dvh {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.max-h-dvh {
+  max-height: 100vh;
+  max-height: 100dvh;
+}
+
+/* Safe area padding utilities */
+.safe-pb {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
+.safe-pt {
+  padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+}
+
+.safe-bottom-pad {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Fluid Touch Scrolling without distracting scrollbars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Mobile-friendly tap target helper */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ultra-wide container constraint */
+.ultra-container {
+  width: 100%;
+  max-width: 1536px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 

@@ -280,5 +280,22 @@ class FlashcardService:
                 "review_count": progress.review_count,
                 "next_review": progress.next_review
             })
-            
         return cards_output
+
+    async def generate_flashcards_from_text(self, text: str, num_cards: int, user_id: int, db: Session) -> List[dict]:
+        """Generate flashcard items directly from text/notes"""
+        raw_cards = await llm_client.generate_flashcards(
+            content=text[:12000],
+            num_cards=num_cards,
+            user_id=user_id,
+            db=db
+        )
+        output = []
+        for c in raw_cards:
+            output.append({
+                "id": str(uuid.uuid4()),
+                "question": c.get("question", ""),
+                "answer": c.get("answer", "")
+            })
+        return output
+

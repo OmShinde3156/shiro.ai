@@ -20,11 +20,16 @@ async def test_get_student_insights_schema(db):
 
     insights = await service.get_student_insights(user_id=user_id, db=db)
 
+    # 0. Global Decision Center Fields
+    assert "is_demo" in insights
+    assert "headline_takeaway" in insights
+
     # 1. Learning Health
     health = insights["learning_health"]
     assert "overall_mastery" in health
     assert "mastery_change_pct" in health
     assert "quiz_accuracy" in health
+    assert "retention_rate" in health
     assert "cards_retained" in health
     assert "total_study_time_minutes" in health
     assert "study_streak_days" in health
@@ -35,6 +40,7 @@ async def test_get_student_insights_schema(db):
     assert "mastery_score" in rec
     assert "study_plan_steps" in rec
     assert "primary_tool" in rec
+    assert "why_recommendation" in rec
     assert "action_payload" in rec
 
     # 3. Topic Matrix

@@ -231,7 +231,9 @@ class Podcast(Base):
     id = Column(String, primary_key=True)
     document_id = Column(Integer, ForeignKey("documents.id"))
     user_id = Column(Integer, ForeignKey("users.id"))
-    episodes = Column(JSON)  # List of episode file paths
+    title = Column(String, nullable=True)
+    subject = Column(String, default="General")
+    episodes = Column(JSON)  # List of episode objects or paths
     script_content = Column(Text)
     language = Column(String, default="en")
     status = Column(String, default="processing")  # processing, completed, failed

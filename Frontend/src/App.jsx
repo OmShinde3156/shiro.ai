@@ -40,7 +40,7 @@ function App() {
   const { user } = useAuth();
   const location = useLocation();
   const isLandingPage = location.pathname === "/";
-  const isAuthPage = location.pathname === "/login";
+  const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
   const isStudyRoom = location.pathname === "/study-rooms" || location.pathname.startsWith("/room/");
 
   useEffect(() => {
@@ -87,7 +87,7 @@ function App() {
         }}
       />
       {!isFullScreenRoute && <CommandPalette />}
-      <div className="flex h-screen w-full bg-[var(--bg-main)] text-[var(--text-main)] font-body overflow-hidden">
+      <div className="flex h-screen h-[100dvh] w-full bg-[var(--bg-main)] text-[var(--text-main)] font-body overflow-hidden">
         {!isFullScreenRoute && (
           <>
             <div className="hidden md:block">
@@ -96,13 +96,14 @@ function App() {
             <BottomNavBar />
           </>
         )}
-        <div className={`flex flex-col flex-grow h-screen overflow-hidden ${!isFullScreenRoute ? 'md:ml-20 pb-24 md:pb-0' : ''}`}>
+        <div className={`flex flex-col flex-grow h-screen h-[100dvh] overflow-hidden ${!isFullScreenRoute ? 'md:ml-20 pb-[calc(4.25rem+env(safe-area-inset-bottom,0px))] md:pb-0' : ''}`}>
           {!isFullScreenRoute && <Header />}
           <AuroraBackground className="flex-grow h-full w-full overflow-hidden">
-            <div id="scroll-container" className="flex-grow overflow-y-auto relative w-full h-full custom-scroll">
+            <div id="scroll-container" className="flex-grow overflow-y-auto relative w-full h-full custom-scroll touch-scroll">
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<AuthPage />} />
+                <Route path="/register" element={<AuthPage initialMode="register" />} />
                 <Route path="/home" element={<ChatPage />} />
                 <Route path="/study-rooms" element={<StudyRoomLobby />} />
                 <Route path="/room/:roomId" element={<StudyRoom />} />

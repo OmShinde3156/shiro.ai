@@ -192,10 +192,10 @@ export const MindMapPage = () => {
       </div>
 
       {/* 2. Content Area */}
-      <div className="flex-1 w-full overflow-y-auto custom-scroll">
+      <div className="flex-1 w-full overflow-y-auto custom-scroll touch-scroll">
         {/* VIEW A: CREATE NEW MIND MAP */}
         {activeTab === 'create' && (
-          <div className="max-w-3xl mx-auto px-4 md:px-6 py-8 space-y-6">
+          <div className="max-w-3xl mx-auto px-3.5 sm:px-6 py-6 sm:py-8 space-y-6">
             <Card className="border-[var(--border)]">
               <CardHeader
                 title="Synthesize Knowledge Map"
@@ -241,7 +241,7 @@ export const MindMapPage = () => {
                   <label className="text-xs font-semibold text-[var(--text-main)]">
                     Structural Depth Level
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {[
                       { level: 1, label: 'Core Pillars', desc: 'High-level overview (1-2 branches)' },
                       { level: 2, label: 'Deep Breakdown', desc: 'Standard syllabus breakdown' },
@@ -251,7 +251,7 @@ export const MindMapPage = () => {
                         key={item.level}
                         type="button"
                         onClick={() => setDepth(item.level)}
-                        className={`p-3 rounded-xl border text-left transition-all ${
+                        className={`p-3 rounded-xl border text-left transition-all active:scale-98 ${
                           depth === item.level
                             ? 'bg-[#89A88D]/15 border-[#89A88D] text-[var(--text-main)] shadow-sm'
                             : 'bg-[var(--bg-surface-elevated)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-hover)]'

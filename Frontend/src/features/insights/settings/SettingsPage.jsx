@@ -445,9 +445,9 @@ export const SettingsPage = () => {
       </div>
 
       {/* Main Settings Body */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Left Navigation Sidebar */}
-        <div className="md:col-span-1 space-y-1">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6">
+        {/* Navigation Tabs (Horizontal Scrollable on Mobile, Sidebar on Desktop) */}
+        <div className="md:col-span-1 flex flex-row overflow-x-auto md:flex-col gap-1.5 md:space-y-1 pb-2 md:pb-0 no-scrollbar touch-scroll shrink-0">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -455,27 +455,27 @@ export const SettingsPage = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all text-left ${
+                className={`w-auto whitespace-nowrap md:w-full flex items-center gap-2 px-3 sm:px-3.5 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-medium transition-all text-left active:scale-95 shrink-0 ${
                   isActive
                     ? 'bg-[#E8EFE9] dark:bg-[#89A88D]/15 text-[#3F6048] dark:text-[#A8C5AC] border border-[#3F6048]/20 dark:border-[#89A88D]/30 font-semibold shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface-elevated)] border border-transparent'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-[#3F6048] dark:text-[#89A88D]' : 'text-[var(--text-muted)]'}`} />
+                <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${isActive ? 'text-[#3F6048] dark:text-[#89A88D]' : 'text-[var(--text-muted)]'}`} />
                 <span>{tab.label}</span>
               </button>
             );
           })}
 
-          <div className="pt-4 mt-4 border-t border-[var(--border)]">
+          <div className="hidden md:block pt-4 mt-4 border-t border-[var(--border)]">
             <button
               onClick={() => {
                 logout();
                 navigate('/');
               }}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-medium text-[#C96B62] hover:bg-[#C96B62]/10 border border-[#C96B62]/20 transition-all text-left"
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs md:text-sm font-medium text-[#C96B62] hover:bg-[#C96B62]/10 border border-[#C96B62]/20 transition-all text-left active:scale-95"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-4 h-4 shrink-0" />
               <span>Log Out</span>
             </button>
           </div>

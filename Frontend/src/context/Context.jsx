@@ -1,6 +1,6 @@
 import { fetchWithAuth } from '../api/fetchWithAuth';
 import { createContext, useState, useEffect, useRef } from "react";
-import runChat, { streamChat } from "../config/Gemini.js";
+import runChat, { streamChat } from "../api/chatStream.js";
 import API_BASE_URL from "../api/config.js";
 import { translations } from "../utils/translations.js";
 
@@ -14,7 +14,29 @@ export const ContextProvider = ({ children }) => {
   const [showResults, setShowResults] = useState(false);
   const [documents, setDocuments] = useState([]);
   const [prevPrompts, setPrevPrompts] = useState([]);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem('shiro_chat_messages');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (messages && messages.length > 0) {
+        localStorage.setItem('shiro_chat_messages', JSON.stringify(messages.slice(-50)));
+      }
+    } catch (e) {}
+  }, [messages]);
+
+  const clearChat = () => {
+    setMessages([]);
+    localStorage.removeItem('shiro_chat_messages');
+    setShowResults(false);
+    setInput("");
+  };
   const [isFeynmanMode, setIsFeynmanMode] = useState(false);
   const [feynmanConcept, setFeynmanConcept] = useState(null);
   const [language, setLanguageState] = useState(localStorage.getItem('shiro_language') || "en");
@@ -117,11 +139,22 @@ export const ContextProvider = ({ children }) => {
     }
   };
 
-  const onSent = async (language = "en", userId = 1, documentIds = [], mode = "human", overrideInput = null) => {
+  const onSent = async (
+    language = "en",
+    userId = 1,
+    documentIds = [],
+    mode = "human",
+    overrideInput = null,
+    contextScope = "GLOBAL",
+    activeDocumentId = null,
+    roomId = null,
+    selectedText = null,
+    toolRequest = null
+  ) => {
     const finalInput = overrideInput || input;
     if (!finalInput.trim()) return;
     const currentInput = finalInput;
-    if (!overrideInput) setInput(""); 
+    setInput(""); 
     setLoading(true);
     setShowResults(true);
     setRecentPrompt(currentInput);
@@ -135,11 +168,12 @@ export const ContextProvider = ({ children }) => {
         text: "", 
         isUser: false, 
         isLoading: true, 
-        statusText: "Searching notes & documents...",
+        statusText: contextScope === "DOCUMENT" ? "Analyzing document context..." : "Consulting Shiro Tutor...",
         citations: [],
         sources: [],
         suggestedAction: null,
-        actionHandoff: null
+        actionHandoff: null,
+        contextScope: contextScope
       }
     ]);
 
@@ -177,6 +211,11 @@ export const ContextProvider = ({ children }) => {
           language,
           userId,
           documentIds,
+          activeDocumentId,
+          contextScope,
+          roomId,
+          selectedText,
+          toolRequest,
           mode,
           abortSignal: abortControllerRef.current.signal,
           onStatus: (statusPayload) => {
@@ -298,6 +337,7 @@ export const ContextProvider = ({ children }) => {
         activeHandoffContext,
         setActiveHandoffContext,
         triggerStudyTool,
+        clearChat,
         t
       }}
     >
