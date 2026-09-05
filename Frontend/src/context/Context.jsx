@@ -69,11 +69,24 @@ export const ContextProvider = ({ children }) => {
 
   const fetchUserStats = async (userId) => {
     try {
-      const response = await fetchWithAuth(`${API_BASE_URL}/progress`);
+      const response = await fetchWithAuth(`${API_BASE_URL}/student-insights`);
       if (response.ok) {
         const data = await response.json();
+        const health = data.learning_health || {};
         setStudyStats({
-          streak: data.study_streak || 1,
+          streak: health.study_streak_days ?? 1,
+          avgScore: health.overall_mastery || health.quiz_accuracy || 75,
+          xp: health.xp || 140,
+          level: health.level || 2,
+        });
+        return;
+      }
+
+      const fallbackRes = await fetchWithAuth(`${API_BASE_URL}/progress`);
+      if (fallbackRes.ok) {
+        const data = await fallbackRes.json();
+        setStudyStats({
+          streak: data.study_streak ?? 1,
           avgScore: data.average_score || 75,
           xp: data.xp || 140,
           level: data.level || 2,
@@ -285,6 +298,9 @@ export const ContextProvider = ({ children }) => {
               }
               return next;
             });
+            if (userId) {
+              fetchUserStats(userId);
+            }
           }
         });
       }
