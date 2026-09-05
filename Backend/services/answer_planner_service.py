@@ -90,8 +90,9 @@ class AnswerPlannerService:
         - DO NOT reorder sections.
         - MUST be concise and exam-oriented.
         - Use bullet points where appropriate.
+        - If the question involves a process, lifecycle, algorithm, hierarchy, or architecture, include a clean ```mermaid flowchart (graph TD or sequenceDiagram) to secure full diagram marks.
 
-        OUTPUT: Plain text final answer ONLY.
+        OUTPUT: Plain markdown final answer with headings and optional mermaid diagram.
         """
         return await llm_client.generate_response(prompt)
 
