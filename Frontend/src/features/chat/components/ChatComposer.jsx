@@ -347,8 +347,8 @@ export const ChatComposer = ({
                 onClick={() => setMode('human')}
                 className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg transition-all active:scale-95 ${
                   mode === 'human'
-                    ? 'bg-[#DDE9DF] dark:bg-[#89A88D]/20 text-[#3F6048] dark:text-[#A8C5AC] font-semibold shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
+                    ? 'bg-[var(--primary-subtle)] text-[var(--primary-strong)] font-semibold shadow-xs border border-[var(--border)]'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] border border-transparent'
                 }`}
                 title="Socratic, intuitive explanations with analogies"
               >
@@ -361,10 +361,10 @@ export const ChatComposer = ({
                 onClick={() => setMode('surgical')}
                 className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg transition-all active:scale-95 ${
                   mode === 'surgical'
-                    ? 'bg-[#3F6048] dark:bg-[#62816A] text-white font-semibold shadow-xs'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-main)]'
+                    ? 'bg-[var(--primary-strong)] text-[var(--bg-canvas)] font-semibold shadow-xs border border-[var(--primary-strong)]'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)] border border-transparent'
                 }`}
-                title="Surgical — precise, direct answers"
+                title="Surgical Mode: Concise, precise, and direct answers"
               >
                 <Crosshair className="w-3.5 h-3.5 shrink-0" />
                 <span className="text-[11px] hidden sm:inline">{t("surgicalMode", "Surgical Mode")}</span>
@@ -380,7 +380,7 @@ export const ChatComposer = ({
                   onClick={() => setShowDocPicker(!showDocPicker)}
                   className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[var(--bg-surface-elevated)] hover:bg-[var(--bg-card-hover)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-all text-xs active:scale-95 shrink-0"
                 >
-                  <Paperclip className="w-3.5 h-3.5 text-[#3F6048] dark:text-[#89A88D] shrink-0" />
+                  <Paperclip className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
                   <span className="hidden xs:inline">Attach Source</span>
                   <span className="xs:hidden">Source</span>
                   <ChevronDown className="w-3 h-3 text-[var(--text-muted)] shrink-0" />
@@ -410,12 +410,12 @@ export const ChatComposer = ({
                               }}
                               className={`w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-left text-xs transition-colors ${
                                 isSelected
-                                  ? 'bg-[#3F6048]/10 dark:bg-[#89A88D]/15 text-[#3F6048] dark:text-[#A8C5AC] border border-[#3F6048]/20 dark:border-[#89A88D]/30 font-medium'
+                                  ? 'bg-[var(--primary-subtle)] text-[var(--primary-strong)] border border-[var(--border)] font-medium'
                                   : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface-elevated)] hover:text-[var(--text-main)]'
                               }`}
                             >
                               <span className="truncate">{doc.filename}</span>
-                              {isSelected && <span className="text-[#3F6048] dark:text-[#89A88D] text-xs">✓</span>}
+                              {isSelected && <span className="text-[var(--primary)] text-xs">✓</span>}
                             </button>
                           );
                         })}
