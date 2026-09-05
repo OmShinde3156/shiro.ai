@@ -28,7 +28,11 @@ import {
   Target,
   Play,
   RotateCcw,
-  Sparkle
+  Sparkle,
+  Radio,
+  Volume2,
+  Folder,
+  BarChart2
 } from "lucide-react";
 
 import Card, { CardHeader, CardContent } from "../../../components/ui/Card";
@@ -64,14 +68,45 @@ const ChatPage = () => {
   const [mode, setMode] = useState("human"); // "human" (analogies/socratic) | "surgical" (exam/strict)
   const [selectedDocIds, setSelectedDocIds] = useState([]);
   const [selectedCitation, setSelectedCitation] = useState(null);
+  const [insights, setInsights] = useState(null);
+  const [podcasts, setPodcasts] = useState([]);
+  const [loadingInsights, setLoadingInsights] = useState(true);
 
   const chatBottomRef = useRef(null);
 
   useEffect(() => {
     if (user?.id) {
       fetchDocuments(user.id);
+      loadStudentInsights();
+      loadPodcasts();
     }
   }, [user]);
+
+  const loadStudentInsights = async () => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/student-insights`);
+      if (res.ok) {
+        const data = await res.json();
+        setInsights(data);
+      }
+    } catch (e) {
+      console.warn("Could not load student insights for dashboard:", e);
+    } finally {
+      setLoadingInsights(false);
+    }
+  };
+
+  const loadPodcasts = async () => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/podcasts`);
+      if (res.ok) {
+        const data = await res.json();
+        setPodcasts(data);
+      }
+    } catch (e) {
+      console.warn("Could not load podcasts for dashboard:", e);
+    }
+  };
 
   // Auto scroll to latest message in chat view (see where we left off)
   useEffect(() => {
@@ -173,6 +208,55 @@ const ChatPage = () => {
     return t("goodEvening", "Good evening");
   };
 
+  // Live telemetry fallbacks
+  const recAction = insights?.recommended_action || {
+    topic: "Operating Systems",
+    subtopic: "CPU Scheduling",
+    mastery_score: 54,
+    failed_questions_count: 3,
+    cards_due_count: 8,
+    study_plan_steps: [
+      "Review core CPU scheduling algorithms (Round Robin vs SJF)",
+      "Targeted 5-question diagnostic quiz on turnaround time calculation",
+      "Consolidate trade-offs with Feynman simple explanation challenge"
+    ],
+    primary_tool: "quiz",
+    why_recommendation: "Based on 3 recent quiz mistakes and 8 due flashcards threatening memory retention.",
+    action_payload: {
+      tool: "quiz",
+      topic: "Operating Systems — CPU Scheduling",
+      difficulty: "medium",
+      mode: "surgical"
+    }
+  };
+
+  const health = insights?.learning_health || {
+    overall_mastery: 82,
+    mastery_change_pct: 6,
+    quiz_accuracy: 74,
+    cards_retained: 142,
+    cards_due_today: 8,
+    study_streak_days: studyStats?.streak || 1,
+    total_study_time_minutes: 860
+  };
+
+  const latestPodcast = podcasts.length > 0 ? podcasts[0] : null;
+  const latestEpisode = latestPodcast && Array.isArray(latestPodcast.episodes) && latestPodcast.episodes.length > 0
+    ? latestPodcast.episodes[0]
+    : (latestPodcast?.episodes && typeof latestPodcast.episodes === 'object' ? Object.values(latestPodcast.episodes)[0] : null);
+
+  const handleLaunchRecovery = (rec) => {
+    if (!rec) return;
+    const tool = rec.primary_tool || "quiz";
+    const payload = rec.action_payload || {
+      tool,
+      topic: `${rec.topic} — ${rec.subtopic}`,
+      difficulty: "medium",
+      mode: "surgical"
+    };
+    handleChatAction(tool, payload);
+  };
+
   return (
     <div className="relative flex flex-col h-full w-full overflow-hidden">
       {/* Citation Slide-over Drawer */}
@@ -261,62 +345,191 @@ const ChatPage = () => {
           </div>
         </div>
       ) : (
-        /* VIEW B: HIGH-IMPACT STUDENT INTELLIGENCE DASHBOARD */
+        /* VIEW B: APPLE-GRADE COGNITIVE COMMAND CENTER */
         <div className="flex-1 w-full overflow-y-auto custom-scroll touch-scroll">
-          <div className="max-w-6xl mx-auto px-3.5 sm:px-6 py-4 sm:py-6 space-y-5 sm:space-y-6 pb-20">
-            {/* 1. Hero Header Banner */}
+          <div className="max-w-6xl mx-auto px-3.5 sm:px-6 py-6 space-y-6 sm:space-y-7 pb-24">
+            
+            {/* 1. EDITORIAL HEADER & STATUS PILLS */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4"
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border)] pb-5"
             >
-            <div>
-              <div className="flex items-center gap-2 text-[11px] font-bold text-[#3F6048] dark:text-[#A8C5AC] mb-1 tracking-widest uppercase font-mono">
-                <span className="w-2 h-2 rounded-full bg-[#3F6048] dark:bg-[#89A88D] animate-pulse" />
-                <span>{t("activeCognition", "ACTIVE LEARNING")}</span>
+              <div>
+                <div className="flex items-center gap-2 text-[11px] font-bold text-[#16A34A] dark:text-[#4ADE80] mb-1 tracking-widest uppercase font-mono">
+                  <span className="w-2 h-2 rounded-full bg-[#16A34A] dark:bg-[#4ADE80] animate-pulse" />
+                  <span>{t("activeCognition", "COGNITIVE COMMAND CENTER")}</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[var(--text-main)] tracking-tight font-serif">
+                  {getGreeting()}, {userName}.{" "}
+                  <span className="italic font-normal text-[var(--text-secondary)] block sm:inline">
+                    {t("masteringPrompt", "What are we mastering today?")}
+                  </span>
+                </h1>
               </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-[var(--text-main)] tracking-tight font-serif">
-                {getGreeting()}, {userName}.{" "}
-                <span className="italic font-normal text-[var(--text-secondary)] block sm:inline">
-                  {t("masteringPrompt", "What are we mastering today?")}
+
+              <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+                <button
+                  onClick={() => navigate('/progress-report')}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border)] hover:border-[var(--primary)]/40 text-xs transition-all shadow-2xs cursor-pointer group"
+                  title="View complete mastery matrix and cognitive recovery paths"
+                >
+                  <div className="w-2 h-2 rounded-full bg-[#16A34A] dark:bg-[#4ADE80] animate-pulse" />
+                  <span className="font-bold text-[var(--text-main)]">
+                    {health.overall_mastery}% Overall Mastery
+                  </span>
+                  <span className="text-[10px] text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors font-mono hidden sm:inline">
+                    Insights →
+                  </span>
+                </button>
+
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => navigate('/documents')}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{t("uploadMaterial", "Upload Material")}</span>
+                </Button>
+              </div>
+            </motion.div>
+
+            {/* 2. SPOTLIGHT COMMAND COMPOSER */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.05 }}
+              className="w-full space-y-3"
+            >
+              <ChatComposer
+                input={input}
+                setInput={setInput}
+                onSend={handleSend}
+                loading={loading}
+                documents={documents}
+                selectedDocIds={selectedDocIds}
+                onToggleDoc={handleToggleDoc}
+                onUploadFile={handleUploadFile}
+                mode={mode}
+                setMode={setMode}
+                onFocusExpand={() => {
+                  if (messages.length > 0) {
+                    setShowResults(true);
+                  }
+                }}
+                placeholder={t("composerPlaceholder", "Ask Shiro anything about your notes, or type / for commands...")}
+              />
+
+              {/* Dynamic Smart Intent Action Chips */}
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-xs">
+                <span className="text-[var(--text-muted)] font-medium flex items-center gap-1 font-mono text-[11px]">
+                  <Zap className="w-3 h-3 text-[#D6A84F]" />
+                  <span>Smart Intents:</span>
                 </span>
-              </h1>
-            </div>
+                {[
+                  {
+                    label: `Sprint: ${recAction.topic}`,
+                    icon: Target,
+                    action: () => handleLaunchRecovery(recAction)
+                  },
+                  {
+                    label: `Clear ${health.cards_due_today} Overdue Cards`,
+                    icon: Layers,
+                    action: () => navigate('/flashcards', { state: { filter: "due" } })
+                  },
+                  {
+                    label: `Explain ${recAction.topic} Simply`,
+                    icon: BrainCircuit,
+                    action: () => handleSuggestionClick(`Explain ${recAction.topic} intuitively using the Feynman technique.`)
+                  },
+                  {
+                    label: "5-Min Diagnostic Checkpoint",
+                    icon: HelpCircle,
+                    action: () => navigate('/quiz')
+                  }
+                ].map((item, idx) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={item.action}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border)] hover:border-[var(--primary-strong)] text-[var(--text-secondary)] hover:text-[var(--primary)] transition-all text-xs shadow-2xs hover:scale-[1.01] cursor-pointer"
+                    >
+                      <Icon className="w-3 h-3 text-[var(--text-muted)]" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
 
-            <div className="flex items-center gap-2.5">
-              <Tooltip text="Daily Study Consistency Streak">
-                <Badge variant="gold" size="md" icon={Flame}>
-                  {studyStats?.streak || 1} {t("dayStreak", "Day Streak")}
-                </Badge>
-              </Tooltip>
+            {/* 3. TODAY'S MISSION TARGET BAR */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className="p-4 sm:p-5 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
+            >
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="w-11 h-11 rounded-2xl bg-[var(--primary-subtle)] text-[var(--primary)] flex items-center justify-center shrink-0 shadow-2xs">
+                  <Target className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-[var(--text-main)] font-serif">Today's Study Mission</h3>
+                    <span className="px-2 py-0.5 rounded-full bg-[var(--primary-subtle)] text-[var(--primary)] text-[10px] font-mono font-bold">
+                      2 of 3 Completed
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5 truncate">
+                    {insights?.headline_takeaway || "Consistency drives long-term memory stability. 1 recovery task remaining."}
+                  </p>
+                </div>
+              </div>
 
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => navigate('/documents')}
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>{t("uploadMaterial", "Upload Material")}</span>
-              </Button>
-            </div>
-          </motion.div>
+              <div className="flex items-center gap-5 sm:gap-7 shrink-0 text-xs border-t md:border-t-0 border-[var(--border)] pt-3 md:pt-0">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#16A34A] dark:text-[#4ADE80]" />
+                  <div>
+                    <span className="text-[var(--text-muted)] text-[10px] uppercase font-mono block">Study Time</span>
+                    <span className="font-semibold text-[var(--text-main)] font-mono">
+                      {Math.min(25, Math.round(health.total_study_time_minutes / 20) || 18)} / 25m
+                    </span>
+                  </div>
+                </div>
 
-          {/* 2. Centralized Search / Chat Composer */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.05 }}
-            className="w-full space-y-3"
-          >
-            {/* Active Conversation In Progress Banner (Click to Expand and see where you left off) */}
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full border-2 border-[#F59E0B] flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
+                  </div>
+                  <div>
+                    <span className="text-[var(--text-muted)] text-[10px] uppercase font-mono block">Memory Due</span>
+                    <span className="font-semibold text-[var(--text-main)] font-mono">{health.cards_due_today} cards</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[var(--primary)]" />
+                  <div>
+                    <span className="text-[var(--text-muted)] text-[10px] uppercase font-mono block">Daily Quiz</span>
+                    <span className="font-semibold text-[var(--text-main)]">Verified</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* 4. ACTIVE CONVERSATION BANNER */}
             {messages.length > 0 && (
-              <div
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.15 }}
                 onClick={() => setShowResults(true)}
-                className="p-3.5 sm:p-4 rounded-2xl bg-linear-to-r from-[#3F6048]/15 via-[var(--bg-surface-elevated)] to-[var(--bg-surface)] border border-[#3F6048]/30 hover:border-[#3F6048] cursor-pointer transition-all shadow-xs flex items-center justify-between gap-3 group"
+                className="p-3.5 sm:p-4 rounded-2xl bg-linear-to-r from-[var(--primary-subtle)] via-[var(--bg-surface-elevated)] to-[var(--bg-surface)] border border-[var(--border)] hover:border-[var(--primary)] cursor-pointer transition-all shadow-xs flex items-center justify-between gap-3 group"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-2xl bg-[#3F6048] dark:bg-[#89A88D] text-white dark:text-black flex items-center justify-center flex-shrink-0 shadow-xs">
+                  <div className="w-10 h-10 rounded-2xl bg-[var(--primary)] text-[var(--bg-canvas)] flex items-center justify-center shrink-0 shadow-xs">
                     <Sparkles className="w-5 h-5 animate-pulse" />
                   </div>
                   <div className="min-w-0 flex flex-col gap-0.5">
@@ -324,12 +537,12 @@ const ChatPage = () => {
                       <span className="text-xs sm:text-sm font-bold text-[var(--text-main)] font-serif truncate">
                         Active Conversation in Progress
                       </span>
-                      <span className="px-2 py-0.5 rounded-full bg-[#3F6048]/20 text-[#3F6048] dark:text-[#A8C5AC] text-[9px] font-mono font-bold shrink-0">
+                      <span className="px-2 py-0.5 rounded-full bg-[var(--primary-subtle)] text-[var(--primary-strong)] text-[9px] font-mono font-bold shrink-0">
                         {messages.filter(m => m.isUser).length} turns
                       </span>
                     </div>
                     <p className="text-[11px] text-[var(--text-secondary)] truncate max-w-lg">
-                      Last: {messages[messages.length - 1]?.text?.slice(0, 100) || "Continue where you left off..."}
+                      Last: {messages[messages.length - 1]?.text?.replace(/[*_#`~>]/g, '').slice(0, 100) || "Continue where you left off..."}
                     </p>
                   </div>
                 </div>
@@ -342,216 +555,288 @@ const ChatPage = () => {
                   <span>Resume Chat</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </Button>
-              </div>
+              </motion.div>
             )}
 
-            <ChatComposer
-              input={input}
-              setInput={setInput}
-              onSend={handleSend}
-              loading={loading}
-              documents={documents}
-              selectedDocIds={selectedDocIds}
-              onToggleDoc={handleToggleDoc}
-              onUploadFile={handleUploadFile}
-              mode={mode}
-              setMode={setMode}
-              onFocusExpand={() => {
-                if (messages.length > 0) {
-                  setShowResults(true);
-                }
-              }}
-              placeholder={t("composerPlaceholder", "Ask Shiro anything about your notes, or type / for commands...")}
-            />
+            {/* 4. PRIMARY SPLIT BENTO: WHAT TO STUDY NEXT (60%) + AUDIO & MEMORY (40%) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+              
+              {/* Dominant Hero Card: What to Study Next (7 cols) */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.15 }}
+                className="lg:col-span-7 p-6 sm:p-7 rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] shadow-xs flex flex-col justify-between space-y-5"
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold text-[#C96B62] uppercase tracking-wider font-mono">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <span>High Recovery Priority</span>
+                    </div>
+                    <Badge variant={recAction.mastery_score >= 65 ? "gold" : "rose"} size="sm">
+                      {recAction.mastery_score}% Mastery
+                    </Badge>
+                  </div>
 
-            {/* Quick Inspiration Action Command Chips */}
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-xs">
-              <span className="text-[var(--text-muted)] font-medium flex items-center gap-1 font-mono text-[11px]">
-                <Zap className="w-3 h-3 text-[#D6A84F]" />
-                {t("quickActions", "Quick actions:")}
-              </span>
-              {[
-                { label: "What documents do I have in my library?", icon: BookOpen },
-                { label: "What should I study today based on my progress?", icon: Target },
-                { label: t("explainIntuitively", "Explain concept intuitively"), icon: BrainCircuit },
-                { label: t("summarizeFormulas", "Summarize key formulas"), icon: FileText },
-              ].map((item, idx) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => handleSuggestionClick(item.label)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--bg-surface)] hover:bg-[#E8EFE9] dark:hover:bg-[#89A88D]/15 border border-[var(--border)] hover:border-[#3F6048]/30 dark:hover:border-[#89A88D]/40 text-[var(--text-secondary)] hover:text-[#3F6048] dark:hover:text-[#A8C5AC] transition-all text-xs shadow-sm hover:scale-[1.01]"
-                  >
-                    <Icon className="w-3 h-3 text-[var(--text-muted)] group-hover:text-[#3F6048]" />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </motion.div>
+                  <div>
+                    <h3 className="text-xl sm:text-2xl font-bold text-[var(--text-main)] font-serif tracking-tight">
+                      {recAction.topic} {recAction.subtopic ? `· ${recAction.subtopic}` : ""}
+                    </h3>
+                    <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
+                      {recAction.why_recommendation}
+                    </p>
+                  </div>
 
-          {/* 3. Primary Student Intelligence Bento Matrix */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Bento Card 1: What to Study Next */}
-            <Card
-              className="md:col-span-2 border-[var(--border)] bg-[var(--bg-surface)]"
-              onClick={() => navigate('/study-plan')}
-            >
-              <CardHeader
-                title={t("whatToStudyNext", "What to Study Next")}
-                subtitle={t("whatToStudySubtitle", "Personalized recommendation based on your recent activity")}
-                icon={Lightbulb}
-                action={
-                  <Badge variant="sage" size="sm">
-                    {t("highPriority", "High Retention Priority")}
-                  </Badge>
-                }
-              />
-              <CardContent className="space-y-3">
-                <p className="text-[var(--text-main)] text-sm leading-relaxed">
-                  {t("whatToStudyBody", "Focus on Neural Network Optimization & Gradient Descent from your uploaded machine learning notes to reinforce concepts before your next scheduled review.")}
-                </p>
-                <div className="flex flex-wrap items-center gap-2.5 pt-2">
+                  {/* Telemetry Chips */}
+                  <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                    <span className="px-2.5 py-1 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] font-mono text-[11px] text-[var(--text-secondary)]">
+                      {recAction.failed_questions_count} recent mistakes
+                    </span>
+                    <span className="px-2.5 py-1 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] font-mono text-[11px] text-[var(--text-secondary)]">
+                      {recAction.cards_due_count} flashcards due
+                    </span>
+                    <span className="px-2.5 py-1 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] font-mono text-[11px] text-[var(--text-secondary)]">
+                      Target: {recAction.primary_tool?.toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* 3 Step Adaptive Sequence */}
+                  <div className="space-y-2 pt-2 border-t border-[var(--border)]">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--text-muted)] block">
+                      3-Step Adaptive Protocol:
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                      {recAction.study_plan_steps.map((step, idx) => (
+                        <div key={idx} className="p-3 rounded-2xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] space-y-1">
+                          <span className="text-[10px] font-mono font-bold text-[#89A88D]">0{idx + 1}</span>
+                          <p className="text-[11px] text-[var(--text-main)] leading-snug line-clamp-2">{step}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center justify-between gap-3">
                   <Button
                     variant="primary"
-                    size="sm"
-                    onClick={(e) => { e.stopPropagation(); navigate('/quiz'); }}
+                    size="md"
+                    className="w-full sm:w-auto justify-center font-semibold text-xs"
+                    onClick={() => handleLaunchRecovery(recAction)}
                   >
-                    <span>{t("startQuiz", "Start 5-Min Quiz")}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={(e) => { e.stopPropagation(); navigate('/feynman'); }}
-                  >
-                    <span>{t("feynmanChallenge", "Feynman Challenge")}</span>
+                    <span>Start Recovery Session</span>
+                    <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={(e) => { e.stopPropagation(); navigate('/mindmap'); }}
+                    className="text-xs text-[var(--text-secondary)]"
+                    onClick={() => navigate('/progress-report')}
                   >
-                    <span>{t("viewMindmap", "View Mind Map")}</span>
+                    <span>Decision Center →</span>
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </motion.div>
 
-            {/* Bento Card 2: Spaced Repetition Due Queue */}
-            <Card
-              className="border-[var(--border)] bg-[var(--bg-surface)]"
-              onClick={() => navigate('/flashcards')}
-            >
-              <CardHeader
-                title={t("spacedRepetition", "Spaced Repetition")}
-                subtitle={t("sm2Subtitle", "SM-2 Memory Recall Queue")}
-                icon={Layers}
-                action={
-                  <Badge variant="gold" size="sm">
-                    30 {t("dueToday", "Due Today")}
-                  </Badge>
-                }
-              />
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
-                  <span>{t("targetRetention", "Target Retention")}</span>
-                  <span className="font-semibold text-[#D6A84F]">85% Accuracy</span>
-                </div>
-                <div className="w-full bg-[var(--bg-surface-elevated)] h-2 rounded-full overflow-hidden border border-[var(--border)]">
-                  <div className="bg-[#D6A84F] h-full w-[73%] rounded-full" />
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full mt-2"
+              {/* Secondary Column: Continue Listening + Memory Retention (5 cols) */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+                className="lg:col-span-5 flex flex-col gap-4 justify-between"
+              >
+                {/* Audio Lab "Continue Listening" Widget */}
+                <div
+                  onClick={() => navigate('/audio-summary')}
+                  className="p-5 rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] hover:border-[#89A88D]/40 transition-all cursor-pointer shadow-xs space-y-3 group"
                 >
-                  {t("reviewCardsNow", "Review Cards Now")}
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold text-[#89A88D] uppercase tracking-wider font-mono">
+                      <Radio className="w-3.5 h-3.5 animate-pulse" />
+                      <span>Continue Listening</span>
+                    </div>
+                    {latestPodcast?.subject && (
+                      <span className="px-2 py-0.5 rounded-full bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-[10px] font-mono text-[var(--text-secondary)]">
+                        {latestPodcast.subject}
+                      </span>
+                    )}
+                  </div>
 
-          {/* 4. Your Study Toolkit */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Compass className="w-4 h-4 text-[#3F6048] dark:text-[#89A88D]" />
-                <h2 className="text-xs md:text-sm font-bold text-[var(--text-main)] uppercase tracking-wider font-serif">
-                  {t("studySuite", "Your Study Toolkit")}
-                </h2>
-              </div>
-              <span className="text-xs text-[var(--text-muted)]">{t("studySuiteDesc", "Everything you need to turn notes into active learning.")}</span>
-            </div>
+                  {latestPodcast ? (
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-[#3F6048] to-[#89A88D] text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                        <Volume2 className="w-6 h-6" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-sm font-bold text-[var(--text-main)] truncate font-serif">
+                          {latestPodcast.name || latestPodcast.title}
+                        </h4>
+                        <p className="text-xs text-[var(--text-secondary)] truncate mt-0.5">
+                          {latestEpisode?.title || `${latestPodcast.total_episodes || 1} Episode Series`}
+                        </p>
+                      </div>
+                      <Button variant="primary" size="sm" className="shrink-0 rounded-xl">
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#89A88D]/15 text-[#89A88D] flex items-center justify-center shrink-0">
+                        <Headphones className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-xs font-bold text-[var(--text-main)]">Shiro Audio Lab</h4>
+                        <p className="text-[11px] text-[var(--text-muted)]">Synthesize episodic dual-host audio from notes</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-[var(--text-muted)]" />
+                    </div>
+                  )}
+                </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-              {[
-                { title: t("quizArenaTitle", "Quiz Arena"), desc: t("quizArenaDesc", "Active recall MCQs"), icon: HelpCircle, route: "/quiz", color: "text-[#3F6048] dark:text-[#89A88D]", bg: "bg-[#E8EFE9] dark:bg-[#89A88D]/10" },
-                { title: t("flashcardsTitle", "Flashcards"), desc: t("flashcardsDesc", "SM-2 3D review"), icon: Layers, route: "/flashcards", color: "text-[#3F6048] dark:text-[#62816A]", bg: "bg-[#E8EFE9] dark:bg-[#62816A]/10" },
-                { title: t("feynmanTitle", "Feynman Mode"), desc: t("feynmanDesc", "Socratic critique"), icon: BrainCircuit, route: "/feynman", color: "text-[#3F6048] dark:text-[#89A88D]", bg: "bg-[#E8EFE9] dark:bg-[#89A88D]/10" },
-                { title: t("mindmapsTitle", "Mind Maps"), desc: t("mindmapsDesc", "Concept hierarchy"), icon: Network, route: "/mindmap", color: "text-[#D6A84F]", bg: "bg-[#F4E9CC] dark:bg-[#D6A84F]/10" },
-                { title: t("audioCastTitle", "Audio Cast"), desc: t("audioCastDesc", "Listen on the go"), icon: Headphones, route: "/audio-summary", color: "text-[#3F6048] dark:text-[#62816A]", bg: "bg-[#E8EFE9] dark:bg-[#62816A]/10" },
-                { title: t("studyRoomsTitle", "Study Rooms"), desc: t("studyRoomsDesc", "Dual-pane focus"), icon: Play, route: "/study-rooms", color: "text-[#3F6048] dark:text-[#89A88D]", bg: "bg-[#E8EFE9] dark:bg-[#89A88D]/10" },
-              ].map((tool, idx) => {
-                const IconComponent = tool.icon;
-                return (
-                  <Card
-                    key={idx}
-                    onClick={() => navigate(tool.route)}
-                    className="p-3.5 flex flex-col justify-between h-32 hover:-translate-y-0.5 cursor-pointer border-[var(--border)] hover:border-[#3F6048]/30 dark:hover:border-[#89A88D]/40 transition-all bg-[var(--bg-surface)] hover:shadow-md"
+                {/* Spaced Repetition (FSRS) Card */}
+                <div
+                  onClick={() => navigate('/flashcards', { state: { filter: "due" } })}
+                  className="p-5 rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] hover:border-[#D6A84F]/40 transition-all cursor-pointer shadow-xs space-y-3.5"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold text-[#D6A84F] uppercase tracking-wider font-mono">
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>Memory & Retention</span>
+                    </div>
+                    <Badge variant="gold" size="sm">
+                      {health.cards_due_today} Due Today
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-[var(--text-secondary)]">Active Retention Target</span>
+                      <span className="font-mono font-bold text-[#D6A84F]">
+                        {health.retention_rate || 85}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-[var(--bg-surface-elevated)] h-2 rounded-full overflow-hidden border border-[var(--border)]">
+                      <div
+                        className="bg-[#D6A84F] h-full rounded-full transition-all duration-700"
+                        style={{ width: `${Math.min(100, health.retention_rate || 85)}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] font-mono pt-0.5">
+                      <span>{health.cards_retained} cards active</span>
+                      <span>FSRS Spaced Repetition</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-center text-xs font-semibold"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate('/flashcards', { state: { filter: "due" } });
+                    }}
                   >
-                    <div className={`p-2 rounded-xl ${tool.bg} border border-[var(--border)] w-fit ${tool.color}`}>
-                      <IconComponent className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-semibold text-[var(--text-main)]">{tool.title}</h4>
-                      <p className="text-[11px] text-[var(--text-muted)]">{tool.desc}</p>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
+                    <span>Review Due Cards ({health.cards_due_today})</span>
+                    <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  </Button>
+                </div>
 
-          {/* 5. Recent Documents Shelf */}
-          {documents.length > 0 && (
-            <div className="space-y-3">
+              </motion.div>
+            </div>
+
+            {/* 5. THE STUDY TOOLKIT (APPLE GRID) */}
+            <div className="space-y-3.5 pt-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-[#89A88D]" />
-                  <h2 className="text-xs md:text-sm font-semibold text-[var(--text-main)] uppercase tracking-wider">
-                    {t("recentDocs", "Recent Study Documents")}
+                  <Compass className="w-4 h-4 text-[#3F6048] dark:text-[#89A88D]" />
+                  <h2 className="text-sm sm:text-base font-bold text-[var(--text-main)] uppercase tracking-wider font-serif">
+                    {t("studySuite", "Your Study Toolkit")}
                   </h2>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => navigate('/documents')}>
-                  {t("viewAll", "View Library")} ({documents.length})
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </Button>
+                <span className="text-xs text-[var(--text-muted)] hidden sm:inline">
+                  {t("studySuiteDesc", "Connected tools to turn static reading into active recall.")}
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {documents.slice(0, 3).map((doc) => (
-                  <Card
-                    key={doc.id}
-                    onClick={() => navigate(`/documents/${doc.id}`)}
-                    className="p-3.5 flex items-center justify-between cursor-pointer border-[var(--border)] hover:border-[#89A88D]/40 bg-[var(--bg-surface)]"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="p-2.5 rounded-xl bg-[#89A88D]/10 border border-[#89A88D]/20 text-[#89A88D] shrink-0">
-                        <BookOpen className="w-4 h-4" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                {[
+                  { title: "Quiz Arena", desc: "Active recall MCQs", icon: HelpCircle, route: "/quiz", color: "text-[#3F6048] dark:text-[#89A88D]", bg: "bg-[#E8EFE9] dark:bg-[#89A88D]/10" },
+                  { title: "Flashcards", desc: "FSRS spaced memory", icon: Layers, route: "/flashcards", badge: health.cards_due_today > 0 ? `${health.cards_due_today}` : null, color: "text-[#D6A84F]", bg: "bg-[#F4E9CC] dark:bg-[#D6A84F]/10" },
+                  { title: "Feynman Mode", desc: "Socratic critique", icon: BrainCircuit, route: "/feynman", color: "text-[#3F6048] dark:text-[#89A88D]", bg: "bg-[#E8EFE9] dark:bg-[#89A88D]/10" },
+                  { title: "Mind Maps", desc: "Concept hierarchy", icon: Network, route: "/mindmap", color: "text-[#D6A84F]", bg: "bg-[#F4E9CC] dark:bg-[#D6A84F]/10" },
+                  { title: "Audio Lab", desc: "Episodic casts", icon: Headphones, route: "/audio-summary", color: "text-[#3F6048] dark:text-[#62816A]", bg: "bg-[#E8EFE9] dark:bg-[#62816A]/10" },
+                  { title: "Study Rooms", desc: "Focus & peers", icon: Play, route: "/study-rooms", color: "text-[#3F6048] dark:text-[#89A88D]", bg: "bg-[#E8EFE9] dark:bg-[#89A88D]/10" },
+                ].map((tool, idx) => {
+                  const IconComponent = tool.icon;
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => navigate(tool.route)}
+                      className="p-3.5 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-elevated)] hover:border-[#89A88D]/50 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between h-32 group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className={`p-2 rounded-xl ${tool.bg} border border-[var(--border)] ${tool.color}`}>
+                          <IconComponent className="w-4 h-4" />
+                        </div>
+                        {tool.badge && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-[#D6A84F]/20 text-[#D6A84F] text-[10px] font-mono font-bold">
+                            {tool.badge}
+                          </span>
+                        )}
                       </div>
-                      <div className="min-w-0">
-                        <h4 className="text-xs font-semibold text-[var(--text-main)] truncate">{doc.filename}</h4>
-                        <p className="text-[11px] text-[var(--text-muted)]">{doc.subject || 'General'}</p>
+                      <div>
+                        <h4 className="text-xs font-bold text-[var(--text-main)] group-hover:text-[#89A88D] transition-colors">
+                          {tool.title}
+                        </h4>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{tool.desc}</p>
                       </div>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
-                  </Card>
-                ))}
+                  );
+                })}
               </div>
             </div>
-          )}
+
+            {/* 6. RECENT DOCUMENTS SHELF */}
+            {documents.length > 0 && (
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-[#89A88D]" />
+                    <h2 className="text-sm sm:text-base font-bold text-[var(--text-main)] uppercase tracking-wider font-serif">
+                      {t("recentDocs", "Recent Study Documents")}
+                    </h2>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/documents')} className="text-xs">
+                    {t("viewAll", "View Library")} ({documents.length})
+                    <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {documents.slice(0, 3).map((doc) => (
+                    <div
+                      key={doc.id}
+                      onClick={() => navigate(`/documents/${doc.id}`)}
+                      className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-elevated)] hover:border-[#89A88D]/40 transition-all cursor-pointer shadow-xs flex items-center justify-between gap-3 group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2.5 rounded-xl bg-[#89A88D]/10 border border-[#89A88D]/20 text-[#89A88D] shrink-0">
+                          <BookOpen className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-bold text-[var(--text-main)] truncate group-hover:text-[#89A88D] transition-colors">
+                            {doc.filename}
+                          </h4>
+                          <p className="text-[11px] text-[var(--text-muted)] font-mono">{doc.subject || 'General'}</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-[var(--text-muted)] shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       )}
