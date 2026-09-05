@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import Optional, List
+from pydantic import BaseModel
 import uuid, os
 
 from database.database import get_db
@@ -123,9 +124,36 @@ async def study_flashcard(study_request: FlashcardStudyRequest, db: Session = De
         logging.getLogger(__name__).error(f'Error: {e}', exc_info=True)
         raise HTTPException(status_code=400, detail=str(e))
 
+class FlashcardReviewDirectRequest(BaseModel):
+    flashcard_id: str
+    rating: Optional[int] = 3
+    ease_rating: Optional[int] = None
+    review_duration_ms: Optional[int] = 0
+
 @router.get("/flashcards/review", tags=["Flashcards"])
 async def get_flashcards_for_review(db: Session = Depends(get_db), flashcard_service: FlashcardService = Depends(get_flashcard_service), current_user: User = Depends(get_current_user)):
     return flashcard_service.get_cards_for_review(current_user.id, db)
+
+@router.post("/flashcards/review", tags=["Flashcards"])
+async def review_flashcard_alias(
+    request: FlashcardReviewDirectRequest,
+    db: Session = Depends(get_db),
+    flashcard_service: FlashcardService = Depends(get_flashcard_service),
+    progress_service: ProgressService = Depends(get_progress_service),
+    current_user: User = Depends(get_current_user)
+):
+    effective_rating = request.ease_rating if request.ease_rating is not None else (request.rating or 3)
+    study_req = FlashcardStudyRequest(
+        flashcard_id=request.flashcard_id,
+        ease_rating=effective_rating,
+        review_duration_ms=request.review_duration_ms or 0
+    )
+    res = flashcard_service.study_flashcard(study_req, db, current_user.id)
+    try:
+        await progress_service.add_xp(current_user.id, 10, db)
+    except Exception:
+        pass
+    return res
 
 @router.get("/flashcards/{flashcard_id}/history", response_model=FlashcardHistoryResponse, tags=["Flashcards"])
 async def get_flashcard_review_history(
@@ -532,6 +560,7 @@ async def validate_api_key(
 # ==============================================
 
 @router.get("/student-insights", tags=["Progress"])
+@router.get("/api/student-insights", tags=["Progress"])
 async def get_student_insights(
     db: Session = Depends(get_db),
     progress_service: ProgressService = Depends(get_progress_service),
