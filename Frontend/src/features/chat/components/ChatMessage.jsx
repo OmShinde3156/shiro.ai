@@ -86,7 +86,7 @@ export const ChatMessage = ({
               <UserIcon className="w-4 h-4" />
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-full bg-[var(--bg-surface)] p-0.5 border border-[#3F6048]/30 dark:border-[#89A88D]/40 flex items-center justify-center overflow-hidden shadow-xs">
+            <div className="w-8 h-8 rounded-full bg-[var(--bg-surface)] p-0.5 border border-[var(--border-strong)] flex items-center justify-center overflow-hidden shadow-xs">
               <img src="/logo.jpg" alt="Shiro AI" className="w-full h-full object-cover rounded-full" />
             </div>
           )}
@@ -104,45 +104,21 @@ export const ChatMessage = ({
             )}
           </div>
 
-          {/* Socratic Thought Process Accordion (Tutor Reasoning) */}
-          {!isUser && thought && (
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] overflow-hidden transition-all">
-              <button
-                onClick={() => setShowThought(!showThought)}
-                className="w-full px-3 py-2 flex items-center justify-between text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
-              >
-                <div className="flex items-center gap-1.5 font-medium">
-                  <BrainCircuit className="w-3.5 h-3.5 text-[#3F6048] dark:text-[#89A88D]" />
-                  <span>Socratic Reasoning & Verification</span>
-                </div>
-                {showThought ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-              </button>
-
-              <AnimatePresence>
-                {showThought && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="px-3.5 pb-3 text-xs text-[var(--text-secondary)] font-mono leading-relaxed border-t border-[var(--border)] pt-2.5 bg-[var(--bg-surface)]/50"
-                  >
-                    {thought}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
           {/* Core Message Text Body */}
           <div
             className={`p-4 rounded-2xl transition-all shadow-xs ${
               isUser
-                ? 'bg-[#3F6048] text-white rounded-tr-xs font-sans text-sm md:text-base leading-relaxed inline-block max-w-full text-left'
+                ? 'bg-[var(--primary)] text-[var(--text-main)] rounded-tr-xs font-sans text-sm md:text-base leading-relaxed inline-block max-w-full text-left'
                 : 'bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text-main)] rounded-tl-xs'
             }`}
           >
             {isUser ? (
               <p className="whitespace-pre-wrap">{cleanText}</p>
+            ) : message.isLoading && !cleanText ? (
+              <div className="flex items-center gap-2.5 py-1 text-xs text-[var(--text-secondary)]">
+                <span className="w-2 h-2 rounded-full bg-[var(--primary)] animate-pulse shrink-0" />
+                <span className="font-mono text-[11px]">{message.statusText || "Generating answer..."}</span>
+              </div>
             ) : (
               <MarkdownRenderer
                 content={cleanText}
@@ -163,11 +139,11 @@ export const ChatMessage = ({
             <motion.div
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="p-4 rounded-2xl bg-[var(--bg-surface-elevated)] border border-[#3F6048]/30 dark:border-[#89A88D]/40 shadow-sm space-y-3"
+              className="p-4 rounded-2xl bg-[var(--bg-surface-elevated)] border border-[var(--border-strong)] shadow-sm space-y-3"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-[#3F6048]/10 dark:bg-[#89A88D]/20 text-[#3F6048] dark:text-[#89A88D]">
+                  <div className="p-1.5 rounded-lg bg-[var(--primary-subtle)] text-[var(--primary)]">
                     {actionCard.tool === 'quiz' && <HelpCircle className="w-4 h-4" />}
                     {actionCard.tool === 'flashcards' && <Layers className="w-4 h-4" />}
                     {actionCard.tool === 'feynman' && <Sparkles className="w-4 h-4" />}
@@ -206,9 +182,9 @@ export const ChatMessage = ({
                 <button
                   key={idx}
                   onClick={() => onCitationClick && onCitationClick(cit)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--bg-surface-elevated)] hover:bg-[#89A88D]/15 border border-[var(--border)] hover:border-[#89A88D]/40 text-xs text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-all font-mono shadow-2xs"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--bg-surface-elevated)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border)] text-xs text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-all font-mono shadow-2xs"
                 >
-                  <FileText className="w-3 h-3 text-[#3F6048] dark:text-[#89A88D]" />
+                  <FileText className="w-3 h-3 text-[var(--primary)]" />
                   <span>{cit.filename || `Doc ${idx + 1}`}</span>
                   <span className="text-[10px] text-[var(--text-muted)] font-sans">p.{cit.page_number || 1}</span>
                 </button>
@@ -216,27 +192,47 @@ export const ChatMessage = ({
             </div>
           )}
 
-          {/* Message Actions Bar (Copy / Regenerate) */}
+          {/* Message Actions Bar (Copy / Regenerate / Handoffs) */}
           {!isUser && (
-            <div className="flex items-center gap-2 pt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={handleCopy}
-                className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface-elevated)] transition-colors flex items-center gap-1 text-[11px]"
-                title="Copy response"
-              >
-                {copied ? <Check className="w-3 h-3 text-[#3F6048] dark:text-[#89A88D]" /> : <Copy className="w-3 h-3" />}
-                <span>{copied ? 'Copied' : 'Copy'}</span>
-              </button>
-
-              {isLatest && onRegenerate && (
+            <div className="flex flex-col gap-2 pt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={onRegenerate}
+                  onClick={handleCopy}
                   className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface-elevated)] transition-colors flex items-center gap-1 text-[11px]"
-                  title="Regenerate response"
+                  title="Copy response"
                 >
-                  <RotateCw className="w-3 h-3" />
-                  <span>Retry</span>
+                  {copied ? <Check className="w-3 h-3 text-[var(--success)]" /> : <Copy className="w-3 h-3" />}
+                  <span>{copied ? 'Copied' : 'Copy'}</span>
                 </button>
+
+                {isLatest && onRegenerate && (
+                  <button
+                    onClick={onRegenerate}
+                    className="p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface-elevated)] transition-colors flex items-center gap-1 text-[11px]"
+                    title="Regenerate response"
+                  >
+                    <RotateCw className="w-3 h-3" />
+                    <span>Retry</span>
+                  </button>
+                )}
+              </div>
+              
+              {/* Study Action Handoffs (Only when contextually relevant) */}
+              {(actionCard || (cleanText.length > 140 && !cleanText.startsWith('Hi!') && !cleanText.startsWith("You're welcome") && !cleanText.startsWith("Sounds good!"))) && (
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+                  <button onClick={() => onActionClick && onActionClick('quiz', { tool: 'quiz', title: 'Quiz Me' })} className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-[var(--primary-subtle)] text-[var(--primary-strong)] hover:bg-[var(--primary)] hover:text-white transition-colors border border-[var(--border)] flex items-center gap-1.5">
+                    <HelpCircle className="w-3 h-3" /> Quiz Me
+                  </button>
+                  <button onClick={() => onActionClick && onActionClick('flashcards', { tool: 'flashcards', title: 'Make Flashcards' })} className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-[var(--primary-subtle)] text-[var(--primary-strong)] hover:bg-[var(--primary)] hover:text-white transition-colors border border-[var(--border)] flex items-center gap-1.5">
+                    <Layers className="w-3 h-3" /> Make Flashcards
+                  </button>
+                  <button onClick={() => onActionClick && onActionClick('feynman', { tool: 'feynman', title: 'Feynman Mode' })} className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-[var(--ai-subtle)] text-[var(--ai)] hover:bg-[var(--ai)] hover:text-white transition-colors border border-[var(--ai-subtle)] flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3" /> Feynman Mode
+                  </button>
+                  <button onClick={() => onActionClick && onActionClick('mindmap', { tool: 'mindmap', title: 'Mind Map' })} className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-[var(--primary-subtle)] text-[var(--primary-strong)] hover:bg-[var(--primary)] hover:text-white transition-colors border border-[var(--border)] flex items-center gap-1.5">
+                    <Network className="w-3 h-3" /> Mind Map
+                  </button>
+                </div>
               )}
             </div>
           )}
