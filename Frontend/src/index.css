@@ -6,126 +6,209 @@
    Philosophy: Calm, focused, human-centered learning with restrained color.
    ========================================================================== */
 
-/* 🌙 WARM DARK MODE (Default) */
+/* 🌙 AWWWARDS EDITORIAL OBSIDIAN DARK THEME (Default) */
 :root, body.theme-dark {
-  --bg-canvas: #111210;
-  --bg-surface: #181916;
-  --bg-surface-elevated: #20221E;
-  --bg-card: #181916;
-  --bg-card-hover: #20221E;
-  --bg-card-light: #20221E;
+  --bg-canvas: #0F100E;         /* Deep Warm Obsidian Canvas (Pure zero-blue neutral) */
+  --bg-surface: #171815;        /* Tactile Warm Carbon Card Surface */
+  --bg-surface-elevated: #1F201C; /* Layered Charcoal Elevated Surface */
+  --bg-surface-hover: #272923;  /* Organic Warm Surface Hover */
+  --bg-card: #171815;
+  --bg-card-hover: #1F201C;
+  --bg-card-light: #22241F;
 
-  /* Typography */
-  --text-main: #F4F1E9;
-  --text-secondary: #A6A49C;
-  --text-muted: #78766E;
-  --text-dim: #54524B;
+  /* Typography (Glare-Free Warm Parchment & Stone) */
+  --text-main: #F4F1EA;         /* Editorial Warm Parchment White */
+  --text-primary: #F4F1EA;
+  --text-secondary: #A6A49C;    /* Calming Warm Stone Gray */
+  --text-muted: #78766F;        /* Non-glare Muted Carbon */
+  --text-dim: #54534E;
 
-  /* Borders & Dividers */
-  --border: #2B2D28;
-  --border-hover: #3D4039;
-  --border-focus: #89A88D;
-  --border-subtle: #20221E;
+  /* Borders & Dividers (Warm Stone & Carbon Hairlines) */
+  --border: #262722;            /* Subdued Hairline Framing */
+  --border-strong: #363831;     /* Distinct Warm Border */
+  --border-hover: #484A42;
+  --border-focus: #89A88D;      /* Calm Sage Focus Ring */
+  --border-subtle: #1D1E1A;
 
-  /* Brand Accents */
-  --primary: #89A88D;          /* Sage */
-  --primary-hover: #9BB89F;
-  --primary-subtle: rgba(137, 168, 141, 0.12);
-  --secondary: #62816A;        /* Forest */
-  --accent-gold: #D6A84F;      /* Soft Gold */
-  --accent-gold-subtle: rgba(214, 168, 79, 0.12);
-  --accent-rose: #C96B62;      /* Muted Red */
+  /* Brand Accents (Calming Laurel Sage & Forest) */
+  --primary: #89A88D;
+  --primary-hover: #76987A;
+  --primary-strong: #A8C5AC;
+  --primary-subtle: rgba(137, 168, 141, 0.14);
+  --secondary: #76987A;
+
+  /* Status Accents */
+  --success: #4ADE80;
+  --success-subtle: rgba(74, 222, 128, 0.14);
+  --warning: #FBBF24;
+  --warning-subtle: rgba(251, 191, 36, 0.14);
+  --orange: #FB923C;
+  --orange-subtle: rgba(251, 146, 60, 0.14);
+  --danger: #F87171;
+  --danger-subtle: rgba(248, 113, 113, 0.14);
+
+  /* AI & Shiro (Luminescent Celadon / Soft Sage) */
+  --ai: #A8C5AC;
+  --ai-subtle: rgba(168, 197, 172, 0.14);
+  --ai-border: rgba(168, 197, 172, 0.28);
+
+  /* XP & Gamification (Soft Amber Gold) */
+  --xp: #D6A84F;
+  --xp-subtle: rgba(214, 168, 79, 0.14);
+
+  /* Legacy Backward Compatibility Tokens */
+  --accent-gold: #D6A84F;
+  --accent-gold-subtle: rgba(214, 168, 79, 0.14);
+  --accent-rose: #D47B72;
+  --accent-info: #7FA3C7;
+  --accent-info-subtle: rgba(127, 163, 199, 0.14);
 
   /* Navigation & Canvas */
-  --sidebar-bg: #111210;
-  --header-bg: rgba(17, 18, 16, 0.92);
-  --app-gradient: #111210;
+  --sidebar-bg: #0F100E;
+  --header-bg: rgba(15, 16, 14, 0.92);
+  --app-gradient: #0F100E;
 }
 
-/* 🌿 WARM IVORY LIGHT THEME */
+/* ☀️ WARM ACADEMIC IVORY LIGHT THEME */
 body.theme-light {
-  --bg-canvas: #F7F5F0;        /* Warm Ivory Canvas */
-  --bg-surface: #FFFFFF;       /* Crisp White Surface */
-  --bg-surface-elevated: #F0EEE8; /* Tactile Stone Elevated Surface */
-  --bg-surface-hover: #EAE7DF; /* Subtle Hover */
+  --bg-canvas: #F6F4EE;         /* Soothing Warm Ivory Canvas */
+  --bg-surface: #FFFFFF;        /* Crisp Pure White Surface */
+  --bg-surface-elevated: #EDE9DF; /* Tactile Warm Stone Elevated Surface */
+  --bg-surface-hover: #E5E0D4;  /* Tactile Subtle Hover */
   --bg-card: #FFFFFF;
-  --bg-card-hover: #FAF9F6;
-  --bg-card-light: #F0EEE8;
+  --bg-card-hover: #FAF9F5;
+  --bg-card-light: #EDE9DF;
 
-  /* High-Contrast Editorial Typography (WCAG AAA) */
-  --text-main: #181916;        /* Deep Charcoal Ink */
-  --text-secondary: #4A4D46;   /* Rich Slate-Stone */
-  --text-muted: #6E7268;       /* Subtle Warm Charcoal */
-  --text-dim: #989C92;
+  /* Editorial Ink Typography (Zero Harsh Glare, Pure Contrast) */
+  --text-main: #18181B;         /* Deep Warm Carbon Ink */
+  --text-primary: #18181B;
+  --text-secondary: #52525B;    /* Stone Slate */
+  --text-muted: #71717A;        /* WCAG AA Compliant Slate */
+  --text-dim: #A1A1AA;
 
-  /* Crisp Stone Borders & Tactile Dividers */
-  --border: #DFDAD1;           /* Stone Border */
-  --border-strong: #CEC8BD;    /* Strong Stone */
-  --border-hover: #B8B2A5;
+  /* Tactile Borders & Dividers */
+  --border: #E4DFD5;            /* Warm Stone Border (Clearly frames white cards) */
+  --border-strong: #D1C9BC;     /* Distinct Strong Border */
+  --border-hover: #B8AFA0;
   --border-focus: #3F6048;
-  --border-subtle: #EBE7DF;
+  --border-subtle: #ECE7DD;
 
-  /* Brand Accents */
-  --primary: #3F6048;          /* Forest / Deep Sage */
-  --primary-strong: #2D4534;   /* Deep Forest */
+  /* Calm Academic Accent (Scholarly Forest Pine & Laurel) */
+  --primary: #3F6048;           /* Deep Botanical Pine */
+  --primary-strong: #2D5A3C;
   --primary-hover: #34523D;
-  --primary-subtle: #E8EFE9;   /* Soft Sage Background */
-  --secondary: #2D4534;        /* Deep Forest */
-  --accent-gold: #B88320;      /* Rich Deep Gold */
-  --accent-gold-soft: #F5ECCE; /* Soft Gold Pill */
-  --accent-gold-border: #E5D29E;
-  --accent-gold-text: #68490B;
+  --primary-subtle: #EBF3EC;
+  --secondary: #34523D;
+
+  /* Tactile Academic Status Accents */
+  --success: #15803D;           /* Forest Green */
+  --success-subtle: #EBF7EE;
+  --warning: #B45309;           /* Warm Amber */
+  --warning-subtle: #FEF7E6;
+  --orange: #C2410C;            /* Terracotta Apricot */
+  --orange-subtle: #FFF3EC;
+  --danger: #B91C1C;            /* Crimson Red */
+  --danger-subtle: #FDF2F2;
+
+  /* AI & Shiro (Refined Editorial Sage) */
+  --ai: #2D5A3C;
+  --ai-subtle: #EBF3EC;
+  --ai-border: #C2DEC8;
+
+  /* XP & Gamification (Warm Gold) */
+  --xp: #B88320;
+  --xp-subtle: #F7EEDB;
+
+  /* Legacy Backward Compatibility Tokens */
+  --accent-gold: #B88320;
+  --accent-gold-soft: #F7EEDB;
+  --accent-gold-border: #FDE68A;
+  --accent-gold-text: #78350F;
   --accent-gold-subtle: rgba(184, 131, 32, 0.12);
-  --accent-rose: #B8473B;      /* Muted Red */
+  --accent-rose: #B8473B;
   --accent-rose-soft: #F9EAE7;
-  --accent-info: #3E6488;      /* Blue-Gray */
-  --accent-info-soft: #E5EDF4;
+  --accent-info: #2C5282;
+  --accent-info-soft: #EBF4FA;
 
   /* Navigation & Canvas */
-  --sidebar-bg: #F0EEE8;
-  --header-bg: rgba(247, 245, 240, 0.96);
-  --app-gradient: #F7F5F0;
+  --sidebar-bg: #EFECE4;        /* Distinct Warm Sidebar */
+  --header-bg: rgba(246, 244, 238, 0.94);
+  --app-gradient: #F6F4EE;
 }
 
 /* 🎨 DYNAMIC ACCENT COLORS */
-/* Sage / Forest (Default) */
+/* Indigo (Flagship Default) */
+body[data-accent="indigo"] {
+  --primary: #818CF8;
+  --primary-hover: #6366F1;
+  --primary-subtle: rgba(129, 140, 248, 0.14);
+  --border-focus: #818CF8;
+}
+body.theme-light[data-accent="indigo"] {
+  --primary: #312E81;
+  --primary-hover: #1E1B4B;
+  --primary-subtle: #E0E7FF;
+  --border-focus: #312E81;
+}
+
+/* Purple / AI */
+body[data-accent="purple"] {
+  --primary: #A78BFA;
+  --primary-hover: #8B5CF6;
+  --primary-subtle: rgba(167, 139, 250, 0.14);
+  --border-focus: #A78BFA;
+}
+body.theme-light[data-accent="purple"] {
+  --primary: #7C3AED;
+  --primary-hover: #6D28D9;
+  --primary-subtle: #F5F3FF;
+  --border-focus: #7C3AED;
+}
+
+/* Sage (Flagship Botanical Accent) */
 body[data-accent="sage"] {
   --primary: #89A88D;
-  --primary-hover: #9BB89F;
-  --primary-subtle: rgba(137, 168, 141, 0.14);
+  --primary-hover: #76987A;
+  --primary-strong: #A8C5AC;
+  --primary-subtle: rgba(137, 168, 141, 0.16);
   --border-focus: #89A88D;
 }
 body.theme-light[data-accent="sage"] {
   --primary: #3F6048;
   --primary-hover: #34523D;
-  --primary-subtle: #E8EFE9;
+  --primary-strong: #2D5A3C;
+  --primary-subtle: #EBF3EC;
   --border-focus: #3F6048;
 }
 
-/* Slate Blue */
+/* Slate Blue (Oxford Academic Blue) */
 body[data-accent="blue"] {
-  --primary: #6892C8;
-  --primary-hover: #7FA5D9;
-  --primary-subtle: rgba(104, 146, 200, 0.15);
-  --border-focus: #6892C8;
+  --primary: #7FA3C7;
+  --primary-hover: #688EB3;
+  --primary-strong: #9BB8D5;
+  --primary-subtle: rgba(127, 163, 199, 0.15);
+  --border-focus: #7FA3C7;
 }
 body.theme-light[data-accent="blue"] {
-  --primary: #365B8C;
-  --primary-hover: #2B4A73;
-  --primary-subtle: #E5EDF6;
-  --border-focus: #365B8C;
+  --primary: #2C5282;
+  --primary-hover: #1A365D;
+  --primary-strong: #152B4D;
+  --primary-subtle: #EBF4FA;
+  --border-focus: #2C5282;
 }
 
 /* Terracotta / Rose */
 body[data-accent="rose"] {
   --primary: #D47B72;
   --primary-hover: #E28F87;
+  --primary-strong: #E7A39B;
   --primary-subtle: rgba(212, 123, 114, 0.15);
   --border-focus: #D47B72;
 }
 body.theme-light[data-accent="rose"] {
   --primary: #B8473B;
   --primary-hover: #A13C31;
+  --primary-strong: #872E25;
   --primary-subtle: #F9EAE7;
   --border-focus: #B8473B;
 }
@@ -134,12 +217,14 @@ body.theme-light[data-accent="rose"] {
 body[data-accent="amber"] {
   --primary: #D6A84F;
   --primary-hover: #E4B860;
+  --primary-strong: #EAC77A;
   --primary-subtle: rgba(214, 168, 79, 0.15);
   --border-focus: #D6A84F;
 }
 body.theme-light[data-accent="amber"] {
   --primary: #B88320;
   --primary-hover: #9E6F18;
+  --primary-strong: #845B10;
   --primary-subtle: #F7EEDB;
   --border-focus: #B88320;
 }
@@ -221,12 +306,17 @@ body {
 }
 
 body.theme-light {
-  background: radial-gradient(circle at 50% -20%, rgba(63, 96, 72, 0.04), transparent 40%), #F7F5F0;
+  background: radial-gradient(circle at 50% -20%, rgba(30, 41, 59, 0.02), transparent 40%), #F6F4EE;
 }
 
 body.theme-light ::selection {
-  background: #E8EFE9;
-  color: #181916;
+  background: #E2E8F0;
+  color: #0F172A;
+}
+
+body.theme-dark ::selection {
+  background: rgba(137, 168, 141, 0.30);
+  color: #F4F1EA;
 }
 
 /* 🏷️ REFINED EDITORIAL CARDS (No Harsh Glare, Multi-Elevation Depth) */
@@ -241,6 +331,21 @@ body.theme-light ::selection {
 .glass-panel:hover, .glass-card:hover {
   border-color: var(--border-hover);
   box-shadow: 0 2px 8px rgba(24, 25, 22, 0.06), 0 12px 28px -4px rgba(24, 25, 22, 0.07);
+}
+
+body.theme-light .glass-panel,
+body.theme-light .glass-card,
+body.theme-light .spotlight-card {
+  background: #FFFFFF;
+  border: 1px solid #E4DFD5;
+  box-shadow: 0 1px 3px rgba(35, 30, 20, 0.04), 0 8px 24px -4px rgba(35, 30, 20, 0.05);
+}
+
+body.theme-light .glass-panel:hover,
+body.theme-light .glass-card:hover,
+body.theme-light .spotlight-card:hover {
+  border-color: #D1C9BC;
+  box-shadow: 0 2px 6px rgba(35, 30, 20, 0.06), 0 14px 32px -4px rgba(35, 30, 20, 0.08);
 }
 
 .spotlight-card {
@@ -258,7 +363,7 @@ body.theme-light ::selection {
 /* 🔘 BUTTON PRIMITIVES (Sage & Stone) */
 .btn-primary {
   background: var(--primary);
-  color: #111210;
+  color: #0F100E;
   font-weight: 600;
   padding: 9px 18px;
   border-radius: 10px;
@@ -274,11 +379,13 @@ body.theme-light ::selection {
 
 body.theme-light .btn-primary {
   color: #FFFFFF !important;
-  background: #3F6048;
+  background: #18181B;
+  border-color: #09090B;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 body.theme-light .btn-primary:hover {
-  background: #34523D;
+  background: #27272A;
 }
 
 .btn-primary:hover {
