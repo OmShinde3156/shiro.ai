@@ -12,7 +12,7 @@ export const Button = ({
   icon: Icon,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[#89A88D]/40 disabled:opacity-50 disabled:cursor-not-allowed select-none';
+  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/40 disabled:opacity-50 disabled:cursor-not-allowed select-none';
 
   const sizeStyles = {
     sm: 'text-xs px-3 py-1.5 gap-1.5 h-8',
@@ -25,8 +25,8 @@ export const Button = ({
     primary: 'btn-primary',
     secondary: 'btn-secondary',
     ghost: 'btn-ghost',
-    outline: 'border border-[var(--border)] hover:border-[#89A88D] hover:bg-[#89A88D]/10 text-[var(--text-main)]',
-    danger: 'bg-[#C96B62]/10 border border-[#C96B62]/30 text-[#C96B62] hover:bg-[#C96B62]/20',
+    outline: 'border border-[var(--border)] hover:border-[var(--primary)] hover:bg-[var(--primary-subtle)] text-[var(--text-main)]',
+    danger: 'bg-[var(--danger)]/10 border border-[var(--danger)]/30 text-[var(--danger)] hover:bg-[var(--danger)]/20',
   };
 
   return (
