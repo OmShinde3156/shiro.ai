@@ -283,13 +283,29 @@ const DocumentDetailsPage = () => {
                   <h2 className="text-xl sm:text-2xl md:text-3xl font-bold font-serif text-[var(--text-main)] tracking-tight leading-tight truncate">{document?.filename}</h2>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2.5 sm:gap-3 w-full sm:w-auto shrink-0">
-                <button onClick={handleReadAloud} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${isReading ? 'bg-[#3F6048] text-white' : 'bg-[var(--bg-surface-elevated)] text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border)]'}`}>
-                  <span className="material-symbols-outlined text-lg">{isReading ? 'stop' : 'volume_up'}</span>
+              <div className="flex flex-wrap gap-2 sm:gap-2.5 w-full sm:w-auto shrink-0">
+                <button 
+                  onClick={() => handleChatSend("Please extract a comprehensive, structured Formula & Core Concept Cheatsheet from this document with mathematical LaTeX equations, definitions, and key exam takeaways.")}
+                  className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--bg-surface-elevated)] text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border)] hover:border-[#89A88D]/50 transition-all flex items-center justify-center gap-1.5 shadow-2xs"
+                  title="Generate LaTeX Formula & Concept Cheatsheet"
+                >
+                  <span className="material-symbols-outlined text-base text-[#D6A84F]">functions</span>
+                  Formula Sheet
+                </button>
+                <button 
+                  onClick={() => navigate('/answer-planner', { state: { documentId: document?.id, subject: document?.subject } })}
+                  className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--bg-surface-elevated)] text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border)] hover:border-[#89A88D]/50 transition-all flex items-center justify-center gap-1.5 shadow-2xs"
+                  title="Plan University Exam Answers"
+                >
+                  <span className="material-symbols-outlined text-base text-[#89A88D]">assignment</span>
+                  Exam Blueprint
+                </button>
+                <button onClick={handleReadAloud} className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${isReading ? 'bg-[#3F6048] text-white' : 'bg-[var(--bg-surface-elevated)] text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border)]'}`}>
+                  <span className="material-symbols-outlined text-base">{isReading ? 'stop' : 'volume_up'}</span>
                   {isReading ? 'Stop' : 'Listen'}
                 </button>
-                <button onClick={() => navigate('/study-rooms', { state: { documentId: document?.id } })} className="flex-1 sm:flex-none bg-[#3F6048] hover:bg-[#34523D] dark:bg-[#89A88D] dark:text-black text-white px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2">
-                  <span className="material-symbols-outlined text-lg">school</span>
+                <button onClick={() => navigate('/study-rooms', { state: { documentId: document?.id } })} className="flex-1 sm:flex-none bg-[#3F6048] hover:bg-[#34523D] dark:bg-[#89A88D] dark:text-black text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                  <span className="material-symbols-outlined text-base">school</span>
                   Study Room
                 </button>
               </div>
@@ -591,19 +607,31 @@ const DocumentDetailsPage = () => {
               {/* Quick Document Profiling Pills */}
               <div className="p-2.5 bg-[var(--bg-surface)] border-b border-[var(--border)] flex flex-wrap gap-1.5">
                 <button
+                  onClick={() => handleChatSend("Please extract all formulas, mathematical theorems, and core equations from this document formatted in clean KaTeX with explanation of variables.")}
+                  className="px-2.5 py-1 rounded-full bg-[var(--bg-surface-elevated)] hover:bg-[#D6A84F]/15 text-[10.5px] font-medium text-[var(--text-secondary)] hover:text-[#D6A84F] border border-[var(--border)] transition-all flex items-center gap-1"
+                >
+                  <span>📐</span> Formulas
+                </button>
+                <button
+                  onClick={() => handleChatSend("Generate a high-scoring 10-mark university model answer based on the most important topic in this document, complete with introduction, structured points, and conclusion.")}
+                  className="px-2.5 py-1 rounded-full bg-[var(--bg-surface-elevated)] hover:bg-[#3F6048]/15 text-[10.5px] font-medium text-[var(--text-secondary)] hover:text-[#3F6048] dark:hover:text-[#A8C5AC] border border-[var(--border)] transition-all flex items-center gap-1"
+                >
+                  <span>📝</span> 10-Mark Answer
+                </button>
+                <button
                   onClick={() => handleChatSend("How much time will it take to study this document and what are the main sections?")}
                   className="px-2.5 py-1 rounded-full bg-[var(--bg-surface-elevated)] hover:bg-[#3F6048]/15 text-[10.5px] font-medium text-[var(--text-secondary)] hover:text-[#3F6048] dark:hover:text-[#A8C5AC] border border-[var(--border)] transition-all flex items-center gap-1"
                 >
                   <span>⏱️</span> Study Time
                 </button>
                 <button
-                  onClick={() => handleChatSend("What are the most important exam topics and formulas in this document?")}
+                  onClick={() => handleChatSend("What are the most important recurring exam topics in this document?")}
                   className="px-2.5 py-1 rounded-full bg-[var(--bg-surface-elevated)] hover:bg-[#3F6048]/15 text-[10.5px] font-medium text-[var(--text-secondary)] hover:text-[#3F6048] dark:hover:text-[#A8C5AC] border border-[var(--border)] transition-all flex items-center gap-1"
                 >
                   <span>🎯</span> Key Topics
                 </button>
                 <button
-                  onClick={() => handleChatSend("Explain the core premise of this document in simple words with intuitive examples.")}
+                  onClick={() => handleChatSend("Explain the core premise of this document in simple words with intuitive examples (Feynman technique).")}
                   className="px-2.5 py-1 rounded-full bg-[var(--bg-surface-elevated)] hover:bg-[#3F6048]/15 text-[10.5px] font-medium text-[var(--text-secondary)] hover:text-[#3F6048] dark:hover:text-[#A8C5AC] border border-[var(--border)] transition-all flex items-center gap-1"
                 >
                   <span>💡</span> Explain Simply
