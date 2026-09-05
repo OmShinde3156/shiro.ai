@@ -97,7 +97,10 @@ class FlashcardService:
     def study_flashcard(self, study_request: FlashcardStudyRequest, db: Session, user_id: int) -> FlashcardStudyResponse:
         """Record flashcard study session with FSRS algorithm"""
         try:
-            from fsrs import FSRS, Card, Rating, State
+            try:
+                from fsrs import FSRS, Card, Rating, State
+            except ImportError:
+                from fsrs import Scheduler as FSRS, Card, Rating, State
             has_fsrs = True
         except ImportError:
             has_fsrs = False
