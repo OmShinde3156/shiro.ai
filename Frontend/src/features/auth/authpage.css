@@ -80,25 +80,25 @@
 
 .auth-form button[type="submit"]:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(114, 220, 255, 0.3);
-  filter: brightness(1.1);
+  box-shadow: 0 12px 24px rgba(63, 96, 72, 0.3);
+  filter: brightness(1.05);
 }
 
 .toggle-btn {
   background: none;
   border: none;
-  color: #72dcff;
+  color: var(--primary, #89A88D);
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 600;
   transition: all 0.2s ease;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 .toggle-btn:hover {
   opacity: 1;
-  text-decoration: none;
-  color: #dd8bfb;
+  text-decoration: underline;
+  color: var(--accent-gold, #D6A84F);
 }
 
 .error-message {
