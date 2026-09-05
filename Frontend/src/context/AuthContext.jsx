@@ -9,15 +9,24 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchUser = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/users/me`);
       if (res.ok) {
         const userData = await res.json();
         setUser(userData);
       } else {
+        localStorage.removeItem('token');
         setUser(null);
       }
     } catch (error) {
+      localStorage.removeItem('token');
       setUser(null);
     } finally {
       setLoading(false);
@@ -37,10 +46,11 @@ export const AuthProvider = ({ children }) => {
     try {
       await fetchWithAuth(`${API_BASE_URL}/logout`, { method: 'POST' });
     } catch (e) {
-      console.error(e);
+      console.error("Logout error:", e);
     }
     localStorage.removeItem('token');
     setUser(null);
+    window.location.href = '/login';
   };
 
   const updateUser = (data) => {
