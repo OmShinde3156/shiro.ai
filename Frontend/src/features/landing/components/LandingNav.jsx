@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function LandingNav({ theme, toggleTheme }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const isAuthenticated = Boolean(user && token);
+
   const [scrolled, setScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -60,19 +65,31 @@ export default function LandingNav({ theme, toggleTheme }) {
               {theme === 'dark' ? 'light_mode' : 'dark_mode'}
             </span>
           </button>
-          <button
-            onClick={() => navigate('/login')}
-            className="ox-btn-login hidden sm:inline-block"
-          >
-            Log in
-          </button>
-          <button
-            onClick={() => navigate('/register')}
-            className="ox-btn-forest"
-          >
-            <span>Get Started Free</span>
-            <span className="material-symbols-outlined text-xs">arrow_forward</span>
-          </button>
+          {isAuthenticated ? (
+            <button
+              onClick={() => navigate('/home')}
+              className="ox-btn-forest"
+            >
+              <span>Go to App</span>
+              <span className="material-symbols-outlined text-xs">arrow_forward</span>
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate('/login')}
+                className="ox-btn-login hidden sm:inline-block"
+              >
+                Log in
+              </button>
+              <button
+                onClick={() => navigate('/register')}
+                className="ox-btn-forest"
+              >
+                <span>Get Started Free</span>
+                <span className="material-symbols-outlined text-xs">arrow_forward</span>
+              </button>
+            </>
+          )}
           {/* Mobile Hamburger Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -122,19 +139,31 @@ export default function LandingNav({ theme, toggleTheme }) {
             </div>
 
             <div className="space-y-3 pt-6 border-t border-[var(--ox-border)]">
-              <button
-                onClick={() => { closeMobile(); navigate('/login'); }}
-                className="ox-btn-secondary w-full justify-center"
-              >
-                Log in
-              </button>
-              <button
-                onClick={() => { closeMobile(); navigate('/register'); }}
-                className="ox-btn-forest w-full justify-center"
-              >
-                <span>Get Started Free</span>
-                <span className="material-symbols-outlined text-xs">arrow_forward</span>
-              </button>
+              {isAuthenticated ? (
+                <button
+                  onClick={() => { closeMobile(); navigate('/home'); }}
+                  className="ox-btn-forest w-full justify-center"
+                >
+                  <span>Go to App</span>
+                  <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => { closeMobile(); navigate('/login'); }}
+                    className="ox-btn-secondary w-full justify-center"
+                  >
+                    Log in
+                  </button>
+                  <button
+                    onClick={() => { closeMobile(); navigate('/register'); }}
+                    className="ox-btn-forest w-full justify-center"
+                  >
+                    <span>Get Started Free</span>
+                    <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </>
