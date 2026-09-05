@@ -5,6 +5,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { Copy, Check, Terminal } from "lucide-react";
+import MermaidDiagram from "./MermaidDiagram";
 
 const CodeBlock = ({ language, value }) => {
   const [copied, setCopied] = useState(false);
@@ -108,6 +109,9 @@ const MarkdownRenderer = ({ content, onCitationClick }) => {
             const match = /language-(\w+)/.exec(className || "");
             const value = String(children).replace(/\n$/, "");
 
+            if (!inline && match && match[1]?.toLowerCase() === "mermaid") {
+              return <MermaidDiagram chart={value} />;
+            }
             if (!inline && match) {
               return <CodeBlock language={match[1]} value={value} />;
             }
