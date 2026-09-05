@@ -344,10 +344,10 @@ export const KnowledgeMesh = ({ className = '' }) => {
   }, [theme]);
 
   return (
-    <div className={`absolute inset-0 pointer-events-none overflow-hidden -z-10 select-none ${className}`}>
+    <div className={`absolute inset-0 pointer-events-none overflow-hidden -z-10 select-none opacity-[0.12] dark:opacity-[0.15] transition-opacity duration-1000 ${className}`}>
       {/* Subtle Upper Ambient Illumination */}
       <div 
-        className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[350px] rounded-full blur-[140px] pointer-events-none opacity-40 dark:opacity-25"
+        className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[350px] rounded-full blur-[140px] pointer-events-none"
         style={{
           background: 'radial-gradient(ellipse at center, rgba(107, 143, 113, 0.22) 0%, rgba(214, 168, 79, 0.08) 50%, transparent 80%)'
         }}
