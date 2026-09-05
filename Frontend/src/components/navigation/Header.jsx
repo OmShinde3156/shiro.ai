@@ -17,7 +17,10 @@ import {
   BarChart3,
   Command,
   Sun,
-  Moon
+  Moon,
+  TrendingUp,
+  BookOpen,
+  Headphones
 } from "lucide-react";
 import Badge from "../ui/Badge";
 
@@ -49,19 +52,24 @@ export const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const isMac = typeof navigator !== "undefined" && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);
+
   const getRouteTitle = () => {
     const path = location.pathname;
-    if (path === "/home") return t("dashboard", "Dashboard");
+    if (path === "/home") return t("commandCenter", "Command Center");
+    if (path === "/progress-report") return t("progressReport", "Decision Center");
     if (path === "/documents") return t("library", "Document Library");
     if (path.startsWith("/documents/")) return t("library", "Document Workstation");
-    if (path === "/study-rooms") return t("studyRoom", "Study Rooms");
+    if (path === "/study-rooms" || path.startsWith("/room/")) return t("studyRoom", "Study Rooms");
     if (path === "/flashcards") return t("flashcards", "Spaced Repetition");
     if (path === "/quiz") return t("quiz", "Quiz Arena");
     if (path === "/feynman") return t("feynman", "Feynman Challenge");
     if (path === "/mindmap") return t("mindmap", "Knowledge Map");
-    if (path === "/audio-summary") return t("audioSummary", "Audio Cast");
-    if (path === "/answer-planner") return t("examBlueprint", "Exam Blueprint");
+    if (path === "/audio-summary") return t("audioSummary", "Audio Lab");
+    if (path === "/answer-planner") return t("examBlueprint", "Answer Planner");
     if (path === "/study-plan") return t("studyPlan", "Study Timetable");
+    if (path === "/pyqs") return t("pyqs", "Exam PYQs");
+    if (path === "/summary") return t("summary", "Document Summary");
     if (path === "/settings") return t("settings", "Settings");
     return t("learningHub", "Learning Hub");
   };
@@ -85,40 +93,46 @@ export const Header = () => {
 
   return (
     <header className="w-full bg-[var(--header-bg)] backdrop-blur-md flex items-center justify-between px-3.5 sm:px-6 py-2.5 sm:py-3 border-b border-[var(--border)] sticky top-0 z-40 select-none">
-      {/* Left: View Breadcrumb */}
+      {/* Left: View Breadcrumb with Clickable Home Navigation */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
-        <span className="text-[10px] sm:text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-widest font-mono shrink-0">
+        <button
+          onClick={() => navigate('/home')}
+          className="text-[10px] sm:text-[11px] font-bold text-[var(--text-muted)] hover:text-[#89A88D] uppercase tracking-widest font-mono shrink-0 transition-colors cursor-pointer"
+          title="Return to Command Center"
+        >
           Shiro
-        </span>
+        </button>
         <span className="text-[var(--border)] text-xs sm:text-sm shrink-0">/</span>
         <span className="text-sm sm:text-base font-bold text-[var(--text-main)] font-serif truncate">
           {getRouteTitle()}
         </span>
       </div>
 
-      {/* Center: Command Palette Trigger (Linear/Raycast Style) */}
+      {/* Center: Command Palette Trigger (Universal Shortcut) */}
       <button
         onClick={() => {
           const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true });
           document.dispatchEvent(event);
         }}
-        className="hidden md:flex items-center justify-between w-64 lg:w-96 px-3.5 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border)] hover:border-[#6B8F71] text-[var(--text-secondary)] hover:text-[var(--text-main)] text-xs transition-all shadow-sm group mx-3"
+        className="hidden md:flex items-center justify-between w-64 lg:w-96 px-3.5 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] border border-[var(--border)] hover:border-[#89A88D]/50 text-[var(--text-secondary)] hover:text-[var(--text-main)] text-xs transition-all shadow-xs group mx-3 cursor-pointer"
       >
         <div className="flex items-center gap-2.5 truncate">
           <Search className="w-3.5 h-3.5 text-[#3F6048] dark:text-[#89A88D] group-hover:scale-105 transition-transform shrink-0" />
           <span className="truncate">{t("searchPlaceholder", "Search notes, tools, or type a command...")}</span>
         </div>
         <kbd className="px-1.5 py-0.5 rounded bg-[var(--bg-surface-elevated)] border border-[var(--border)] font-mono text-[10px] text-[var(--text-muted)] shrink-0">
-          ⌘K
+          {isMac ? "⌘K" : "Ctrl K"}
         </kbd>
       </button>
 
       {/* Right: Quick Controls & Profile */}
-      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-        {/* Streak Flame Badge */}
-        <Badge variant="gold" size="md" icon={Flame} className="hidden sm:inline-flex font-semibold text-xs">
-          {studyStats?.streak || 1} {t("streak", "d Streak")}
-        </Badge>
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Subtle AI Gateway Live Badge */}
+        <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-[10px] font-mono text-[var(--text-muted)] shadow-2xs">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] dark:bg-[#4ADE80] animate-pulse" />
+          <span>AI Gateway Live</span>
+        </div>
+
 
         {/* Theme Toggle Button */}
         <button
@@ -128,9 +142,9 @@ export const Header = () => {
           className="p-1.5 sm:p-2 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors active:scale-95 touch-target"
         >
           {theme === 'dark' ? (
-            <Sun className="w-3.5 h-3.5 text-[#D6A84F]" />
+            <Sun className="w-3.5 h-3.5 text-[#F59E0B]" />
           ) : (
-            <Moon className="w-3.5 h-3.5 text-[#6B8F71]" />
+            <Moon className="w-3.5 h-3.5 text-[#1E293B]" />
           )}
         </button>
 
@@ -195,16 +209,30 @@ export const Header = () => {
               <div className="space-y-1 pt-1 border-t border-[var(--border)] text-xs">
                 <button
                   onClick={() => { setShowProfileMenu(false); navigate("/progress-report"); }}
-                  className="w-full px-3 py-2 rounded-xl hover:bg-[var(--bg-surface-elevated)] flex items-center gap-2.5 text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors"
+                  className="w-full px-3 py-2 rounded-xl hover:bg-[var(--bg-surface-elevated)] flex items-center gap-2.5 text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors cursor-pointer"
                 >
-                  <BarChart3 className="w-4 h-4 text-[#89A88D]" />
-                  <span>Learning Analytics</span>
+                  <TrendingUp className="w-4 h-4 text-[#89A88D]" />
+                  <span>Decision Center</span>
+                </button>
+                <button
+                  onClick={() => { setShowProfileMenu(false); navigate("/documents"); }}
+                  className="w-full px-3 py-2 rounded-xl hover:bg-[var(--bg-surface-elevated)] flex items-center gap-2.5 text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors cursor-pointer"
+                >
+                  <BookOpen className="w-4 h-4 text-[#89A88D]" />
+                  <span>Document Library</span>
+                </button>
+                <button
+                  onClick={() => { setShowProfileMenu(false); navigate("/audio-summary"); }}
+                  className="w-full px-3 py-2 rounded-xl hover:bg-[var(--bg-surface-elevated)] flex items-center gap-2.5 text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors cursor-pointer"
+                >
+                  <Headphones className="w-4 h-4 text-[#62816A]" />
+                  <span>Audio Lab</span>
                 </button>
                 <button
                   onClick={() => { setShowProfileMenu(false); navigate("/settings"); }}
-                  className="w-full px-3 py-2 rounded-xl hover:bg-[var(--bg-surface-elevated)] flex items-center gap-2.5 text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors"
+                  className="w-full px-3 py-2 rounded-xl hover:bg-[var(--bg-surface-elevated)] flex items-center gap-2.5 text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors cursor-pointer"
                 >
-                  <UserIcon className="w-4 h-4 text-[#62816A]" />
+                  <UserIcon className="w-4 h-4 text-[var(--text-muted)]" />
                   <span>Account Settings</span>
                 </button>
               </div>
