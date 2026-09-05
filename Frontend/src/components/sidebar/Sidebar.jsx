@@ -95,7 +95,7 @@ export const Sidebar = () => {
         </div>
         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap overflow-hidden">
           <h1 className="text-base font-bold text-[var(--text-main)] tracking-tight flex items-center gap-1 font-serif">
-            Shiro<span className="text-[#3F6048] dark:text-[#89A88D] font-sans text-xs">.ai</span>
+            Shiro<span className="text-[var(--primary)] font-sans text-xs">.ai</span>
           </h1>
           <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-mono">
             {t("learningOS", "Learning OS")}
@@ -125,12 +125,12 @@ export const Sidebar = () => {
                   }}
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                     isActive
-                      ? "bg-[#E4ECE5] dark:bg-[#89A88D]/15 text-[#3F6048] dark:text-[#A8C5AC] border border-[#3F6048]/20 dark:border-[#89A88D]/30 font-semibold shadow-sm"
+                      ? "bg-[var(--primary-subtle)] text-[var(--primary-strong)] font-semibold shadow-xs"
                       : "text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)]"
                   }`}
                   title={item.label}
                 >
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-[#3F6048] dark:text-[#A8C5AC]" : "text-[var(--text-muted)]"}`} />
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-[var(--primary)]" : "text-[var(--text-muted)]"}`} />
                   <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
                     {item.label}
                   </span>
@@ -150,9 +150,9 @@ export const Sidebar = () => {
           className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs transition-colors text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface-hover)]"
         >
           {theme === 'dark' ? (
-            <Sun className="w-4 h-4 shrink-0 text-[#D6A84F]" />
+            <Sun className="w-4 h-4 shrink-0 text-[var(--warning)]" />
           ) : (
-            <Moon className="w-4 h-4 shrink-0 text-[#3F6048]" />
+            <Moon className="w-4 h-4 shrink-0 text-[var(--primary)]" />
           )}
           <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
             {theme === 'dark' ? "Warm Light Mode" : "Dark Mode"}
@@ -178,7 +178,7 @@ export const Sidebar = () => {
         {user ? (
           <div className="flex items-center justify-between p-2 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] mt-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-[#3F6048]/15 dark:bg-[#89A88D]/20 border border-[#3F6048]/20 dark:border-[#89A88D]/30 flex items-center justify-center text-[#3F6048] dark:text-[#89A88D] font-bold text-xs shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-[var(--primary-subtle)] flex items-center justify-center text-[var(--primary)] font-bold text-xs shrink-0">
                 {user.name ? user.name[0].toUpperCase() : "U"}
               </div>
               <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 min-w-0">
@@ -189,7 +189,7 @@ export const Sidebar = () => {
             <button
               onClick={logout}
               title="Log out"
-              className="opacity-0 group-hover:opacity-100 p-1 text-[var(--text-muted)] hover:text-[#C96B62] transition-colors"
+              className="opacity-0 group-hover:opacity-100 p-1 text-[var(--text-muted)] hover:text-[var(--danger)] transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>
@@ -197,9 +197,9 @@ export const Sidebar = () => {
         ) : (
           <button
             onClick={() => navigate("/login")}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#3F6048]/15 text-[#3F6048] dark:bg-[#89A88D]/15 dark:text-[#89A88D] text-xs font-semibold hover:bg-[#3F6048]/25 transition-colors"
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[var(--primary-subtle)] text-[var(--primary-strong)] text-xs font-semibold hover:bg-[var(--primary)] hover:text-white transition-colors"
           >
-            <span className="w-2 h-2 rounded-full bg-[#3F6048] dark:bg-[#89A88D]" />
+            <span className="w-2 h-2 rounded-full bg-[var(--primary)]" />
             <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
               Log In
             </span>
