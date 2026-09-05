@@ -11,7 +11,7 @@ export const Card = ({
     <div
       onClick={onClick}
       className={`glass-panel p-5 relative overflow-hidden transition-all duration-200 ${
-        hover ? 'hover:-translate-y-0.5 hover:border-[#89A88D]/40' : ''
+        hover ? 'hover:-translate-y-0.5 hover:border-[var(--primary)]/40' : ''
       } ${onClick ? 'cursor-pointer' : ''} ${className}`}
       {...props}
     >
@@ -24,7 +24,7 @@ export const CardHeader = ({ title, subtitle, icon: Icon, action, className = ''
   <div className={`flex items-start justify-between gap-3 mb-3 ${className}`}>
     <div className="flex items-center gap-2.5">
       {Icon && (
-        <div className="p-2 rounded-xl bg-[#E8EFE9] dark:bg-[#89A88D]/15 border border-[#3F6048]/15 dark:border-[#89A88D]/30 text-[#3F6048] dark:text-[#89A88D]">
+        <div className="p-2 rounded-xl bg-[var(--primary-subtle)] border border-[var(--primary)]/20 text-[var(--primary)]">
           <Icon className="w-4 h-4" />
         </div>
       )}
