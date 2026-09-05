@@ -31,7 +31,7 @@ import Badge from '../../../components/ui/Badge';
 
 export const QuizPage = () => {
   const { user } = useAuth();
-  const { documents, fetchDocuments, activeHandoffContext } = useContext(Context);
+  const { documents, fetchDocuments, activeHandoffContext, fetchUserStats } = useContext(Context);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -159,6 +159,9 @@ export const QuizPage = () => {
         }),
       });
       toast.success('Quiz submitted! Performance saved to learning analytics.');
+      if (user?.id && fetchUserStats) {
+        fetchUserStats(user.id);
+      }
     } catch (e) {
       console.error('Error submitting quiz progress:', e);
     }
@@ -516,12 +519,12 @@ export const QuizPage = () => {
 
                       if (submitted) {
                         if (isOptionCorrect) {
-                          btnStyle = 'bg-[#3F6048]/20 dark:bg-[#89A88D]/20 border-[#3F6048] dark:border-[#89A88D] text-[var(--text-main)] font-semibold shadow-xs';
+                          btnStyle = 'bg-[var(--primary-subtle)] border-[var(--primary)] text-[var(--text-main)] font-semibold shadow-xs';
                         } else if (isSelected && !isOptionCorrect) {
-                          btnStyle = 'bg-[#C96B62]/15 border-[#C96B62]/50 text-[#C96B62]';
+                          btnStyle = 'bg-[var(--danger)]/10 border-[var(--danger)]/40 text-[var(--danger)] font-semibold';
                         }
                       } else if (isSelected) {
-                        btnStyle = 'bg-[#3F6048]/10 dark:bg-[#89A88D]/15 border-[#3F6048] dark:border-[#89A88D] text-[var(--text-main)] font-semibold shadow-xs';
+                        btnStyle = 'bg-[var(--primary-subtle)] border-[var(--primary)] text-[var(--text-main)] font-semibold shadow-xs';
                       }
 
                       return (
@@ -545,12 +548,34 @@ export const QuizPage = () => {
                     <motion.div 
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      className="p-3.5 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-xs text-[var(--text-secondary)] space-y-1"
+                      className={`p-4 rounded-xl border space-y-2 mt-4 text-xs ${isCorrect ? 'bg-[var(--primary-subtle)] border-[var(--primary)]/30' : 'bg-[var(--danger)]/5 border-[var(--danger)]/20'}`}
                     >
-                      <span className="font-bold text-[#3F6048] dark:text-[#89A88D] uppercase tracking-wider font-mono text-[10px] block">
-                        Rationale & Explanation:
+                      <div className="flex items-center gap-1.5 mb-2 text-sm">
+                        {isCorrect ? (
+                          <span className="font-bold text-[var(--primary-strong)] flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Correct ✓</span>
+                        ) : (
+                          <span className="font-bold text-[var(--danger)] flex items-center gap-1.5"><XCircle className="w-4 h-4" /> Not quite.</span>
+                        )}
+                      </div>
+                      
+                      {!isCorrect && (
+                         <div className="space-y-1 mb-3 bg-[var(--bg-surface)] p-3 rounded-lg border border-[var(--border)]">
+                            <p className="text-[var(--text-secondary)]">Your answer: <span className="font-semibold text-[var(--danger)]">{q.options[selectedKey] || 'No Answer'}</span></p>
+                            <p className="text-[var(--text-secondary)]">Correct answer: <span className="font-semibold text-[var(--primary)]">{q.options[q.correct_answer]}</span></p>
+                         </div>
+                      )}
+
+                      <span className="font-bold text-[var(--text-main)] block">
+                        Why:
                       </span>
-                      <p className="text-[var(--text-main)] leading-relaxed">{q.explanation}</p>
+                      <p className="text-[var(--text-secondary)] leading-relaxed">{q.explanation}</p>
+                      
+                      {!isCorrect && (
+                         <div className="flex flex-wrap items-center gap-2 pt-3 mt-3 border-t border-[var(--border)]">
+                            <Button variant="outline" size="sm" onClick={() => navigate('/flashcards')}>Make Flashcard</Button>
+                            <Button variant="secondary" size="sm" onClick={() => navigate('/chat', { state: { handoff: `Explain this question intuitively: ${q.question}` } })}>Explain with Shiro</Button>
+                         </div>
+                      )}
                     </motion.div>
                   )}
                 </Card>
