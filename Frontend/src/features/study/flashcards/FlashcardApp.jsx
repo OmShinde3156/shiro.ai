@@ -26,7 +26,7 @@ import Badge from '../../../components/ui/Badge';
 
 export const FlashcardApp = () => {
   const { user } = useAuth();
-  const { documents, fetchDocuments, activeHandoffContext } = useContext(Context);
+  const { documents, fetchDocuments, activeHandoffContext, fetchUserStats } = useContext(Context);
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -138,9 +138,13 @@ export const FlashcardApp = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             flashcard_id: currentCard.id,
-            rating: rating
+            rating: rating,
+            ease_rating: rating
           })
         });
+        if (user?.id && fetchUserStats) {
+          fetchUserStats(user.id);
+        }
       } catch (e) {
         console.error("Failed to record review", e);
       }
@@ -353,7 +357,7 @@ export const FlashcardApp = () => {
                   </h3>
                 </div>
                 <div className="text-center text-xs text-[var(--text-muted)]">
-                  Click or tap to see answer
+                  Click, tap, or press <kbd className="px-1.5 py-0.5 border border-[var(--border)] rounded bg-[var(--bg-canvas)] shadow-xs font-mono text-[10px]">Space</kbd> to see answer
                 </div>
               </div>
 
@@ -392,7 +396,7 @@ export const FlashcardApp = () => {
               >
                 <button
                   onClick={() => handleRating(1)}
-                  className="p-2.5 sm:p-3 rounded-2xl border border-[#C96B62]/40 bg-[#F7E8E5] dark:bg-[#C96B62]/15 text-[#9E352B] dark:text-[#E58B82] hover:scale-[1.01] active:scale-95 transition-transform text-center"
+                  className="p-2.5 sm:p-3 rounded-2xl border border-[var(--danger-subtle)] bg-[var(--bg-canvas)] text-[var(--danger)] hover:bg-[var(--danger-subtle)] hover:scale-[1.01] active:scale-95 transition-all text-center"
                 >
                   <span className="font-bold text-xs sm:text-sm block">Again (1)</span>
                   <span className="text-[10px] text-[var(--text-muted)]">Forgot / Blackout</span>
@@ -400,7 +404,7 @@ export const FlashcardApp = () => {
 
                 <button
                   onClick={() => handleRating(2)}
-                  className="p-2.5 sm:p-3 rounded-2xl border border-[#E9D8AE] dark:border-[#D6A84F]/30 bg-[#F4E9CC] dark:bg-[#D6A84F]/15 text-[#7B5E20] dark:text-[#E8C278] hover:scale-[1.01] active:scale-95 transition-transform text-center"
+                  className="p-2.5 sm:p-3 rounded-2xl border border-[var(--warning-subtle)] bg-[var(--bg-canvas)] text-[var(--warning)] hover:bg-[var(--warning-subtle)] hover:scale-[1.01] active:scale-95 transition-all text-center"
                 >
                   <span className="font-bold text-xs sm:text-sm block">Hard (2)</span>
                   <span className="text-[10px] text-[var(--text-muted)]">Struggled</span>
@@ -408,7 +412,7 @@ export const FlashcardApp = () => {
 
                 <button
                   onClick={() => handleRating(3)}
-                  className="p-2.5 sm:p-3 rounded-2xl border border-[#3F6048]/30 dark:border-[#89A88D]/30 bg-[#E8EFE9] dark:bg-[#89A88D]/15 text-[#3F6048] dark:text-[#A8C5AC] hover:scale-[1.01] active:scale-95 transition-transform text-center"
+                  className="p-2.5 sm:p-3 rounded-2xl border border-[var(--success-subtle)] bg-[var(--bg-canvas)] text-[var(--success)] hover:bg-[var(--success-subtle)] hover:scale-[1.01] active:scale-95 transition-all text-center"
                 >
                   <span className="font-bold text-xs sm:text-sm block">Good (3)</span>
                   <span className="text-[10px] text-[var(--text-muted)]">Recalled cleanly</span>
@@ -416,10 +420,10 @@ export const FlashcardApp = () => {
 
                 <button
                   onClick={() => handleRating(4)}
-                  className="p-2.5 sm:p-3 rounded-2xl border border-[#3F6048] bg-[#3F6048] hover:bg-[#34523D] text-white font-semibold hover:scale-[1.01] active:scale-95 transition-transform text-center shadow-sm"
+                  className="p-2.5 sm:p-3 rounded-2xl border border-[var(--primary)] bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-[var(--bg-canvas)] font-semibold hover:scale-[1.01] active:scale-95 transition-all text-center shadow-sm"
                 >
                   <span className="font-bold text-xs sm:text-sm block">Easy (4)</span>
-                  <span className="text-[10px] text-white/80">Instant recall</span>
+                  <span className="text-[10px] opacity-90">Instant recall</span>
                 </button>
               </motion.div>
             )}
