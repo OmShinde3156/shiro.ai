@@ -14,6 +14,11 @@ import math
 import datetime
 import logging
 import re
+import os
+try:
+    import fitz
+except ImportError:
+    fitz = None
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -135,30 +140,114 @@ class ChatService:
             "summary_preview": preview
         }
 
-    def _detect_intent(
+    def _classify_intent(
         self,
         message: str,
-        context_scope: str,
-        document_ids: List[int],
-        active_document_id: Optional[int],
-        selected_text: Optional[str]
+        context_scope: str = "GLOBAL",
+        document_ids: List[int] = [],
+        active_document_id: Optional[int] = None,
+        selected_text: Optional[str] = None,
+        db: Optional[Session] = None,
+        user_id: Optional[int] = None,
+        is_ambiguous_doc: bool = False
     ) -> str:
         """
-        Infers query category:
-        - "library_meta": Inquiring about uploaded documents/stats
-        - "study_progress": Asking for learning recommendations / weakness analysis
-        - "doc_profiling": Asking for study time, difficulty, or high-yield topics
-        - "text_selection": Explicit focus on highlighted text
-        - "doc_rag": Grounded retrieval on specific document(s)
-        - "cross_doc_rag": Grounded retrieval across full user library
-        - "general_tutor": Open-domain pedagogical guidance
+        Decoupled 10-Class Intent Classifier with fast deterministic paths:
+        - "CASUAL": Greetings, small talk, pleasantries (hi, hello, thanks, bye)
+        - "SIMPLE_FACTUAL": Direct factual queries (what is, define, meaning of)
+        - "EXPLANATION": Conceptual learning (explain, how does, why does)
+        - "DEEP_EXPLANATION": In-depth architectural/mechanic breakdowns
+        - "DOCUMENT_QUESTION": Grounded question on a resolved document
+        - "FIGURE_QUESTION": Analysis of diagrams, charts, visual flows
+        - "TASK_ACTION": Direct item generation (give 5 questions, make flashcards)
+        - "STUDY_COACHING": Active tutoring, step-by-step guidance, Socratic mode
+        - "EXAM_PREPARATION": High-yield topics, exam questions, scoring criteria
+        - "AMBIGUOUS": Ambiguous reference that needs single clarification
+        - Specialized: "library_meta", "study_progress", "doc_profiling", "text_selection", "room_copilot"
         """
-        msg_lower = message.lower().strip()
+        msg_clean = message.lower().strip()
 
+        # 1. Ambiguity flag passed from reference resolver
+        if is_ambiguous_doc:
+            return "AMBIGUOUS"
+
+        # 2. Text Selection fast-path
         if selected_text and len(selected_text.strip()) > 3:
             return "text_selection"
 
-        # 1. Library Meta queries
+        # 3. Casual Greeting, Pleasantries & Fatigue Fast-Path
+        # e.g. "hi", "hello", "hey", "thanks", "thank you", "ok", "cool", "bye", "I'm tired"
+        casual_pattern = r"^(hi|hello|hey|greetings|howdy|sup|thanks|thank\s+you|thx|ok|okay|cool|k|bye|goodbye|good\s+morning|good\s+afternoon|good\s+evening|i'?m\s+(tired|exhausted|sleepy|drained)|need\s+a\s+break)[\.!\s]*$"
+        if re.match(casual_pattern, msg_clean) or (len(msg_clean.split()) <= 2 and any(w == msg_clean.split()[0] for w in ["hi", "hello", "hey", "thanks", "ok", "cool", "bye"])):
+            return "CASUAL"
+
+        # 4. Hypothetical Simulation & Task Action Fast-Path
+        # e.g. "pretend I took 10 quizzes", "give me 5 questions", "make flashcards", "summarize in 3 bullet points"
+        hypothetical_patterns = [
+            r"\b(pretend|hypothetical(ly)?|simulate|what\s+if\s+i\s+(took|scored))\b"
+        ]
+        task_action_patterns = [
+            r"\b(give\s+me|generate|create|make)\s+(\d+)?\s*([a-zA-Z0-9_\-]+\s+)*(questions|mcqs|problems|practice\s+questions)\b",
+            r"\b(make|generate|create)\s+flashcards?\b",
+            r"\b(summarize|summary)\s+in\s+(\d+)\s+(bullets?|points?)\b",
+            r"\bgive\s+me\s+(\d+)\s+(points|takeaways|notes)\b"
+        ]
+        if any(re.search(p, msg_clean) for p in hypothetical_patterns) or any(re.search(p, msg_clean) for p in task_action_patterns):
+            return "TASK_ACTION"
+
+        # 5. Figure & Diagram Fast-Path
+        figure_patterns = [
+            r"\bexplain\s+(the\s+)?(diagrams?|figures?|charts?|flowcharts?|visuals?)\b",
+            r"\bdiagrams?\s+in\s+(my|the)?\b",
+            r"\bwhat\s+does\s+(the\s+)?(figure|fig\.?|diagram)\s*\d+\b",
+            r"\b(figure|fig\.?|diagram)\s*\d+\b",
+            r"\bexplain\s+the\s+diagram\b",
+            r"\bdiagram\s+on\s+slide\b"
+        ]
+        if any(re.search(p, msg_clean) for p in figure_patterns):
+            return "FIGURE_QUESTION"
+
+        # 6. Study Coaching & Exam Preparation Fast-Path
+        # e.g. "prepare for GATE", "study 3 hours on weekdays", "teach me normalization like a tutor"
+        exam_patterns = [
+            r"\bimportant\s+questions?\s+(for\s+exam|from|in)\b",
+            r"\bhigh[- ]yield\b",
+            r"\bexam\s+questions?\b",
+            r"\bexam\s+patterns?\b",
+            r"\bpyq\b",
+            r"\bprevious\s+year\s+questions?\b",
+            r"\bscoring\s+criteria\b",
+            r"\bgate(\s+exam)?\b"
+        ]
+        coaching_patterns = [
+            r"\bteach\s+me\b",
+            r"\btutor\s+me\b",
+            r"\bguide\s+me\s+through\b",
+            r"\bfeynman\s+challenge\b",
+            r"\bsocratic\b",
+            r"\bhelp\s+me\s+learn\b",
+            r"\bpractice\s+with\s+me\b",
+            r"\b(i\s+can\s+study|study\s+\d+\s+hours|hours\s+on\s+(weekdays|weekends))\b",
+            r"\bweak\s+in\s+.*\s+strong\s+in\b",
+            r"\bmy\s+syllabus\b"
+        ]
+        if any(re.search(p, msg_clean) for p in coaching_patterns):
+            return "STUDY_COACHING"
+        if any(re.search(p, msg_clean) for p in exam_patterns):
+            return "EXAM_PREPARATION"
+
+        # 7. Deep Explanation Fast-Path
+        deep_patterns = [
+            r"\bdeep\s+dive\b",
+            r"\bin[- ]depth\b",
+            r"\bcomprehensive\s+analysis\b",
+            r"\bdetailed\s+breakdown\b",
+            r"\bmathematical\s+derivation\b"
+        ]
+        if any(re.search(p, msg_clean) for p in deep_patterns):
+            return "DEEP_EXPLANATION"
+
+        # 8. Library Metadata queries
         meta_patterns = [
             r"\bwhich doc(ument)?s?\b",
             r"\bwhat doc(ument)?s?\b",
@@ -170,51 +259,387 @@ class ChatService:
             r"\bmy uploaded\b",
             r"\bwhich pdfs?\b"
         ]
-        if any(re.search(p, msg_lower) for p in meta_patterns):
+        if any(re.search(p, msg_clean) for p in meta_patterns):
             return "library_meta"
 
-        # 2. Progress / Study Recommendation queries
+        # 9. Study Progress queries
         progress_patterns = [
+            r"\btoday'?s\s+mission\b",
             r"\bwhat should i study\b",
             r"\bwhat to study today\b",
             r"\bhow am i doing\b",
             r"\bmy progress\b",
             r"\bmy streak\b",
+            r"\bmy\s+weakness(es)?\b",
             r"\bweak topics?\b",
+            r"\bmy\s+(average\s+)?(quiz\s+)?score\b",
+            r"\bmy\s+(current\s+)?mastery\b",
             r"\bwhat did i learn\b",
             r"\brecommend(ation)?s?\b"
         ]
-        if any(re.search(p, msg_lower) for p in progress_patterns):
+        if any(re.search(p, msg_clean) for p in progress_patterns):
             return "study_progress"
 
-        # 3. Document Profiling queries
+        # 10. Document Profiling queries
         profiling_patterns = [
             r"\bhow (much )?time\b",
             r"\bhow long\b",
             r"\btime (to |will it )?take\b",
             r"\bstudy time\b",
-            r"\bimportant (topic|question|point)s?\b",
-            r"\bhigh[- ]yield\b",
-            r"\bkey topics?\b",
-            r"\bexam topics?\b",
             r"\bwhat is this (doc(ument)?|file|pdf) about\b",
             r"\bsummarize this (doc(ument)?|file|pdf)\b"
         ]
-        if (context_scope == "DOCUMENT" or active_document_id) and any(re.search(p, msg_lower) for p in profiling_patterns):
+        if (context_scope == "DOCUMENT" or active_document_id) and any(re.search(p, msg_clean) for p in profiling_patterns):
             return "doc_profiling"
 
-        # 4. Scope-dependent intent
-        if context_scope == "DOCUMENT" or active_document_id or len(document_ids) == 1:
-            return "doc_rag"
+        # 11. Explicit Document Question Check
+        doc_patterns = [
+            r"\b(in|from|according to|based on)\s+(this|the|my)\s+(doc(ument)?|pdf|paper|file|notes)\b",
+            r"\bin\s+page\s+\d+\b",
+            r"\bpage\s+\d+\b",
+            r"\bfigure\s+\d+\b"
+        ]
+        has_explicit_doc_ref = any(re.search(p, msg_clean) for p in doc_patterns)
+        if has_explicit_doc_ref or (selected_text and len(selected_text.strip()) > 3):
+            return "DOCUMENT_QUESTION"
 
-        if context_scope == "LIBRARY" or any(w in msg_lower for w in ["in my notes", "from my documents", "in my pdfs", "in my library"]):
+        if context_scope == "LIBRARY" or any(w in msg_clean for w in ["in my notes", "from my documents", "in my pdfs", "in my library"]):
             return "cross_doc_rag"
 
+        # 12. Simple Factual vs Conceptual Explanation
+        factual_patterns = [
+            r"^(what\s+is|who\s+is|define|definition\s+of|meaning\s+of|what\s+are\s+the|which\s+is|where\s+is|when\s+was|capital\s+of)\b",
+            r"\bwhat\s+(is|are)\s+(a\s+)?(dbms|primary\s+key|foreign\s+key|normalization|indexing|deadlock|quantum\s+entanglement)\b"
+        ]
+        if any(re.search(p, msg_clean) for p in factual_patterns) and not any(w in msg_clean for w in ["explain", "how", "why", "deep", "compare"]):
+            return "SIMPLE_FACTUAL"
+
+        if any(w in msg_clean for w in ["explain simply", "simple", "intuitively", "analogy", "why does", "how does", "explain", "teach me", "now explain", "tell me about", "indexing"]):
+            return "EXPLANATION"
+
+        # Scope-dependent fallback
         if context_scope == "ROOM":
             return "room_copilot"
 
-        # Default for dashboard is general tutor
-        return "general_tutor"
+        # Default fallback
+        if len(msg_clean.split()) <= 6 and msg_clean.startswith(("what", "who", "when", "where")):
+            return "SIMPLE_FACTUAL"
+
+        return "EXPLANATION"
+
+    def _detect_intent(
+        self,
+        message: str,
+        context_scope: str = "GLOBAL",
+        document_ids: List[int] = [],
+        active_document_id: Optional[int] = None,
+        selected_text: Optional[str] = None
+    ) -> str:
+        """Backward-compatible wrapper mapping into decoupled intent classifier"""
+        classified = self._classify_intent(
+            message=message,
+            context_scope=context_scope,
+            document_ids=document_ids,
+            active_document_id=active_document_id,
+            selected_text=selected_text
+        )
+        if classified == "DOCUMENT_QUESTION":
+            return "doc_rag"
+        if classified in ["SIMPLE_FACTUAL", "EXPLANATION", "CASUAL", "STUDY_COACHING"]:
+            return "general_tutor"
+        return classified
+
+    def _resolve_document_references(
+        self,
+        message: str,
+        user_id: int,
+        document_ids: List[int] = [],
+        active_document_id: Optional[int] = None,
+        db: Optional[Session] = None
+    ) -> Dict[str, Any]:
+        """
+        Decoupled Document & Reference Resolver.
+        Resolution chain:
+        1. Active Document ID
+        2. Query explicit attachments
+        3. Mentioned filename/subject keywords in query
+        4. Context history (document discussed in recent turns)
+        5. Single library document fallback
+        6. Ambiguity detection (if multiple candidate matches exist)
+        """
+        msg_lower = message.lower()
+
+        # 0. Explicit Negation Check (e.g., "Ignore the document. What is quantum entanglement?")
+        negation_patterns = [
+            r"\b(ignore|without|forget|don't\s+use|dont\s+use)\s+(the\s+)?(doc|document|pdf|paper|notes)\b",
+            r"\bgeneral\s+(knowledge|question|qa)\b",
+            r"\bno\s+(doc|document|pdf)\b"
+        ]
+        if any(re.search(p, msg_lower) for p in negation_patterns):
+            return {
+                "resolved_document_ids": [],
+                "is_ambiguous": False,
+                "primary_doc": None,
+                "candidates": []
+            }
+
+        if db:
+            user_docs = db.query(Document).filter(Document.user_id == user_id).order_by(Document.upload_date.desc()).all()
+        else:
+            user_docs = []
+
+        # 1. Active Document
+        if active_document_id and user_docs:
+            active_doc = next((d for d in user_docs if d.id == active_document_id), None)
+            if active_doc:
+                return {
+                    "resolved_document_ids": [active_doc.id],
+                    "is_ambiguous": False,
+                    "primary_doc": active_doc,
+                    "candidates": [active_doc]
+                }
+
+        # 2. Explicit attachments passed in query
+        if document_ids and user_docs:
+            matched_docs = [d for d in user_docs if d.id in document_ids]
+            if len(matched_docs) >= 1:
+                return {
+                    "resolved_document_ids": [d.id for d in matched_docs],
+                    "is_ambiguous": False,
+                    "primary_doc": matched_docs[0],
+                    "candidates": matched_docs
+                }
+
+        # 3. Match filename or subject keywords mentioned in query
+        # e.g., "final year research paper", "final year paper", "deep learning.pdf"
+        keyword_matches = []
+        for d in user_docs:
+            fn_clean = re.sub(r'[\._\-]', ' ', d.filename.lower())
+            subj_clean = (d.subject or "").lower()
+            words = [w for w in fn_clean.split() if len(w) > 3 and w not in ["file", "document", "assignment", "draft", "paper", "final"]]
+            if any(w in msg_lower for w in words):
+                keyword_matches.append(d)
+            elif "final year" in msg_lower and any(k in fn_clean for k in ["final", "year", "paper", "research", "project"]):
+                keyword_matches.append(d)
+            elif subj_clean and subj_clean in msg_lower:
+                keyword_matches.append(d)
+
+        if keyword_matches:
+            return {
+                "resolved_document_ids": [keyword_matches[0].id],
+                "is_ambiguous": False,
+                "primary_doc": keyword_matches[0],
+                "candidates": keyword_matches
+            }
+
+        # 4. Check conversation history ONLY if query explicitly contains a document follow-up pronoun
+        followup_markers = ["this doc", "that doc", "the doc", "the paper", "this paper", "the pdf", "this pdf", "it say", "page ", "figure ", "diagram"]
+        if any(m in msg_lower for m in followup_markers) and db:
+            recent_turns = (
+                db.query(ChatHistory)
+                .filter(ChatHistory.user_id == user_id)
+                .order_by(ChatHistory.timestamp.desc())
+                .limit(5)
+                .all()
+            )
+            for turn in recent_turns:
+                turn_doc_ids = getattr(turn, "document_ids", None)
+                if turn_doc_ids and isinstance(turn_doc_ids, list) and len(turn_doc_ids) > 0:
+                    hist_doc = next((d for d in user_docs if d.id in turn_doc_ids), None)
+                    if hist_doc:
+                        return {
+                            "resolved_document_ids": [hist_doc.id],
+                            "is_ambiguous": False,
+                            "primary_doc": hist_doc,
+                            "candidates": [hist_doc]
+                        }
+
+        # 5. Ambiguity detection: only when user explicitly asks to inspect an unspecified document
+        doc_action_patterns = [
+            r"\b(explain|summarize|read|analyze|open|review|check)\s+(this|the|that)\s+(doc(ument)?|paper|pdf|file)\b",
+            r"\bwhat\s+does\s+(this|the|that)\s+(doc(ument)?|paper|pdf|file)\s+say\b"
+        ]
+        if any(re.search(p, msg_lower) for p in doc_action_patterns) and len(user_docs) > 1:
+            return {
+                "resolved_document_ids": [],
+                "is_ambiguous": True,
+                "primary_doc": None,
+                "candidates": user_docs[:4]
+            }
+
+        return {
+            "resolved_document_ids": [],
+            "is_ambiguous": False,
+            "primary_doc": None,
+            "candidates": user_docs
+        }
+
+    def _extract_document_figures(
+        self,
+        document_ids: List[int],
+        query: str,
+        user_id: int,
+        db: Optional[Session] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Extracts structured visual figure/diagram metadata from resolved documents.
+        Supports:
+        - PyMuPDF text & page structure
+        - Figure/Diagram/Chart candidate regexes
+        - Page tracking via '--- Page N ---' markers
+        - Caption and surrounding context extraction
+        """
+        figures = []
+        if not db or not document_ids:
+            return figures
+
+        docs = db.query(Document).filter(Document.id.in_(document_ids), Document.user_id == user_id).all()
+        query_lower = query.lower()
+
+        # Check if a specific figure number was requested (e.g. "Figure 3" or "Figure 4")
+        fig_num_match = re.search(r'\b(?:figure|fig\.?|diagram)\s*(\d+)\b', query_lower)
+        target_fig_num = int(fig_num_match.group(1)) if fig_num_match else None
+
+        for doc in docs:
+            text = doc.text_content or ""
+            pages = text.split("--- Page ")
+            current_page = 1
+
+            for p_idx, page_chunk in enumerate(pages):
+                if p_idx > 0:
+                    page_header_match = re.match(r'^(\d+)\s*---', page_chunk)
+                    if page_header_match:
+                        current_page = int(page_header_match.group(1))
+                    else:
+                        current_page = p_idx
+
+                # Find candidate figure blocks: "Figure X: Caption" or "Figure X - Title"
+                fig_matches = re.finditer(
+                    r'(?:Figure|Fig\.?|Diagram|Chart)\s*(\d+)[:\.\-\s]+([^\n\.\;]{4,120})',
+                    page_chunk,
+                    re.IGNORECASE
+                )
+                for m in fig_matches:
+                    f_num = int(m.group(1))
+                    caption = m.group(2).strip()
+                    start_pos = max(0, m.start() - 100)
+                    end_pos = min(len(page_chunk), m.end() + 250)
+                    surrounding = page_chunk[start_pos:end_pos].replace("\n", " ").strip()
+
+                    fig_entry = {
+                        "figure_id": f"fig-{doc.id}-{f_num}",
+                        "figure_number": f_num,
+                        "caption": caption,
+                        "page": current_page,
+                        "surrounding_context": surrounding,
+                        "document_id": doc.id,
+                        "document_filename": doc.filename,
+                        "visual_description": f"Diagram {f_num} illustrating {caption}"
+                    }
+
+                    if target_fig_num is None or f_num == target_fig_num:
+                        figures.append(fig_entry)
+
+            # Fallback if no numbered figures were found, but diagrams/architecture were asked
+            if not figures and any(w in query_lower for w in ["diagram", "figure", "chart", "architecture", "flowchart"]):
+                arch_matches = re.finditer(r'(?:Architecture|System Overview|Workflow|Dataflow|Pipeline|Flowchart)[:\.\-\s]+([^\n]{10,140})', text, re.IGNORECASE)
+                for idx, m in enumerate(arch_matches, 1):
+                    figures.append({
+                        "figure_id": f"fig-{doc.id}-{idx}",
+                        "figure_number": idx,
+                        "caption": m.group(0).strip(),
+                        "page": 1,
+                        "surrounding_context": text[max(0, m.start()-50):min(len(text), m.end()+200)].replace("\n", " ").strip(),
+                        "document_id": doc.id,
+                        "document_filename": doc.filename,
+                        "visual_description": f"Architectural diagram depicting {m.group(1).strip()}"
+                    })
+                    if len(figures) >= 4:
+                        break
+
+        return figures
+
+    def _build_modular_prompt(
+        self,
+        intent: str,
+        message: str,
+        context_text: str,
+        pedagogy_block: str,
+        language: str = "en"
+    ) -> str:
+        """
+        Constructs decoupled, intent-specific prompt without monolithic tutor pollution.
+        """
+        system_rules = (
+            "You are Shiro, a grounded, precise, and human-centered academic AI system.\n\n"
+            "CORE PRINCIPLES:\n"
+            "1. Deliver direct, accurate, and proportional answers matching the user's intent.\n"
+            "2. Never fabricate user progress, weak topics, quiz history, or deadlines.\n"
+            "3. Output clean GitHub-flavored Markdown. Do NOT output conversational filler like 'Thinking...', 'Still working...', 'One moment...'.\n"
+            f"4. Answer in {language}."
+        )
+
+        intent_directive = ""
+        if intent == "CASUAL":
+            intent_directive = (
+                "USER INTENT: CASUAL GREETING.\n"
+                "Respond naturally, warmly, and briefly in 1 to 2 sentences. "
+                "Do NOT provide a study framework, long lesson, or diagnostic quiz."
+            )
+        elif intent == "SIMPLE_FACTUAL":
+            intent_directive = (
+                "USER INTENT: SIMPLE FACTUAL ANSWER.\n"
+                "Provide a direct, accurate answer using established academic and general knowledge in 1 to 2 concise paragraphs. "
+                "Do NOT demand a document or claim you cannot answer without a document. "
+                "Do NOT add unrequested pedagogical essays or long preambles."
+            )
+        elif intent == "EXPLANATION":
+            intent_directive = (
+                "USER INTENT: CONCEPTUAL EXPLANATION.\n"
+                "Explain clearly with appropriate depth, structured headings, and intuitive real-world examples using general academic knowledge. "
+                "Do NOT demand a document or claim you cannot answer without a document."
+            )
+        elif intent == "DEEP_EXPLANATION":
+            intent_directive = (
+                "USER INTENT: DEEP TECHNICAL EXPLANATION.\n"
+                "Provide a comprehensive, structured technical breakdown covering core mechanics, definitions, and trade-offs using general academic knowledge. "
+                "Do NOT demand a document or claim you cannot answer without a document."
+            )
+        elif intent in ["DOCUMENT_QUESTION", "doc_rag", "cross_doc_rag"]:
+            intent_directive = (
+                "USER INTENT: DOCUMENT-GROUNDED QUESTION.\n"
+                "Answer strictly using the verified context excerpts below. Cite source tags like [cit-1] with page numbers.\n"
+                "GROUNDING DIRECTIVE: If the requested information is not found in the verified excerpts, state: \"I couldn't verify that from this document.\""
+            )
+        elif intent == "FIGURE_QUESTION":
+            intent_directive = (
+                "USER INTENT: FIGURE / DIAGRAM ANALYSIS.\n"
+                "Ground your explanation strictly in the actual figures. Structure each figure as:\n"
+                "### Figure X — [Caption / Title] (Page Y)\n"
+                "**What it shows**:\n...\n"
+                "**How the components interact**:\n...\n"
+                "**Why it matters**:\n..."
+            )
+        elif intent == "TASK_ACTION":
+            intent_directive = (
+                "USER INTENT: DIRECT TASK EXECUTION.\n"
+                "Execute the requested action directly without conversational preamble. If the user presents hypothetical data (e.g. 'pretend I scored...'), analyze their hypothetical numbers accurately and clearly state that it is an illustrative simulation."
+            )
+        elif intent == "STUDY_COACHING":
+            intent_directive = (
+                "USER INTENT: STUDY COACHING.\n"
+                "Provide supportive, structured study guidance. If the student shares their study hours, schedule, or strengths/weaknesses, actively acknowledge those details and continue building their study plan. Do NOT reset or demand they upload a document."
+            )
+        elif intent == "EXAM_PREPARATION":
+            intent_directive = (
+                "USER INTENT: EXAM PREPARATION.\n"
+                "Provide high-yield exam points, scoring criteria, and examiner insights. If the student provides details about their exam (e.g. GATE), hours, or strengths/weaknesses, actively acknowledge and incorporate them into a concrete plan. Do NOT demand a document."
+            )
+
+        context_block = f"\n\nCONTEXT & EVIDENCE:\n{context_text}" if context_text else ""
+        pedagogy = f"\n\nPEDAGOGY SETTINGS:\n{pedagogy_block}" if pedagogy_block and intent in ["EXPLANATION", "DEEP_EXPLANATION", "STUDY_COACHING", "EXAM_PREPARATION"] else ""
+
+        return f"{system_rules}\n\n{intent_directive}{context_block}{pedagogy}\n\nUSER MESSAGE: {message}"
 
     def _build_pedagogy_block(
         self,
@@ -234,7 +659,7 @@ class ChatService:
         elif mode_clean == "feynman":
             pedagogy_instructions.append("PEDAGOGICAL MODE: FEYNMAN CHALLENGE. Use plain English metaphors, zero jargon, and evaluate understanding intuitively.")
         else:
-            pedagogy_instructions.append("PEDAGOGICAL MODE: SOCRATIC TUTOR. Guide the student step-by-step with intuitive analogies and conceptual questions.")
+            pedagogy_instructions.append("PEDAGOGICAL MODE: ACADEMIC TUTOR. Guide the student clearly with intuitive analogies.")
 
         if response_style == "concise":
             pedagogy_instructions.append("RESPONSE DEPTH: Concise, direct, and tightly summarized.")
@@ -247,7 +672,7 @@ class ChatService:
             pedagogy_instructions.append("STYLE: Include real-world intuitive examples.")
         if explain_terms:
             pedagogy_instructions.append("STYLE: Clearly explain any difficult academic terminology.")
-        if ask_followups:
+        if ask_followups and mode_clean in ["feynman", "socratic"]:
             pedagogy_instructions.append("STYLE: Conclude with a thought-provoking follow-up question to verify comprehension.")
         if learning_goal:
             pedagogy_instructions.append(f"STUDENT LEARNING GOAL: {learning_goal}")
@@ -491,9 +916,14 @@ class ChatService:
         sources: List[Dict[str, Any]],
         document_ids: List[int],
         mode: str,
-        context_scope: str = "GLOBAL"
-    ) -> Dict[str, Any]:
-        """Infers structured action handoff based on user intent, pedagogy mode, and content"""
+        context_scope: str = "GLOBAL",
+        intent: str = "EXPLANATION"
+    ) -> Optional[Dict[str, Any]]:
+        """Infers structured action handoff only when contextually appropriate"""
+        # Never emit action cards for casual greetings, ambiguity, or very short non-study text
+        if intent in ["CASUAL", "AMBIGUOUS", "library_meta"] or len(response_text.strip()) < 80:
+            return None
+
         msg_lower = message.lower()
         topic = message.strip().strip("?.!")[:60]
         summary_excerpt = response_text[:180].replace("\n", " ").strip() + "..." if response_text else ""
@@ -515,12 +945,15 @@ class ChatService:
             tool = "summary"
             title = f"Study Notes: {topic}"
         else:
-            if mode == "surgical":
-                tool = "quiz"
-                title = f"Verify Knowledge: {topic}"
+            if intent in ["SIMPLE_FACTUAL", "EXPLANATION", "DEEP_EXPLANATION", "DOCUMENT_QUESTION", "STUDY_COACHING", "EXAM_PREPARATION"]:
+                if mode == "surgical":
+                    tool = "quiz"
+                    title = f"Verify Knowledge: {topic}"
+                else:
+                    tool = "flashcards"
+                    title = f"Review Flashcards: {topic}"
             else:
-                tool = "flashcards"
-                title = f"Review Flashcards: {topic}"
+                return None
 
         return {
             "tool": tool,
@@ -555,10 +988,13 @@ class ChatService:
     ) -> AsyncGenerator[str, None]:
         """
         Unified Real-Time Server-Sent Events (SSE) Streaming Pipeline across all Context Scopes:
-        - GLOBAL: General Tutor & Library Assistant
-        - LIBRARY: Knowledge Librarian & Metadata Navigator
-        - DOCUMENT: Deep Document Copilot with Citations & Profiling
-        - ROOM: Collaborative Study Room Facilitator
+        Decoupled stages:
+        1. Reference Resolution
+        2. Intent Classification
+        3. Fast-Path Handling (Casual, Ambiguous, Progress)
+        4. Multimodal Context & Figure Extraction
+        5. Modular Prompt Assembly
+        6. Token Streaming with Typed SSE & Monotonic Event IDs
         """
         start_time = time.time()
         event_id = 1
@@ -571,69 +1007,255 @@ class ChatService:
             event_id += 1
             return frame
 
-        # 1. Resolve Intent
-        intent = self._detect_intent(
+        # 1. Resolve Document References
+        ref_resolution = self._resolve_document_references(
             message=message,
-            context_scope=context_scope,
-            document_ids=document_ids,
-            active_document_id=active_document_id,
-            selected_text=selected_text
-        )
-
-        status_msg = "Consulting Shiro Tutor..."
-        if intent == "library_meta":
-            status_msg = "Scanning your library inventory..."
-        elif intent == "study_progress":
-            status_msg = "Reviewing your study progress & streak..."
-        elif intent == "doc_profiling":
-            status_msg = "Analyzing document structure & study time..."
-        elif intent in ["doc_rag", "cross_doc_rag"]:
-            status_msg = "Searching verified document passages..."
-        elif intent == "text_selection":
-            status_msg = "Analyzing highlighted excerpt..."
-        elif context_scope == "ROOM":
-            status_msg = "Connecting with room discussion & materials..."
-
-        yield _format_sse("status", {"type": "status", "step": status_msg})
-
-        # 2. Build Dynamic Context
-        retrieval_start = time.time()
-        context_data = self._build_dynamic_context(
             user_id=user_id,
-            message=message,
-            context_scope=context_scope,
             document_ids=document_ids,
             active_document_id=active_document_id,
-            room_id=room_id,
-            selected_text=selected_text,
-            intent=intent,
             db=db
         )
-        retrieval_ms = int((time.time() - retrieval_start) * 1000)
-        sources = context_data["sources"]
-        context_text = context_data["context_text"]
+        resolved_doc_ids = ref_resolution["resolved_document_ids"] or document_ids
+        is_ambiguous = ref_resolution["is_ambiguous"]
 
-        # 3. Emit Citations (if any retrieved)
+        # 2. Classify Intent
+        intent = self._classify_intent(
+            message=message,
+            context_scope=context_scope,
+            document_ids=resolved_doc_ids,
+            active_document_id=active_document_id,
+            selected_text=selected_text,
+            db=db,
+            user_id=user_id,
+            is_ambiguous_doc=is_ambiguous
+        )
+
+        # -------------------------------------------------------------
+        # FAST-PATH A: Casual Greeting & Pleasantries (Zero Tutoring)
+        # -------------------------------------------------------------
+        if intent == "CASUAL":
+            yield _format_sse("status", {"type": "status", "step": "Generating answer"})
+            msg_clean = message.lower().strip()
+            if any(w in msg_clean for w in ["thanks", "thank you", "thx"]):
+                casual_reply = "You're welcome! Let me know if you need any help with your study materials."
+            elif any(w in msg_clean for w in ["ok", "okay", "cool", "got it"]):
+                casual_reply = "Sounds good! What topic or document should we tackle next?"
+            elif any(w in msg_clean for w in ["bye", "goodbye"]):
+                casual_reply = "Goodbye! Good luck with your study session today. 👋"
+            elif any(w in msg_clean for w in ["tired", "exhausted", "sleepy", "drained", "break"]):
+                casual_reply = "Sounds like you might need a break! Feel free to take a breather, or we can keep things light. Let me know whenever you're ready to pick back up. 🌱"
+            else:
+                casual_reply = "Hi! 👋 What are you working on today?"
+
+            words = casual_reply.split(" ")
+            for idx, w in enumerate(words):
+                delta = w + (" " if idx < len(words) - 1 else "")
+                yield _format_sse("token", {"type": "token", "delta": delta})
+                await asyncio.sleep(0.01)
+
+            total_latency_ms = int((time.time() - start_time) * 1000)
+            yield _format_sse("done", {
+                "type": "done",
+                "status": "completed",
+                "metrics": {
+                    "retrieval_ms": 0,
+                    "ttft_ms": int((time.time() - start_time) * 1000),
+                    "total_latency_ms": total_latency_ms,
+                    "sources_count": 0,
+                    "context_scope": context_scope,
+                    "intent": "CASUAL",
+                    "debug": {
+                        "intent": "CASUAL",
+                        "document_context": False,
+                        "document_required": False,
+                        "pedagogy": False,
+                        "study_coaching": False,
+                        "conversation_state": "casual",
+                        "refusal_policy": "general_knowledge"
+                    }
+                }
+            })
+
+            if db:
+                try:
+                    chat_entry = ChatHistory(
+                        user_id=user_id,
+                        message=message,
+                        response=casual_reply,
+                        document_ids=[],
+                        language=language,
+                        status="completed",
+                        latency_ms=total_latency_ms
+                    )
+                    db.add(chat_entry)
+                    db.commit()
+                except Exception:
+                    db.rollback()
+            return
+
+        # -------------------------------------------------------------
+        # FAST-PATH B: Ambiguous Document Clarification (One Question)
+        # -------------------------------------------------------------
+        if intent == "AMBIGUOUS":
+            yield _format_sse("status", {"type": "status", "step": "Clarifying reference"})
+            candidates = ref_resolution.get("candidates", [])
+            cand_names = [f"**{c.filename}**" for c in candidates]
+            if cand_names:
+                clarification = f"Which document are you referring to? In your library, you have: {', '.join(cand_names)}. Please let me know which one you'd like to explore!"
+            else:
+                clarification = "Which document are you referring to? Could you mention the title or select it from your library?"
+
+            words = clarification.split(" ")
+            for idx, w in enumerate(words):
+                delta = w + (" " if idx < len(words) - 1 else "")
+                yield _format_sse("token", {"type": "token", "delta": delta})
+                await asyncio.sleep(0.01)
+
+            total_latency_ms = int((time.time() - start_time) * 1000)
+            yield _format_sse("done", {
+                "type": "done",
+                "status": "completed",
+                "metrics": {
+                    "retrieval_ms": 0,
+                    "ttft_ms": int((time.time() - start_time) * 1000),
+                    "total_latency_ms": total_latency_ms,
+                    "sources_count": 0,
+                    "context_scope": context_scope,
+                    "intent": "AMBIGUOUS"
+                }
+            })
+
+            if db:
+                try:
+                    chat_entry = ChatHistory(
+                        user_id=user_id,
+                        message=message,
+                        response=clarification,
+                        document_ids=[],
+                        language=language,
+                        status="completed",
+                        latency_ms=total_latency_ms
+                    )
+                    db.add(chat_entry)
+                    db.commit()
+                except Exception:
+                    db.rollback()
+            return
+
+        # -------------------------------------------------------------
+        # FAST-PATH C: Study Progress & Truth-Grounding (No Hallucination)
+        # -------------------------------------------------------------
+        if intent == "study_progress":
+            yield _format_sse("status", {"type": "status", "step": "Reviewing your study progress & streak..."})
+            recent_results = db.query(QuizResult).filter(QuizResult.user_id == user_id).all() if db else []
+            user_obj = db.query(User).filter(User.id == user_id).first() if db else None
+            streak = getattr(user_obj, "streak", 0) or 0
+            xp = getattr(user_obj, "xp", 0) or 0
+
+            if len(recent_results) == 0 and xp == 0:
+                progress_reply = (
+                    "You don't have any recorded study progress or quiz history yet. "
+                    "Once you complete a quiz or review flashcards, your mastery data will appear here. "
+                    "What topic would you like to start with today?"
+                )
+                words = progress_reply.split(" ")
+                for idx, w in enumerate(words):
+                    delta = w + (" " if idx < len(words) - 1 else "")
+                    yield _format_sse("token", {"type": "token", "delta": delta})
+                    await asyncio.sleep(0.01)
+
+                total_latency_ms = int((time.time() - start_time) * 1000)
+                yield _format_sse("done", {
+                    "type": "done",
+                    "status": "completed",
+                    "metrics": {
+                        "retrieval_ms": 0,
+                        "ttft_ms": int((time.time() - start_time) * 1000),
+                        "total_latency_ms": total_latency_ms,
+                        "sources_count": 0,
+                        "context_scope": context_scope,
+                        "intent": "study_progress"
+                    }
+                })
+                return
+
+        # -------------------------------------------------------------
+        # 3. Status Transitions (Meaningful, Never Conversational Filler)
+        # -------------------------------------------------------------
+        if intent == "FIGURE_QUESTION":
+            yield _format_sse("status", {"type": "status", "step": "Searching sources"})
+            yield _format_sse("status", {"type": "status", "step": "Analyzing figure"})
+        elif intent in ["DOCUMENT_QUESTION", "doc_rag", "cross_doc_rag"]:
+            yield _format_sse("status", {"type": "status", "step": "Searching sources"})
+            yield _format_sse("status", {"type": "status", "step": "Reading document"})
+        elif intent == "library_meta":
+            yield _format_sse("status", {"type": "status", "step": "Scanning your library inventory..."})
+        elif intent == "TASK_ACTION":
+            yield _format_sse("status", {"type": "status", "step": "Executing study task..."})
+        else:
+            yield _format_sse("status", {"type": "status", "step": "Generating answer"})
+
+        # -------------------------------------------------------------
+        # 4. Context & Source Assembly
+        # -------------------------------------------------------------
+        retrieval_start = time.time()
+        sources = []
+        context_text = ""
+
+        if intent == "FIGURE_QUESTION":
+            extracted_figures = self._extract_document_figures(
+                document_ids=resolved_doc_ids,
+                query=message,
+                user_id=user_id,
+                db=db
+            )
+            if extracted_figures:
+                fig_text_parts = []
+                for idx, f in enumerate(extracted_figures, 1):
+                    cit_id = f"cit-{idx}"
+                    sources.append({
+                        "id": cit_id,
+                        "document_id": f["document_id"],
+                        "filename": f["document_filename"],
+                        "page_number": f["page"],
+                        "content": f["surrounding_context"]
+                    })
+                    fig_text_parts.append(
+                        f"[{cit_id} Figure {f['figure_number']} from {f['document_filename']}, Page {f['page']}]:\n"
+                        f"Caption: {f['caption']}\n"
+                        f"Visual: {f['visual_description']}\n"
+                        f"Context: {f['surrounding_context']}\n"
+                    )
+                context_text = "\n".join(fig_text_parts)
+            else:
+                context_text = "NO_FIGURES_FOUND"
+        else:
+            context_data = self._build_dynamic_context(
+                user_id=user_id,
+                message=message,
+                context_scope=context_scope,
+                document_ids=resolved_doc_ids,
+                active_document_id=active_document_id,
+                room_id=room_id,
+                selected_text=selected_text,
+                intent=intent,
+                db=db
+            )
+            sources = context_data["sources"]
+            context_text = context_data["context_text"]
+
+        retrieval_ms = int((time.time() - retrieval_start) * 1000)
+
+        # -------------------------------------------------------------
+        # 5. Emit Citations (if any retrieved)
+        # -------------------------------------------------------------
         if sources:
-            yield _format_sse("status", {"type": "status", "step": f"Verified {len(sources)} citations from study materials."})
             for src in sources:
                 yield _format_sse("citation", {"type": "citation", "citation": src})
 
-        # 4. Select Matching Prompt Definition
-        if intent == "library_meta" or context_scope == "LIBRARY":
-            prompt_def = prompt_registry.get("library_navigator", "v1.0")
-            feature_tag = "library_navigator"
-        elif context_scope == "DOCUMENT" or intent in ["doc_rag", "doc_profiling", "text_selection"]:
-            prompt_def = prompt_registry.get("rag_document", "v1.0")
-            feature_tag = "rag_document"
-        elif context_scope == "ROOM":
-            prompt_def = prompt_registry.get("room_copilot", "v1.0")
-            feature_tag = "room_copilot"
-        else:
-            prompt_def = prompt_registry.get("tutor", "v1.0")
-            feature_tag = "tutor"
-
-        # 5. Build Pedagogy & Full LLM Prompt
+        # -------------------------------------------------------------
+        # 6. Prompt Assembly & Execution
+        # -------------------------------------------------------------
         pedagogy_block = self._build_pedagogy_block(
             mode=mode,
             response_style=response_style,
@@ -644,19 +1266,25 @@ class ChatService:
             current_level=current_level
         )
 
-        system_prompt = prompt_def.template.format(question=message, context=context_text)
-        full_llm_prompt = f"{system_prompt}\n\n{pedagogy_block}\n\nUSER QUESTION: {message}\n\nProvide a direct, well-formatted markdown response in {language}."
+        full_llm_prompt = self._build_modular_prompt(
+            intent=intent,
+            message=message,
+            context_text=context_text,
+            pedagogy_block=pedagogy_block,
+            language=language
+        )
+
+        feature_tag = "rag_document" if intent in ["DOCUMENT_QUESTION", "doc_rag"] else ("figure_analysis" if intent == "FIGURE_QUESTION" else ("task_execution" if intent == "TASK_ACTION" else "tutor"))
 
         accumulated_tokens = []
         ttft_ms = 0
         stream_status = "completed"
 
         try:
-            # 6. Stream LLM Tokens
             async for chunk in llm_client.stream_with_governance(
                 prompt=full_llm_prompt,
                 feature=feature_tag,
-                prompt_version=prompt_def.version,
+                prompt_version="v1.0",
                 user_id=user_id,
                 db=db
             ):
@@ -674,33 +1302,70 @@ class ChatService:
                         ttft_ms = ai_metrics.get("ttft_ms", 0)
 
         except (asyncio.CancelledError, GeneratorExit):
-            logger.info("Client cancelled active chat stream.")
             stream_status = "stopped"
         except Exception as ex:
             logger.error(f"Streaming error occurred: {ex}")
             stream_status = "failed"
             yield _format_sse("error", {"type": "error", "code": "STREAM_ERROR", "message": str(ex)})
 
-        # 7. Final Response & Action Handoff
+        # -------------------------------------------------------------
+        # 7. Action Handoff (Contextual Only!)
+        # -------------------------------------------------------------
         final_response = "".join(accumulated_tokens).strip()
-        if not final_response and stream_status == "failed":
-            final_response = "I encountered an issue generating a response. Please try asking again."
-
         total_latency_ms = int((time.time() - start_time) * 1000)
 
-        effective_ids = [active_document_id] if active_document_id else document_ids
         if stream_status == "completed" and final_response:
             action_handoff = self._infer_study_action(
                 message=message,
                 response_text=final_response,
                 sources=sources,
-                document_ids=effective_ids,
+                document_ids=resolved_doc_ids,
                 mode=mode,
-                context_scope=context_scope
+                context_scope=context_scope,
+                intent=intent
             )
-            yield _format_sse("action", {"type": "action", "handoff": action_handoff})
+            if action_handoff:
+                yield _format_sse("action", {"type": "action", "handoff": action_handoff})
 
-        # 8. Emit Done Event
+        # -------------------------------------------------------------
+        # 8. Emit Done Event with Transparent Routing Debug Metadata
+        # -------------------------------------------------------------
+        # Determine refusal policy & conversation state
+        if intent in ["DOCUMENT_QUESTION", "doc_rag", "cross_doc_rag"]:
+            refusal_policy = "document_refusal" if sources else "document_missing"
+        elif intent in ["study_progress", "zero_history"]:
+            refusal_policy = "zero_fabrication"
+        else:
+            refusal_policy = "general_knowledge"
+
+        if intent in ["STUDY_COACHING", "EXAM_PREPARATION"]:
+            conversation_state = "exam_coaching" if "gate" in message.lower() or intent == "EXAM_PREPARATION" else "study_coaching"
+        elif mode in ["feynman", "socratic"]:
+            conversation_state = mode
+        else:
+            conversation_state = "normal"
+
+        debug_metadata = {
+            "intent": intent,
+            "document_context": bool(sources),
+            "document_required": intent in ["DOCUMENT_QUESTION", "doc_rag", "cross_doc_rag"],
+            "pedagogy": bool(mode in ["feynman", "socratic", "surgical", "exam"]),
+            "study_coaching": intent in ["STUDY_COACHING", "EXAM_PREPARATION"],
+            "conversation_state": conversation_state,
+            "refusal_policy": refusal_policy
+        }
+        logger.info(
+            f"\n--- CHAT ROUTING DEBUG ---\n"
+            f"INTENT: {debug_metadata['intent']}\n"
+            f"DOCUMENT_CONTEXT: {debug_metadata['document_context']}\n"
+            f"DOCUMENT_REQUIRED: {debug_metadata['document_required']}\n"
+            f"PEDAGOGY: {debug_metadata['pedagogy']}\n"
+            f"STUDY_COACHING: {debug_metadata['study_coaching']}\n"
+            f"CONVERSATION_STATE: {debug_metadata['conversation_state']}\n"
+            f"REFUSAL_POLICY: {debug_metadata['refusal_policy']}\n"
+            f"--------------------------"
+        )
+
         yield _format_sse("done", {
             "type": "done",
             "status": stream_status,
@@ -710,18 +1375,21 @@ class ChatService:
                 "total_latency_ms": total_latency_ms,
                 "sources_count": len(sources),
                 "context_scope": context_scope,
-                "intent": intent
+                "intent": intent,
+                "debug": debug_metadata
             }
         })
 
+        # -------------------------------------------------------------
         # 9. Persist History
+        # -------------------------------------------------------------
         if db:
             try:
                 chat_entry = ChatHistory(
                     user_id=user_id,
                     message=message,
                     response=final_response or "(stream aborted)",
-                    document_ids=effective_ids,
+                    document_ids=resolved_doc_ids,
                     language=language,
                     status=stream_status,
                     latency_ms=total_latency_ms
@@ -752,19 +1420,31 @@ class ChatService:
         current_level: Optional[str] = None
     ) -> Dict[str, Any]:
         """Synchronous wrapper for unified chat engine"""
-        intent = self._detect_intent(
+        ref_resolution = self._resolve_document_references(
             message=message,
-            context_scope=context_scope,
+            user_id=user_id,
             document_ids=document_ids,
             active_document_id=active_document_id,
-            selected_text=selected_text
+            db=db
+        )
+        resolved_doc_ids = ref_resolution["resolved_document_ids"] or document_ids
+
+        intent = self._classify_intent(
+            message=message,
+            context_scope=context_scope,
+            document_ids=resolved_doc_ids,
+            active_document_id=active_document_id,
+            selected_text=selected_text,
+            db=db,
+            user_id=user_id,
+            is_ambiguous_doc=ref_resolution["is_ambiguous"]
         )
 
         context_data = self._build_dynamic_context(
             user_id=user_id,
             message=message,
             context_scope=context_scope,
-            document_ids=document_ids,
+            document_ids=resolved_doc_ids,
             active_document_id=active_document_id,
             room_id=room_id,
             selected_text=selected_text,
@@ -773,19 +1453,6 @@ class ChatService:
         )
         sources = context_data["sources"]
         context_text = context_data["context_text"]
-
-        if intent == "library_meta" or context_scope == "LIBRARY":
-            prompt_def = prompt_registry.get("library_navigator", "v1.0")
-            feature_tag = "library_navigator"
-        elif context_scope == "DOCUMENT" or intent in ["doc_rag", "doc_profiling", "text_selection"]:
-            prompt_def = prompt_registry.get("rag_document", "v1.0")
-            feature_tag = "rag_document"
-        elif context_scope == "ROOM":
-            prompt_def = prompt_registry.get("room_copilot", "v1.0")
-            feature_tag = "room_copilot"
-        else:
-            prompt_def = prompt_registry.get("tutor", "v1.0")
-            feature_tag = "tutor"
 
         pedagogy_block = self._build_pedagogy_block(
             mode=mode,
@@ -797,28 +1464,35 @@ class ChatService:
             current_level=current_level
         )
 
-        system_prompt = prompt_def.template.format(question=message, context=context_text)
-        full_llm_prompt = f"{system_prompt}\n\n{pedagogy_block}\n\nUSER QUESTION: {message}\n\nProvide a direct, well-formatted markdown response in {language}."
+        full_llm_prompt = self._build_modular_prompt(
+            intent=intent,
+            message=message,
+            context_text=context_text,
+            pedagogy_block=pedagogy_block,
+            language=language
+        )
+
+        feature_tag = "rag_document" if intent in ["DOCUMENT_QUESTION", "doc_rag"] else "tutor"
 
         start_time = time.time()
         ai_result = await llm_client.execute_with_governance(
             prompt=full_llm_prompt,
             feature=feature_tag,
-            prompt_version=prompt_def.version,
+            prompt_version="v1.0",
             user_id=user_id,
             db=db
         )
         total_latency_ms = int((time.time() - start_time) * 1000)
         final_response = ai_result.content
 
-        effective_ids = [active_document_id] if active_document_id else document_ids
         action_handoff = self._infer_study_action(
             message=message,
             response_text=final_response,
             sources=sources,
-            document_ids=effective_ids,
+            document_ids=resolved_doc_ids,
             mode=mode,
-            context_scope=context_scope
+            context_scope=context_scope,
+            intent=intent
         )
 
         if db:
@@ -827,7 +1501,7 @@ class ChatService:
                     user_id=user_id,
                     message=message,
                     response=final_response,
-                    document_ids=effective_ids,
+                    document_ids=resolved_doc_ids,
                     language=language,
                     status="completed",
                     latency_ms=total_latency_ms
@@ -841,7 +1515,7 @@ class ChatService:
             "response": final_response,
             "sources": sources,
             "citations": sources,
-            "suggested_action": action_handoff.get("tool"),
+            "suggested_action": action_handoff.get("tool") if action_handoff else None,
             "action_handoff": action_handoff,
             "language": language,
             "context_scope": context_scope
