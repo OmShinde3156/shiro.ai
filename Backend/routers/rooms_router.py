@@ -337,24 +337,41 @@ async def summarize_room_to_notes(
 ):
     """Summarizes room chat messages and active document into structured revision notes"""
     room = db.query(StudyRoom).filter(StudyRoom.id == room_id).first()
+    doc = None
     if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
+        if room_id.isdigit():
+            doc = db.query(Document).filter(Document.id == int(room_id)).first()
+        if not doc:
+            # Fallback to user's most recent document if available
+            doc = db.query(Document).filter(Document.user_id == current_user.id).order_by(Document.id.desc()).first()
 
-    messages = db.query(RoomMessage).filter(RoomMessage.room_id == room_id).order_by(RoomMessage.created_at.desc()).limit(20).all()
-    chat_transcript = "\n".join([f"- {('Shiro' if m.is_ai else (m.user.name if m.user else 'Student'))}: {m.content}" for m in reversed(messages)])
+    if not room and not doc:
+        raise HTTPException(status_code=404, detail="Study room or document not found")
+
+    room_name = room.name if room else doc.filename
+    room_subject = room.subject if room else (doc.subject or "General")
+
+    messages = []
+    if room:
+        messages = db.query(RoomMessage).filter(RoomMessage.room_id == room_id).order_by(RoomMessage.created_at.desc()).limit(20).all()
+    chat_transcript = "\n".join([f"- {('Shiro' if m.is_ai else (m.user.name if m.user else 'Student'))}: {m.content}" for m in reversed(messages)]) if messages else "- Focus study session on active reading and revision."
 
     doc_text = ""
-    if room.document_id:
-        doc = db.query(Document).filter(Document.id == room.document_id).first()
-        if doc and doc.text_content:
-            doc_text = f"\nACTIVE DOCUMENT EXCERPT:\n{doc.text_content[:2500]}\n"
+    target_doc = None
+    if room and room.document_id:
+        target_doc = db.query(Document).filter(Document.id == room.document_id).first()
+    elif doc:
+        target_doc = doc
+
+    if target_doc and target_doc.text_content:
+        doc_text = f"\nACTIVE DOCUMENT EXCERPT:\n{target_doc.text_content[:2500]}\n"
 
     summary_prompt = f"""You are Shiro, the collaborative study room AI.
 Generate clean, highly structured Markdown revision notes summarizing the key topics studied in this session.
 
-ROOM TOPIC: {room.name} ({room.subject})
+ROOM / DOCUMENT TOPIC: {room_name} ({room_subject})
 {doc_text}
-RECENT ROOM CHAT & DISCUSSIONS:
+RECENT SESSION CHAT & DISCUSSIONS:
 {chat_transcript}
 
 FORMAT RULES:
@@ -373,7 +390,7 @@ FORMAT RULES:
         )
         notes_content = res.content.strip()
     except Exception as e:
-        notes_content = f"## Study Notes: {room.name}\n\n- Reviewed session topics.\n- Continue active recall drills on key definitions."
+        notes_content = f"## Study Notes: {room_name}\n\n- Reviewed session topics.\n- Continue active recall drills on key definitions."
 
     return {
         "room_id": room_id,
