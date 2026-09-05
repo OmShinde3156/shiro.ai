@@ -9,7 +9,8 @@ export const ThemeProvider = ({ children }) => {
   });
 
   const [accent, setAccent] = useState(() => {
-    return localStorage.getItem('shiro_accent_color') || 'sage';
+    const saved = localStorage.getItem('shiro_accent_color');
+    return (saved && saved !== 'indigo' && saved !== 'purple') ? saved : 'sage';
   });
 
   const [density, setDensity] = useState(() => {
