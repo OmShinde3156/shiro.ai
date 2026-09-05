@@ -24,7 +24,10 @@ import {
   RotateCcw,
   Compass,
   CheckCircle2,
-  Calendar
+  Calendar,
+  Trophy,
+  Zap,
+  Info
 } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import { Context } from "../../../context/Context";
@@ -43,6 +46,9 @@ export const ProgressReport = () => {
   const [loading, setLoading] = useState(true);
   const [showWhy, setShowWhy] = useState(false);
   const [selectedTimeframe, setSelectedTimeframe] = useState("month"); // "week" | "month" | "quarter" | "year"
+  const [selectedYear, setSelectedYear] = useState("2026"); // "2026" | "2025" | "pastYear"
+  const [hoveredDay, setHoveredDay] = useState(null);
+  const [filterIntensity, setFilterIntensity] = useState(null); // null | 0 | 1 | 2 | 3 | 4
 
   useEffect(() => {
     fetchStudentInsights();
@@ -73,7 +79,7 @@ export const ProgressReport = () => {
               cards_due_today: 8,
               total_study_time_minutes: 860,
               study_time_label: "Estimated Study Time",
-              study_streak_days: legacy.study_streak || 7,
+              study_streak_days: legacy.study_streak ?? 1,
               xp: legacy.xp || 240,
               level: legacy.level || 2
             },
@@ -99,10 +105,10 @@ export const ProgressReport = () => {
               }
             },
             topic_matrix: [
-              { subject: "Operating Systems", subtopic: "CPU Scheduling", mastery: 54, change: -4, status: "Needs Review", color_variant: "rose", failed_count: 3, cards_due: 8 },
-              { subject: "Theory of Computation", subtopic: "Core Automata", mastery: 60, change: -8, status: "Needs Review", color_variant: "rose", failed_count: 2, cards_due: 4 },
-              { subject: "Computer Networks", subtopic: "Transport Layer", mastery: 72, change: 14, status: "Developing", color_variant: "gold", failed_count: 1, cards_due: 2 },
-              { subject: "DBMS", subtopic: "Indexing & SQL", mastery: 91, change: 8, status: "Mastered", color_variant: "sage", failed_count: 0, cards_due: 0 }
+              { subject: "Operating Systems", subtopic: "CPU Scheduling", mastery: 54, change: -4, status: "Needs Review", color_variant: "review", failed_count: 3, cards_due: 8 },
+              { subject: "Theory of Computation", subtopic: "Core Automata", mastery: 60, change: -8, status: "Needs Review", color_variant: "review", failed_count: 2, cards_due: 4 },
+              { subject: "Computer Networks", subtopic: "Transport Layer", mastery: 72, change: 14, status: "Developing", color_variant: "developing", failed_count: 1, cards_due: 2 },
+              { subject: "DBMS", subtopic: "Indexing & SQL", mastery: 91, change: 8, status: "Mastered", color_variant: "mastered", failed_count: 0, cards_due: 0 }
             ],
             performance_trend: {
               timeframe: "30D",
@@ -234,7 +240,7 @@ export const ProgressReport = () => {
   if (loading) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-4">
-        <div className="w-10 h-10 border-3 border-[var(--border)] border-t-[#89A88D] rounded-full animate-spin" />
+        <div className="w-10 h-10 border-3 border-[var(--border)] border-t-[var(--primary)] rounded-full animate-spin" />
         <p className="text-sm font-mono text-[var(--text-muted)] animate-pulse">
           Computing learning health and recovery pathways...
         </p>
@@ -264,6 +270,96 @@ export const ProgressReport = () => {
   const peakScore = activePoints.length > 0 ? Math.max(...activePoints.map(p => p.score)) : 85;
   const latestScore = activePoints[activePoints.length - 1]?.score || 82;
   const netGain = latestScore - baselineScore;
+
+  const heatmapData = insights?.activity_heatmap || {
+    current_streak: health.study_streak_days || 7,
+    longest_streak: 18,
+    total_active_days: 64,
+    total_activities: 328,
+    daily_counts: {},
+    available_years: [2026, 2025]
+  };
+
+  const getHeatmapGrid = (yearOpt, counts = {}) => {
+    const today = new Date();
+    let start, end;
+    if (yearOpt === '2025') {
+      start = new Date(2025, 0, 1);
+      end = new Date(2025, 11, 31);
+    } else if (yearOpt === '2026') {
+      start = new Date(2026, 0, 1);
+      end = new Date(2026, 11, 31);
+    } else {
+      end = new Date(today);
+      start = new Date(today);
+      start.setDate(today.getDate() - 364);
+    }
+
+    const alignedStart = new Date(start);
+    alignedStart.setDate(alignedStart.getDate() - alignedStart.getDay());
+
+    const weeks = [];
+    let cur = new Date(alignedStart);
+    const monthMarkers = [];
+    let prevMonth = -1;
+    let yearTotalActs = 0;
+    let yearActiveDays = 0;
+
+    for (let w = 0; w < 53; w++) {
+      const curWeek = [];
+      for (let d = 0; d < 7; d++) {
+        const y = cur.getFullYear();
+        const m = String(cur.getMonth() + 1).padStart(2, '0');
+        const dayNum = String(cur.getDate()).padStart(2, '0');
+        const dateStr = `${y}-${m}-${dayNum}`;
+        const count = counts[dateStr] || 0;
+
+        let intensity = 0;
+        if (count > 0) {
+          if (count <= 2) intensity = 1;
+          else if (count <= 4) intensity = 2;
+          else if (count <= 7) intensity = 3;
+          else intensity = 4;
+        }
+
+        const isFuture = cur > today;
+        const inYear = (yearOpt === 'pastYear') 
+          ? (cur >= start && cur <= end) 
+          : (cur.getFullYear().toString() === yearOpt);
+
+        if (inYear && !isFuture && count > 0) {
+          yearTotalActs += count;
+          yearActiveDays += 1;
+        }
+
+        const curMonth = cur.getMonth();
+        if (d === 0 && curMonth !== prevMonth && w < 52) {
+          monthMarkers.push({
+            colIndex: w,
+            label: cur.toLocaleString('en-US', { month: 'short' })
+          });
+          prevMonth = curMonth;
+        }
+
+        curWeek.push({
+          dateStr,
+          count: isFuture ? 0 : count,
+          intensity: isFuture ? 0 : intensity,
+          isFuture,
+          isToday: cur.toDateString() === today.toDateString(),
+          dayName: cur.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
+          inYear
+        });
+
+        cur.setDate(cur.getDate() + 1);
+      }
+      weeks.push(curWeek);
+    }
+
+    return { weeks, monthMarkers, yearTotalActs, yearActiveDays };
+  };
+
+  const { weeks: heatmapWeeks, monthMarkers, yearTotalActs, yearActiveDays } = getHeatmapGrid(selectedYear, heatmapData.daily_counts);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-8 text-[var(--text-main)] font-body">
@@ -324,7 +420,7 @@ export const ProgressReport = () => {
               </span>
               {health.mastery_change_pct !== undefined && (
                 <span className={`inline-flex items-center text-xs font-semibold ${
-                  health.mastery_change_pct >= 0 ? "text-[#3F6048] dark:text-[#A8C5AC]" : "text-[#C96B62]"
+                  health.mastery_change_pct >= 0 ? "text-[#16A34A] dark:text-[#4ADE80]" : "text-[#DC2626] dark:text-[#F87171]"
                 }`}>
                   {health.mastery_change_pct >= 0 ? "+" : ""}{health.mastery_change_pct}%
                 </span>
@@ -360,7 +456,7 @@ export const ProgressReport = () => {
             <span className="text-xs font-medium text-[var(--text-muted)]">Study Streak</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl sm:text-3xl font-extrabold font-body text-[var(--text-main)] flex items-center gap-1.5">
-                <Flame className="w-5 h-5 text-[#D6A84F] fill-current" />
+                <Flame className="w-5 h-5 text-[#F59E0B] fill-current" />
                 <span>{health.study_streak_days}d</span>
               </span>
             </div>
@@ -372,8 +468,8 @@ export const ProgressReport = () => {
         </div>
 
         {/* Dynamic Prominent Takeaway Sentence */}
-        <div className="p-4 rounded-2xl bg-[#89A88D]/10 border border-[#89A88D]/25 flex items-start sm:items-center gap-3">
-          <Sparkles className="w-4 h-4 text-[#89A88D] shrink-0 mt-0.5 sm:mt-0" />
+        <div className="p-4 rounded-2xl bg-[var(--primary-subtle)] border border-[var(--primary)]/20 flex items-start sm:items-center gap-3">
+          <Sparkles className="w-4 h-4 text-[var(--primary)] shrink-0 mt-0.5 sm:mt-0" />
           <p className="text-sm font-semibold text-[var(--text-main)] leading-relaxed">
             {insights?.headline_takeaway || "You're improving steadily. Your biggest opportunity is Operating Systems."}
           </p>
@@ -389,15 +485,15 @@ export const ProgressReport = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="lg:col-span-7 rounded-3xl border-2 border-[#C96B62]/40 bg-[#C96B62]/5 p-6 md:p-7 flex flex-col justify-between relative overflow-hidden shadow-sm"
+            className="lg:col-span-7 rounded-3xl border-2 border-[#DC2626]/30 bg-[#DC2626]/5 dark:border-[#F87171]/30 dark:bg-[#F87171]/10 p-6 md:p-7 flex flex-col justify-between relative overflow-hidden shadow-sm"
           >
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Badge variant="rose" size="sm">
+                  <Badge variant="weak" size="sm">
                     What to Study Next
                   </Badge>
-                  <span className="text-[11px] font-mono uppercase tracking-wider text-[#C96B62] font-semibold">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-[#DC2626] dark:text-[#F87171] font-semibold">
                     Priority Gap
                   </span>
                 </div>
@@ -418,7 +514,7 @@ export const ProgressReport = () => {
 
                 {/* Context metrics */}
                 <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--text-muted)] mt-2">
-                  <span className="font-semibold text-[#C96B62]">
+                  <span className="font-semibold text-[#DC2626] dark:text-[#F87171]">
                     {recommended.mastery_score}% mastery
                   </span>
                   <span>·</span>
@@ -439,7 +535,7 @@ export const ProgressReport = () => {
                       key={idx}
                       className="flex items-start gap-2.5 p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-xs text-[var(--text-main)] shadow-2xs"
                     >
-                      <span className="w-5 h-5 rounded-full bg-[#89A88D]/20 text-[#3F6048] dark:text-[#A8C5AC] flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">
+                      <span className="w-5 h-5 rounded-full bg-[var(--primary-subtle)] text-[var(--primary)] flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">
                         {idx + 1}
                       </span>
                       <span className="leading-snug">{step}</span>
@@ -523,10 +619,10 @@ export const ProgressReport = () => {
 
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
                 <span className="flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-[#C96B62]" />
+                  <Clock className="w-4 h-4 text-[#DC2626] dark:text-[#F87171]" />
                   <span>Cards Due Today:</span>
                 </span>
-                <strong className="font-mono text-[#C96B62]">{health.cards_due_today} cards</strong>
+                <strong className="font-mono text-[#DC2626] dark:text-[#F87171]">{health.cards_due_today} cards</strong>
               </div>
             </div>
           </div>
@@ -556,7 +652,7 @@ export const ProgressReport = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
           <div>
             <h3 className="text-base sm:text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-[#89A88D]" />
+              <BookOpen className="w-4 h-4 text-[var(--primary)]" />
               <span>Subject Mastery</span>
             </h3>
             <p className="text-xs text-[var(--text-muted)] mt-0.5">
@@ -574,11 +670,11 @@ export const ProgressReport = () => {
             <div
               key={idx}
               onClick={() => handleStudySubject(item)}
-              className="group p-3.5 sm:p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] hover:border-[#89A88D]/50 hover:shadow-xs transition-all cursor-pointer space-y-2.5"
+              className="group p-3.5 sm:p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] hover:border-[var(--primary)]/40 hover:shadow-xs transition-all cursor-pointer space-y-2.5"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-sm font-bold text-[var(--text-main)] group-hover:text-[#89A88D] transition-colors truncate">
+                  <span className="text-sm font-bold text-[var(--text-main)] group-hover:text-[var(--primary)] transition-colors truncate">
                     {item.subject}
                   </span>
                   {item.subtopic && (
@@ -591,7 +687,7 @@ export const ProgressReport = () => {
                 <div className="flex items-center gap-3 shrink-0">
                   {item.change !== 0 && (
                     <span className={`inline-flex items-center gap-0.5 text-xs font-semibold ${
-                      item.change > 0 ? "text-[#3F6048] dark:text-[#A8C5AC]" : "text-[#C96B62]"
+                      item.change > 0 ? "text-[#16A34A] dark:text-[#4ADE80]" : "text-[#DC2626] dark:text-[#F87171]"
                     }`}>
                       {item.change > 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
                       {Math.abs(item.change)}%
@@ -599,7 +695,7 @@ export const ProgressReport = () => {
                   )}
 
                   <Badge
-                    variant={item.color_variant || (item.mastery >= 80 ? "sage" : item.mastery >= 65 ? "gold" : "rose")}
+                    variant={item.color_variant || (item.mastery >= 80 ? "mastered" : item.mastery >= 65 ? "developing" : item.mastery >= 50 ? "review" : "weak")}
                     size="sm"
                   >
                     {item.status}
@@ -615,7 +711,7 @@ export const ProgressReport = () => {
               <div className="w-full h-2 rounded-full bg-[var(--border)] overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-700 ease-out ${
-                    item.mastery >= 80 ? "bg-[#89A88D]" : item.mastery >= 65 ? "bg-[#D6A84F]" : "bg-[#C96B62]"
+                    item.mastery >= 80 ? "bg-[#16A34A] dark:bg-[#4ADE80]" : item.mastery >= 65 ? "bg-[#D97706] dark:bg-[#FBBF24]" : item.mastery >= 50 ? "bg-[#EA580C] dark:bg-[#FB923C]" : "bg-[#DC2626] dark:bg-[#F87171]"
                   }`}
                   style={{ width: `${Math.max(6, item.mastery)}%` }}
                 />
@@ -635,7 +731,7 @@ export const ProgressReport = () => {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-[var(--border)] pb-4">
           <div>
             <h3 className="text-base sm:text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-[#89A88D]" />
+              <TrendingUp className="w-4 h-4 text-[var(--primary)]" />
               <span>
                 Performance · {
                   selectedTimeframe === "week" ? "Last 7 Days" :
@@ -677,13 +773,13 @@ export const ProgressReport = () => {
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-xs shadow-2xs">
                 <span className="text-[var(--text-muted)]">Net:</span>
-                <span className={`font-mono font-bold ${netGain >= 0 ? "text-[#3F6048] dark:text-[#A8C5AC]" : "text-[#C96B62]"}`}>
+                <span className={`font-mono font-bold ${netGain >= 0 ? "text-[#16A34A] dark:text-[#4ADE80]" : "text-[#DC2626] dark:text-[#F87171]"}`}>
                   {netGain >= 0 ? "+" : ""}{netGain}%
                 </span>
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-xs shadow-2xs">
                 <span className="text-[var(--text-muted)]">Peak:</span>
-                <span className="font-mono font-bold text-[#89A88D]">{peakScore}%</span>
+                <span className="font-mono font-bold text-[var(--primary)]">{peakScore}%</span>
               </div>
             </div>
           </div>
@@ -699,7 +795,7 @@ export const ProgressReport = () => {
               key={idx}
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-[11px] font-medium text-[var(--text-secondary)] shrink-0 shadow-2xs"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-[#89A88D]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
               <strong className="font-mono text-[var(--text-main)]">{p.score}%</strong>
               <span className="text-[var(--text-muted)]">·</span>
               <span>{p.milestone}</span>
@@ -714,8 +810,8 @@ export const ProgressReport = () => {
             <AreaChart data={activePoints} margin={{ top: 15, right: 15, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="performanceGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#89A88D" stopOpacity={0.35} />
-                  <stop offset="95%" stopColor="#89A88D" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
 
@@ -745,15 +841,15 @@ export const ProgressReport = () => {
               {/* 80% Mastery Benchmark Line */}
               <ReferenceLine
                 y={80}
-                stroke="#89A88D"
+                stroke="#16A34A"
                 strokeDasharray="4 4"
-                strokeOpacity={0.5}
+                strokeOpacity={0.6}
                 label={{
                   value: "Mastery Target (80%)",
                   position: "insideTopRight",
-                  fill: "#89A88D",
+                  fill: "#16A34A",
                   fontSize: 10,
-                  opacity: 0.8
+                  opacity: 0.9
                 }}
               />
 
@@ -765,10 +861,10 @@ export const ProgressReport = () => {
                       <div className="p-3.5 rounded-2xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] shadow-xl text-xs space-y-1.5 min-w-[170px]">
                         <div className="flex items-center justify-between border-b border-[var(--border)] pb-1.5">
                           <span className="font-bold text-[var(--text-main)]">{data.date}</span>
-                          <span className="font-mono font-bold text-[#89A88D] text-sm">{data.score}%</span>
+                          <span className="font-mono font-bold text-[var(--primary)] text-sm">{data.score}%</span>
                         </div>
                         {data.milestone ? (
-                          <div className="flex items-center gap-1.5 text-[11px] text-[#3F6048] dark:text-[#A8C5AC] font-semibold pt-0.5">
+                          <div className="flex items-center gap-1.5 text-[11px] text-[#16A34A] dark:text-[#4ADE80] font-semibold pt-0.5">
                             <span className="text-xs">🚩</span>
                             <span>{data.milestone}</span>
                           </div>
@@ -785,7 +881,7 @@ export const ProgressReport = () => {
               <Area
                 type="monotone"
                 dataKey="score"
-                stroke="#89A88D"
+                stroke="var(--primary)"
                 strokeWidth={3}
                 fill="url(#performanceGradient)"
                 dot={(props) => {
@@ -797,86 +893,310 @@ export const ProgressReport = () => {
                       cx={cx}
                       cy={cy}
                       r={isMilestone ? 5 : 3.5}
-                      fill={isMilestone ? "#3F6048" : "#89A88D"}
+                      fill={isMilestone ? "var(--primary-strong)" : "var(--primary)"}
                       stroke="var(--bg-surface)"
                       strokeWidth={2}
                     />
                   );
                 }}
-                activeDot={{ r: 7, fill: "#89A88D", stroke: "var(--bg-surface)", strokeWidth: 3 }}
+                activeDot={{ r: 7, fill: "var(--primary)", stroke: "var(--bg-surface)", strokeWidth: 3 }}
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </motion.section>
 
-      {/* 6. LOWER SPLIT: STUDY CONSISTENCY (Heatmap) + BEST STUDY WINDOW */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-        
-        {/* Study Activity Heatmap */}
-        <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] p-6 shadow-xs flex flex-col justify-between space-y-4"
-        >
+      {/* 6. FULL-WIDTH ALL-TIME STREAK & GITHUB-STYLE YEARLY ACTIVITY HEATMAP */}
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+        className="rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] p-6 sm:p-7 shadow-xs space-y-5 relative overflow-hidden"
+      >
+        {/* Subtle Ambient Radial Glow */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+
+        {/* Header & Year Selector */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border)] pb-5 relative">
           <div>
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm sm:text-base font-bold text-[var(--text-main)] flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#89A88D]" />
-                <span>Study Activity</span>
+            <div className="flex items-center gap-2.5">
+              <h3 className="text-base sm:text-lg font-bold text-[var(--text-main)] font-serif flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <span>Study Activity & Habit Consistency Matrix</span>
               </h3>
-              <span className="text-[11px] font-mono text-[var(--text-muted)]">
-                This Week
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-mono font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Telemetry
               </span>
             </div>
-            <p className="text-xs text-[var(--text-muted)] mt-0.5">
-              Daily habit consistency & session frequency
+            <p className="text-xs text-[var(--text-secondary)] mt-1">
+              52-week longitudinal heat distribution across quizzes, flashcards, mindmaps, and Shiro AI sessions
             </p>
           </div>
 
-          {/* 7 Days Blocks */}
-          <div className="grid grid-cols-7 gap-2 py-2">
-            {consistencyGrid.map((day, idx) => {
-              const bgColors = [
-                "bg-[var(--border)]",
-                "bg-[#89A88D]/25",
-                "bg-[#89A88D]/50",
-                "bg-[#89A88D]/75",
-                "bg-[#89A88D]"
-              ];
-              return (
-                <div key={idx} className="flex flex-col items-center gap-1.5">
-                  <div
-                    className={`w-full aspect-square rounded-xl ${bgColors[day.intensity || 0]} transition-all flex items-center justify-center`}
-                    title={`${day.full_day}: ${day.count} study sessions`}
-                  >
-                    {day.count > 0 && (
-                      <span className="text-[10px] font-mono font-bold text-white/90">
-                        {day.count}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[11px] font-mono text-[var(--text-muted)]">
-                    {day.day}
-                  </span>
-                </div>
-              );
-            })}
+          {/* Year Filter Switcher */}
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] self-start sm:self-auto shrink-0 shadow-2xs">
+            {[
+              { key: '2026', label: '2026' },
+              { key: '2025', label: '2025' },
+              { key: 'pastYear', label: 'Last 12 Months' }
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setSelectedYear(tab.key);
+                  setFilterIntensity(null);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  selectedYear === tab.key
+                    ? "bg-[var(--bg-surface)] text-[var(--text-main)] shadow-xs font-bold border border-[var(--border)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
+        </div>
 
-          <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] pt-1 border-t border-[var(--border)]">
-            <span>{consistencyGrid.reduce((acc, d) => acc + (d.count || 0), 0)} sessions completed</span>
-            <div className="flex items-center gap-1 font-mono text-[10px]">
-              <span>Less</span>
-              <div className="w-2.5 h-2.5 rounded bg-[var(--border)]" />
-              <div className="w-2.5 h-2.5 rounded bg-[#89A88D]/50" />
-              <div className="w-2.5 h-2.5 rounded bg-[#89A88D]" />
-              <span>More</span>
+        {/* 4 Habit KPI Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 relative">
+          
+          {/* Card 1: Current Streak */}
+          <div className="p-3.5 rounded-2xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] flex flex-col justify-between shadow-2xs hover:-translate-y-0.5 transition-all">
+            <div className="flex items-center justify-between text-xs text-[var(--text-muted)] font-medium">
+              <span>Current Streak</span>
+              <div className="w-7 h-7 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl sm:text-3xl font-black font-body text-[var(--text-main)]">
+                  {heatmapData.current_streak}d
+                </span>
+                <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">active</span>
+              </div>
+              <span className="text-[10px] text-[var(--text-muted)] font-mono block mt-0.5">Consecutive daily study</span>
             </div>
           </div>
-        </motion.section>
 
+          {/* Card 2: Longest Streak (All-Time) */}
+          <div className="p-3.5 rounded-2xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] flex flex-col justify-between shadow-2xs hover:-translate-y-0.5 transition-all">
+            <div className="flex items-center justify-between text-xs text-[var(--text-muted)] font-medium">
+              <span>Longest Streak</span>
+              <div className="w-7 h-7 rounded-xl bg-yellow-500/10 flex items-center justify-center">
+                <Trophy className="w-4 h-4 text-amber-500" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl sm:text-3xl font-black font-body text-[var(--text-main)]">
+                  {heatmapData.longest_streak}d
+                </span>
+                <span className="text-[11px] font-semibold text-yellow-600 dark:text-yellow-400 font-mono">record</span>
+              </div>
+              <span className="text-[10px] text-[var(--text-muted)] font-mono block mt-0.5">All-time personal record</span>
+            </div>
+          </div>
+
+          {/* Card 3: Active Study Days */}
+          <div className="p-3.5 rounded-2xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] flex flex-col justify-between shadow-2xs hover:-translate-y-0.5 transition-all">
+            <div className="flex items-center justify-between text-xs text-[var(--text-muted)] font-medium">
+              <span>Active Study Days</span>
+              <div className="w-7 h-7 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl sm:text-3xl font-black font-body text-[var(--text-main)]">
+                  {yearActiveDays}
+                </span>
+                <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">days</span>
+              </div>
+              <span className="text-[10px] text-[var(--text-muted)] font-mono block mt-0.5">In {selectedYear === 'pastYear' ? 'Last 12 Months' : selectedYear}</span>
+            </div>
+          </div>
+
+          {/* Card 4: Total Study Sessions */}
+          <div className="p-3.5 rounded-2xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] flex flex-col justify-between shadow-2xs hover:-translate-y-0.5 transition-all">
+            <div className="flex items-center justify-between text-xs text-[var(--text-muted)] font-medium">
+              <span>Total Activities</span>
+              <div className="w-7 h-7 rounded-xl bg-[var(--primary-subtle)] flex items-center justify-center">
+                <Zap className="w-4 h-4 text-[var(--primary)]" />
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-2xl sm:text-3xl font-black font-body text-[var(--text-main)]">
+                  {yearTotalActs}
+                </span>
+                <span className="text-[11px] font-semibold text-[var(--primary)]">drills</span>
+              </div>
+              <span className="text-[10px] text-[var(--text-muted)] font-mono block mt-0.5">Quizzes, cards & chats</span>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Live Interactive Telemetry Inspector Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-xs transition-all duration-200 shadow-2xs">
+          {hoveredDay ? (
+            <div className="flex items-center gap-2.5">
+              <span className={`w-3 h-3 rounded-full shrink-0 ${
+                hoveredDay.count > 0 
+                  ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" 
+                  : "bg-zinc-400"
+              }`} />
+              <span className="font-bold text-[var(--text-main)] font-mono">{hoveredDay.dayName}</span>
+              <span className="text-[var(--text-secondary)]">
+                — {hoveredDay.count > 0 ? (
+                  <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">{hoveredDay.count} study {hoveredDay.count === 1 ? 'activity' : 'activities'} completed</strong>
+                ) : (
+                  <span className="text-[var(--text-muted)]">No study activities logged</span>
+                )}
+              </span>
+              {hoveredDay.count >= 6 && (
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  High Intensity Drill 🔥
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-[var(--text-muted)] font-mono text-[11px]">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>Hover any cell to inspect day volume, drills, and habit milestones</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 font-mono text-[11px] text-[var(--text-muted)] shrink-0 self-end sm:self-auto">
+            {filterIntensity !== null && (
+              <button
+                onClick={() => setFilterIntensity(null)}
+                className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[var(--primary)] text-white hover:opacity-90 transition-all cursor-pointer"
+              >
+                Clear Filter ✕
+              </button>
+            )}
+            <span>
+              Consistency: <strong className="text-[var(--text-main)] font-semibold">{yearActiveDays} active days ({Math.min(100, Math.round((yearActiveDays / (selectedYear === '2026' ? 247 : 365)) * 100))}%)</strong>
+            </span>
+          </div>
+        </div>
+
+        {/* 52-Week GitHub Heatmap Grid Container (Horizontally Scrollable) */}
+        <div className="heatmap-scroll-container overflow-x-auto pb-3 pt-1">
+          <div className="min-w-[840px] space-y-2 select-none">
+            
+            {/* Pixel-Aligned Month Headers Row (Columns match cells exactly) */}
+            <div className="flex items-center gap-[2.5px] pl-[26px]">
+              {heatmapWeeks.map((_, wIdx) => {
+                const marker = monthMarkers.find(m => m.colIndex === wIdx);
+                return (
+                  <div 
+                    key={wIdx} 
+                    className="w-3.5 sm:w-4 text-[10px] font-mono text-[var(--text-muted)] font-medium truncate select-none text-left"
+                  >
+                    {marker ? marker.label : ""}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Grid Container with Discrete Weekday Labels on Left */}
+            <div className="flex items-start gap-1">
+              
+              {/* Discrete Weekday Labels (Rows 0-6 matching cells exactly) */}
+              <div className="flex flex-col gap-[2.5px] w-[22px] text-[9px] font-mono text-[var(--text-muted)] select-none shrink-0 pt-0.5">
+                <div className="h-3.5 sm:h-4 flex items-center justify-end leading-none text-transparent">-</div>
+                <div className="h-3.5 sm:h-4 flex items-center justify-end leading-none font-semibold">Mon</div>
+                <div className="h-3.5 sm:h-4 flex items-center justify-end leading-none text-transparent">-</div>
+                <div className="h-3.5 sm:h-4 flex items-center justify-end leading-none font-semibold">Wed</div>
+                <div className="h-3.5 sm:h-4 flex items-center justify-end leading-none text-transparent">-</div>
+                <div className="h-3.5 sm:h-4 flex items-center justify-end leading-none font-semibold">Fri</div>
+                <div className="h-3.5 sm:h-4 flex items-center justify-end leading-none text-transparent">-</div>
+              </div>
+
+              {/* Columns of 7 Days */}
+              <div className="flex items-center gap-[2.5px]">
+                {heatmapWeeks.map((week, wIdx) => (
+                  <div key={wIdx} className="flex flex-col gap-[2.5px]">
+                    {week.map((day, dIdx) => {
+                      // High-contrast, vibrant palette
+                      const intensityClasses = [
+                        "bg-[#E5E0D6] dark:bg-[#181D24] border border-[#D5CFBF] dark:border-[#27303E]",
+                        "bg-[#A7F3D0] dark:bg-[#064E3B] border border-[#6EE7B7] dark:border-[#065F46]",
+                        "bg-[#34D399] dark:bg-[#047857] border border-[#10B981] dark:border-[#059669]",
+                        "bg-[#059669] dark:bg-[#10B981] border border-[#047857] dark:border-[#34D399] shadow-xs",
+                        "bg-[#064E3B] dark:bg-[#34D399] border border-[#022C22] dark:border-[#6EE7B7] shadow-[0_0_8px_rgba(52,211,153,0.4)]"
+                      ];
+
+                      const isFilteredOut = filterIntensity !== null && day.intensity !== filterIntensity;
+
+                      return (
+                        <div
+                          key={dIdx}
+                          onMouseEnter={() => setHoveredDay(day)}
+                          onMouseLeave={() => setHoveredDay(null)}
+                          title={`${day.count > 0 ? `${day.count} activities` : 'No activity'} on ${day.dayName}`}
+                          className={`heatmap-cell w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-[3px] cursor-pointer ${
+                            day.isFuture 
+                              ? "opacity-20 bg-[var(--border)] border border-dashed border-[var(--border)] pointer-events-none" 
+                              : isFilteredOut
+                                ? "opacity-15 grayscale"
+                                : intensityClasses[day.intensity]
+                          } ${day.isToday ? "ring-2 ring-emerald-500 dark:ring-emerald-400 ring-offset-1 ring-offset-[var(--bg-surface)] heatmap-today" : ""}`}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom Footer: Dynamic Session Total & Interactive Clickable Legend */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[var(--text-muted)] pt-3.5 border-t border-[var(--border)]">
+              <div className="flex items-center gap-2 font-mono text-[11px]">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>
+                  <strong>{yearTotalActs}</strong> study drills completed across <strong>{yearActiveDays}</strong> active days in {selectedYear === 'pastYear' ? 'the past 12 months' : selectedYear}
+                </span>
+              </div>
+
+              {/* Interactive Legend with click-to-filter */}
+              <div className="flex items-center gap-2 font-mono text-[10px]">
+                <span>Less</span>
+                {[
+                  { level: 0, label: "0 activities", cls: "bg-[#E5E0D6] dark:bg-[#181D24] border border-[#D5CFBF] dark:border-[#27303E]" },
+                  { level: 1, label: "1-2 activities", cls: "bg-[#A7F3D0] dark:bg-[#064E3B] border border-[#6EE7B7] dark:border-[#065F46]" },
+                  { level: 2, label: "3-4 activities", cls: "bg-[#34D399] dark:bg-[#047857] border border-[#10B981] dark:border-[#059669]" },
+                  { level: 3, label: "5-7 activities", cls: "bg-[#059669] dark:bg-[#10B981] border border-[#047857] dark:border-[#34D399]" },
+                  { level: 4, label: "8+ activities", cls: "bg-[#064E3B] dark:bg-[#34D399] border border-[#022C22] dark:border-[#6EE7B7]" }
+                ].map(item => (
+                  <button
+                    key={item.level}
+                    onClick={() => setFilterIntensity(filterIntensity === item.level ? null : item.level)}
+                    title={`Click to filter: ${item.label}`}
+                    className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-[3px] transition-transform cursor-pointer hover:scale-125 ${item.cls} ${
+                      filterIntensity === item.level ? "ring-2 ring-[var(--primary)] ring-offset-1 ring-offset-[var(--bg-surface)] scale-110" : ""
+                    }`}
+                  />
+                ))}
+                <span>More</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </motion.section>
+
+      {/* 7. LOWER SPLIT: BEST STUDY WINDOW + RECENT ACTIVITY */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+        
         {/* Best Study Window (Cognitive Peak) */}
         <motion.section
           initial={{ opacity: 0, y: 10 }}
@@ -887,11 +1207,11 @@ export const ProgressReport = () => {
           <div>
             <div className="flex items-center justify-between">
               <h3 className="text-sm sm:text-base font-bold text-[var(--text-main)] flex items-center gap-2">
-                <Brain className="w-4 h-4 text-[#D6A84F]" />
+                <Brain className="w-4 h-4 text-[var(--ai)]" />
                 <span>Your Best Study Window</span>
               </h3>
-              <Badge variant="gold" size="sm">
-                Efficiency
+              <Badge variant="ai" size="sm">
+                AI Peak
               </Badge>
             </div>
             <p className="text-xs text-[var(--text-muted)] mt-0.5">
@@ -899,12 +1219,12 @@ export const ProgressReport = () => {
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-[#D6A84F]/10 border border-[#D6A84F]/25 flex items-baseline justify-between">
+          <div className="p-4 rounded-2xl bg-[var(--ai-subtle)] border border-[var(--ai-border)] flex items-baseline justify-between">
             <div>
               <span className="text-2xl sm:text-3xl font-bold font-body text-[var(--text-main)]">
                 {cognitivePeak.time_range_label || "9 AM – 12 PM"}
               </span>
-              <p className="text-xs font-semibold text-[#8C6D23] dark:text-[#E8C57A] mt-1">
+              <p className="text-xs font-semibold text-[var(--ai)] mt-1">
                 {cognitivePeak.efficiency || 88}% average quiz efficiency
               </p>
             </div>
@@ -916,58 +1236,65 @@ export const ProgressReport = () => {
           </div>
         </motion.section>
 
-      </div>
-
-      {/* 7. FOOTER: RECENT ACTIVITY */}
-      <motion.section
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35 }}
-        className="rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] p-6 shadow-xs space-y-4"
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm sm:text-base font-bold text-[var(--text-main)] flex items-center gap-2">
-            <Clock className="w-4 h-4 text-[#89A88D]" />
-            <span>Recent Activity</span>
-          </h3>
-          <span className="text-xs text-[var(--text-muted)] font-mono">
-            Latest study logs
-          </span>
-        </div>
-
-        <div className="divide-y divide-[var(--border)]">
-          {recentActivities.map((act, idx) => (
-            <div
-              key={idx}
-              className="py-3 flex items-center justify-between gap-3 text-xs"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="w-6 h-6 rounded-full bg-[var(--bg-surface-elevated)] border border-[var(--border)] flex items-center justify-center shrink-0">
-                  {act.type === "quiz" ? (
-                    <Target className="w-3.5 h-3.5 text-[#89A88D]" />
-                  ) : act.type === "flashcards" ? (
-                    <Layers className="w-3.5 h-3.5 text-[#D6A84F]" />
-                  ) : (
-                    <Sparkles className="w-3.5 h-3.5 text-[#C96B62]" />
-                  )}
-                </span>
-                <div className="min-w-0">
-                  <p className="font-semibold text-[var(--text-main)] truncate">
-                    {act.title}
-                  </p>
-                  <p className="text-[11px] text-[var(--text-muted)] truncate">
-                    {act.details}
-                  </p>
-                </div>
-              </div>
-
-              <span className="text-[10px] font-mono text-[var(--text-muted)] shrink-0">
-                {act.timestamp ? new Date(act.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Today"}
+        {/* Recent Activity Log */}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] p-6 shadow-xs space-y-4 flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm sm:text-base font-bold text-[var(--text-main)] flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[var(--primary)]" />
+                <span>Recent Activity</span>
+              </h3>
+              <span className="text-xs text-[var(--text-muted)] font-mono">
+                Latest study logs
               </span>
             </div>
-          ))}
-        </div>
-      </motion.section>
+
+            <div className="divide-y divide-[var(--border)] mt-2">
+              {recentActivities.slice(0, 4).map((act, idx) => (
+                <div
+                  key={idx}
+                  className="py-2.5 flex items-center justify-between gap-3 text-xs"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-6 h-6 rounded-full bg-[var(--bg-surface-elevated)] border border-[var(--border)] flex items-center justify-center shrink-0">
+                      {act.type === "quiz" ? (
+                        <Target className="w-3.5 h-3.5 text-[var(--primary)]" />
+                      ) : act.type === "flashcards" ? (
+                        <Layers className="w-3.5 h-3.5 text-[#F59E0B]" />
+                      ) : (
+                        <Sparkles className="w-3.5 h-3.5 text-[var(--ai)]" />
+                      )}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-[var(--text-main)] truncate">
+                        {act.title}
+                      </p>
+                      <p className="text-[11px] text-[var(--text-muted)] truncate">
+                        {act.details}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="text-[10px] font-mono text-[var(--text-muted)] shrink-0">
+                    {act.timestamp ? new Date(act.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "Today"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-[var(--border)] flex items-center justify-between text-[11px] text-[var(--text-muted)] font-mono">
+            <span>Continuous Telemetry Active</span>
+            <span className="text-[#16A34A] dark:text-[#4ADE80] font-semibold">Synced</span>
+          </div>
+        </motion.section>
+
+      </div>
 
     </div>
   );
