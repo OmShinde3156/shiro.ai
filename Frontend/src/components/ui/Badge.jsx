@@ -10,19 +10,45 @@ export const Badge = ({
   ...props
 }) => {
   const variantStyles = {
-    sage: 'bg-[#E8EFE9] text-[#3F6048] border-[#3F6048]/20 dark:bg-[#89A88D]/15 dark:text-[#A8C5AC] dark:border-[#89A88D]/30 font-semibold',
-    forest: 'bg-[#3F6048]/15 text-[#2D4534] dark:text-[#88A690] border-[#3F6048]/30 dark:border-[#62816A]/30 font-semibold',
-    gold: 'bg-[#F4E9CC] text-[#7B5E20] border-[#E9D8AE] dark:bg-[#D6A84F]/15 dark:text-[#E8C278] dark:border-[#D6A84F]/30 font-semibold',
-    amber: 'bg-[#F4E9CC] text-[#7B5E20] border-[#E9D8AE] dark:bg-[#D6A84F]/15 dark:text-[#E8C278] dark:border-[#D6A84F]/30 font-semibold',
+    // Brand & Academic
+    primary: 'bg-[#EBF3EC] text-[#2D5A3C] border-[#C2DEC8] dark:bg-[#89A88D]/20 dark:text-[#A8C5AC] dark:border-[#89A88D]/35 font-semibold',
+    indigo: 'bg-[#E8EDF5] text-[#0F172A] border-[#CBD5E1] dark:bg-[#818CF8]/15 dark:text-[#A5B4FC] dark:border-[#818CF8]/30 font-semibold',
+
+    // Status: Mastered (Green)
+    mastered: 'bg-[#EAF5EC] text-[#14532D] border-[#86EFAC] dark:bg-[#4ADE80]/15 dark:text-[#86EFAC] dark:border-[#4ADE80]/30 font-semibold',
+    success: 'bg-[#EAF5EC] text-[#14532D] border-[#86EFAC] dark:bg-[#4ADE80]/15 dark:text-[#86EFAC] dark:border-[#4ADE80]/30 font-semibold',
+    sage: 'bg-[#EBF3EC] text-[#2D5A3C] border-[#C2DEC8] dark:bg-[#89A88D]/20 dark:text-[#A8C5AC] dark:border-[#89A88D]/35 font-semibold',
+    forest: 'bg-[#EAF5EC] text-[#14532D] border-[#86EFAC] dark:bg-[#4ADE80]/15 dark:text-[#86EFAC] dark:border-[#4ADE80]/30 font-semibold',
+    emerald: 'bg-[#EAF5EC] text-[#14532D] border-[#86EFAC] dark:bg-[#4ADE80]/15 dark:text-[#86EFAC] dark:border-[#4ADE80]/30 font-semibold',
+
+    // Status: Developing (Amber)
+    developing: 'bg-[#FEF6E6] text-[#78350F] border-[#FDE68A] dark:bg-[#FBBF24]/15 dark:text-[#FDE68A] dark:border-[#FBBF24]/30 font-semibold',
+    warning: 'bg-[#FEF6E6] text-[#78350F] border-[#FDE68A] dark:bg-[#FBBF24]/15 dark:text-[#FDE68A] dark:border-[#FBBF24]/30 font-semibold',
+    gold: 'bg-[#FEF6E6] text-[#78350F] border-[#FDE68A] dark:bg-[#FBBF24]/15 dark:text-[#FDE68A] dark:border-[#FBBF24]/30 font-semibold',
+    amber: 'bg-[#FEF6E6] text-[#78350F] border-[#FDE68A] dark:bg-[#FBBF24]/15 dark:text-[#FDE68A] dark:border-[#FBBF24]/30 font-semibold',
+
+    // Status: Needs Review (Orange)
+    review: 'bg-[#FFF1EB] text-[#7C2D12] border-[#FED7AA] dark:bg-[#FB923C]/15 dark:text-[#FED7AA] dark:border-[#FB923C]/30 font-semibold',
+    orange: 'bg-[#FFF1EB] text-[#7C2D12] border-[#FED7AA] dark:bg-[#FB923C]/15 dark:text-[#FED7AA] dark:border-[#FB923C]/30 font-semibold',
+
+    // Status: Weak / Danger (Red)
+    weak: 'bg-[#FDF0ED] text-[#7F1D1D] border-[#FECACA] dark:bg-[#F87171]/15 dark:text-[#FCA5A5] dark:border-[#F87171]/30 font-semibold',
+    danger: 'bg-[#FDF0ED] text-[#7F1D1D] border-[#FECACA] dark:bg-[#F87171]/15 dark:text-[#FCA5A5] dark:border-[#F87171]/30 font-semibold',
+    rose: 'bg-[#FDF0ED] text-[#7F1D1D] border-[#FECACA] dark:bg-[#F87171]/15 dark:text-[#FCA5A5] dark:border-[#F87171]/30 font-semibold',
+
+    // AI & Shiro (Calming Celadon & Editorial Sage)
+    ai: 'bg-[#EBF3EC] text-[#2D5A3C] border-[#C2DEC8] dark:bg-[#A8C5AC]/20 dark:text-[#A8C5AC] dark:border-[#A8C5AC]/35 font-semibold',
+    purple: 'bg-[#F5F3FF] text-[#4C1D95] border-[#DDD6FE] dark:bg-[#A78BFA]/15 dark:text-[#C4B5FD] dark:border-[#A78BFA]/30 font-semibold',
+
+    // XP & Achievements (Gold)
+    xp: 'bg-[#FEF9C3] text-[#713F12] border-[#FDE047] dark:bg-[#FACC15]/15 dark:text-[#FDE047] dark:border-[#FACC15]/30 font-semibold',
+
+    // Neutral & Info
+    info: 'bg-[#E0F2FE] text-[#0369A1] border-[#BAE6FD] dark:bg-[#38BDF8]/15 dark:text-[#7DD3FC] dark:border-[#38BDF8]/30 font-semibold',
+    cyan: 'bg-[#E0F2FE] text-[#0369A1] border-[#BAE6FD] dark:bg-[#38BDF8]/15 dark:text-[#7DD3FC] dark:border-[#38BDF8]/30 font-semibold',
     stone: 'bg-[var(--bg-surface-elevated)] text-[var(--text-main)] border-[var(--border)] font-medium',
     neutral: 'bg-[var(--bg-surface-elevated)] text-[var(--text-main)] border-[var(--border)] font-medium',
-    slate: 'bg-[var(--bg-surface-elevated)] text-[var(--text-main)] border-[var(--border)] font-medium',
-    rose: 'bg-[#F7E8E5] text-[#9E352B] border-[#C96B62]/30 dark:bg-[#C96B62]/15 dark:text-[#E58B82] font-semibold',
-    info: 'bg-[#E8EEF4] text-[#3B5875] border-[#5E7C9A]/30 dark:bg-[#5E7C9A]/15 dark:text-[#8BAECF] font-semibold',
-    // Aliases for backward compatibility
-    cyan: 'bg-[#E8EFE9] text-[#3F6048] dark:text-[#A8C5AC] border-[#3F6048]/20 dark:border-[#89A88D]/30 font-semibold',
-    purple: 'bg-[#3F6048]/15 text-[#2D4534] dark:text-[#88A690] border-[#3F6048]/30 dark:border-[#62816A]/30 font-semibold',
-    emerald: 'bg-[#E8EFE9] text-[#3F6048] dark:text-[#A8C5AC] border-[#3F6048]/20 dark:border-[#89A88D]/30 font-semibold',
+    slate: 'bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)] border-[var(--border)] font-medium',
   };
 
   const sizeStyles = {
