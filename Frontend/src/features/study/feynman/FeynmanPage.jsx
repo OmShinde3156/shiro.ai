@@ -636,24 +636,20 @@ export const FeynmanPage = () => {
               {/* Verdict Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
                 <div className="flex items-center gap-3.5">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${
-                    evaluation.overall_score >= 80
-                      ? 'bg-[#3F6048]/15 border-[#3F6048]/40 text-[#3F6048] dark:text-[#89A88D]'
-                      : 'bg-[#D6A84F]/15 border-[#D6A84F]/40 text-[#D6A84F]'
-                  }`}>
-                    <Award className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center border bg-[var(--primary-subtle)] border-[var(--primary)]/40 text-[var(--primary)] shadow-xs">
+                    <Sparkles className="w-6 h-6" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg sm:text-xl font-bold text-[var(--text-main)] font-serif">
-                        Mastery Index: {evaluation.overall_score || evaluation.score}%
+                      <h3 className="text-lg sm:text-xl font-bold text-[var(--primary-strong)] font-serif">
+                        Shiro's Analysis
                       </h3>
-                      <Badge variant={evaluation.overall_score >= 80 ? 'sage' : 'gold'} size="sm">
-                        {evaluation.overall_score >= 80 ? '🟢 Strong Foundation' : '🟡 One Important Gap'}
+                      <Badge variant="primary" size="sm">
+                        {evaluation.overall_score >= 80 ? '🟢 Solid Foundation' : '🟡 Found Gaps to Bridge'}
                       </Badge>
                     </div>
                     <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                      {evaluation.verdict || (evaluation.overall_score >= 80 ? 'Excellent intuitive grasp!' : 'Good effort. Close the missing link below.')}
+                      {evaluation.verdict || (evaluation.overall_score >= 80 ? 'Excellent intuitive grasp!' : 'Good effort. Let\'s close the missing links below.')}
                     </p>
                   </div>
                 </div>
@@ -680,14 +676,11 @@ export const FeynmanPage = () => {
                     <div key={idx} className="p-3 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] space-y-1.5">
                       <div className="flex justify-between items-center text-xs">
                         <span className="font-semibold text-[var(--text-main)]">{dim.label}</span>
-                        <span className={`font-mono font-bold ${
-                          dim.score >= 80 ? 'text-[#3F6048] dark:text-[#89A88D]' : dim.score >= 60 ? 'text-[#D6A84F]' : 'text-[#C96B62]'
-                        }`}>{dim.score}%</span>
                       </div>
                       <div className="w-full bg-[var(--bg-main)] rounded-full h-1.5 overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
-                            dim.score >= 80 ? 'bg-[#3F6048] dark:bg-[#89A88D]' : dim.score >= 60 ? 'bg-[#D6A84F]' : 'bg-[#C96B62]'
+                            dim.score >= 80 ? 'bg-[var(--primary)]' : dim.score >= 60 ? 'bg-[#D6A84F]' : 'bg-[#C96B62]'
                           }`}
                           style={{ width: `${Math.min(100, Math.max(5, dim.score))}%` }}
                         />
