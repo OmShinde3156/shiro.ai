@@ -36,8 +36,29 @@ import { useAuth } from "./context/AuthContext";
 import { PodcastProvider } from "./context/PodcastContext";
 import './App.css';
 
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+  if (loading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-[var(--bg-canvas)]">
+        <div className="w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user || !token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+};
+
 function App() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const isAuthenticated = Boolean(user && token);
   const location = useLocation();
   const isLandingPage = location.pathname === "/";
   const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
@@ -45,7 +66,7 @@ function App() {
 
   useEffect(() => {
     // Tour runs for both guest and logged-in users, but not on landing page
-    if (!isLandingPage && !isAuthPage && !localStorage.getItem("shiro_tour_completed")) {
+    if (!isLandingPage && !isAuthPage && isAuthenticated && !localStorage.getItem("shiro_tour_completed")) {
       const driverObj = driver({
         showProgress: true,
         steps: [
@@ -65,10 +86,10 @@ function App() {
         }
       }, 1500); // Wait for animations
     }
-  }, [isLandingPage, isAuthPage]);
+  }, [isLandingPage, isAuthPage, isAuthenticated]);
 
   // Full-screen routes (no sidebar/header)
-  const isFullScreenRoute = isStudyRoom || isLandingPage || isAuthPage;
+  const isFullScreenRoute = isStudyRoom || isLandingPage || isAuthPage || !isAuthenticated;
 
   return (
     <PodcastProvider>
@@ -76,14 +97,16 @@ function App() {
         position="bottom-right"
         toastOptions={{
           style: {
-            background: 'rgba(21, 25, 38, 0.9)',
-            color: '#fff',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '16px'
+            background: 'rgba(24, 25, 22, 0.95)',
+            color: '#F4F1E9',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid #2B2D28',
+            borderRadius: '16px',
+            fontSize: '13px',
+            fontWeight: 500
           },
-          success: { iconTheme: { primary: '#72dcff', secondary: '#151926' } },
-          error: { iconTheme: { primary: '#ef4444', secondary: '#151926' } },
+          success: { iconTheme: { primary: '#89A88D', secondary: '#181916' } },
+          error: { iconTheme: { primary: '#C96B62', secondary: '#181916' } },
         }}
       />
       {!isFullScreenRoute && <CommandPalette />}
@@ -104,22 +127,22 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<AuthPage />} />
                 <Route path="/register" element={<AuthPage initialMode="register" />} />
-                <Route path="/home" element={<ChatPage />} />
-                <Route path="/study-rooms" element={<StudyRoomLobby />} />
-                <Route path="/room/:roomId" element={<StudyRoom />} />
-                <Route path="/quiz" element={<QuizPage />} />
-                <Route path="/progress-report" element={<ProgressReport />} />
-                <Route path="/audio-summary" element={<AudioSummaryPage />} />
-                <Route path="/flashcards" element={<FlashcardApp />} />
-                <Route path="/mindmap" element={<MindMapPage />} />
-                <Route path="/answer-planner" element={<AnswerPlanner />} />
-                <Route path="/summary" element={<SummaryFetcher />} />
-                <Route path="/pyqs" element={<PyqsPage />} />
-                <Route path="/documents" element={<DocumentsPage />} />
-                <Route path="/documents/:id" element={<DocumentDetailsPage />} />
-                <Route path="/study-plan" element={<StudyPlanPage />} />
-                <Route path="/feynman" element={<FeynmanPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/home" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+                <Route path="/study-rooms" element={<ProtectedRoute><StudyRoomLobby /></ProtectedRoute>} />
+                <Route path="/room/:roomId" element={<ProtectedRoute><StudyRoom /></ProtectedRoute>} />
+                <Route path="/quiz" element={<ProtectedRoute><QuizPage /></ProtectedRoute>} />
+                <Route path="/progress-report" element={<ProtectedRoute><ProgressReport /></ProtectedRoute>} />
+                <Route path="/audio-summary" element={<ProtectedRoute><AudioSummaryPage /></ProtectedRoute>} />
+                <Route path="/flashcards" element={<ProtectedRoute><FlashcardApp /></ProtectedRoute>} />
+                <Route path="/mindmap" element={<ProtectedRoute><MindMapPage /></ProtectedRoute>} />
+                <Route path="/answer-planner" element={<ProtectedRoute><AnswerPlanner /></ProtectedRoute>} />
+                <Route path="/summary" element={<ProtectedRoute><SummaryFetcher /></ProtectedRoute>} />
+                <Route path="/pyqs" element={<ProtectedRoute><PyqsPage /></ProtectedRoute>} />
+                <Route path="/documents" element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
+                <Route path="/documents/:id" element={<ProtectedRoute><DocumentDetailsPage /></ProtectedRoute>} />
+                <Route path="/study-plan" element={<ProtectedRoute><StudyPlanPage /></ProtectedRoute>} />
+                <Route path="/feynman" element={<ProtectedRoute><FeynmanPage /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
