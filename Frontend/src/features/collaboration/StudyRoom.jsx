@@ -1,6 +1,6 @@
 import { fetchWithAuth } from '../../api/fetchWithAuth';
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Context } from '../../context/Context';
 import API_BASE_URL from '../../api/config.js';
@@ -38,6 +38,7 @@ export const StudyRoom = () => {
   const { documents, fetchDocuments, onSent } = useContext(Context);
   const navigate = useNavigate();
   const location = useLocation();
+  const { roomId } = useParams();
 
   const [selectedDocId, setSelectedDocId] = useState(location.state?.documentId || "");
   const [currentDocument, setCurrentDocument] = useState(null);
@@ -114,7 +115,7 @@ export const StudyRoom = () => {
           document_ids: selectedDocId ? [parseInt(selectedDocId)] : [],
           active_document_id: selectedDocId ? parseInt(selectedDocId) : null,
           context_scope: "ROOM",
-          room_id: String(selectedDocId || "room-1"),
+          room_id: String(roomId || selectedDocId || "room-1"),
           language: "en",
           mode: "human"
         })
@@ -140,7 +141,7 @@ export const StudyRoom = () => {
   const handleSummarizeDiscussion = async () => {
     setIsSummarizingNotes(true);
     try {
-      const targetRoomId = String(selectedDocId || "default");
+      const targetRoomId = String(roomId || selectedDocId || "default");
       const response = await fetchWithAuth(`${API_BASE_URL}/rooms/${targetRoomId}/summarize-to-notes`, {
         method: 'POST'
       });
@@ -167,7 +168,7 @@ export const StudyRoom = () => {
     }
     setIsConvertingNotes(true);
     try {
-      const targetRoomId = String(selectedDocId || "default");
+      const targetRoomId = String(roomId || selectedDocId || "default");
       const response = await fetchWithAuth(`${API_BASE_URL}/rooms/${targetRoomId}/notes-to-flashcards`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
