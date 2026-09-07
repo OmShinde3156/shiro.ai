@@ -34,7 +34,8 @@ from routers import (
     features_router, 
     important_questions_router,
     rooms_router,
-    knowledge_tracing_router
+    knowledge_tracing_router,
+    adaptive_quiz_router
 )
 
 # ✅ Initialize App
@@ -83,6 +84,7 @@ app.include_router(documents_router.router)
 app.include_router(important_questions_router.router)
 app.include_router(rooms_router.router)
 app.include_router(knowledge_tracing_router.router)
+app.include_router(adaptive_quiz_router.router)
 
 # ✅ Startup Event
 @app.on_event("startup")

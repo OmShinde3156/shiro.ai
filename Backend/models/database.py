@@ -411,3 +411,81 @@ class LearnerEventLog(Base):
     user = relationship("User")
 
 
+# =====================================================================
+# Shiro v3.1: Adaptive Assessment Engine & 1PL Rasch Model (ADAPT-01)
+# =====================================================================
+
+class AdaptiveQuizItem(Base):
+    __tablename__ = "adaptive_quiz_items"
+
+    id = Column(String, primary_key=True) # UUID
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=True, index=True)
+    concept_name = Column(String, nullable=False, index=True)
+    subtopic = Column(String, nullable=True)
+    question = Column(Text, nullable=False)
+    options = Column(JSON, nullable=False) # {"A": "...", "B": "...", ...}
+    correct_answer = Column(String, nullable=False) # "A", "B", "C", "D"
+    explanation = Column(Text, nullable=True)
+    difficulty_prior = Column(Float, default=0.0, nullable=False) # Initial heuristic e.g. -1.2, 0.0, +1.2
+    difficulty_estimate = Column(Float, default=0.0, nullable=False) # Empirical calibration estimate
+    response_count = Column(Integer, default=0, nullable=False)
+    correct_count = Column(Integer, default=0, nullable=False)
+    quality_score = Column(Float, default=1.0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    document = relationship("Document")
+
+
+class AdaptiveQuizSession(Base):
+    __tablename__ = "adaptive_quiz_sessions"
+
+    id = Column(String, primary_key=True) # UUID
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=True, index=True)
+    topic = Column(String, nullable=True)
+    theta_estimate = Column(Float, default=0.0, nullable=False) # Latent ability parameter \theta
+    standard_error = Column(Float, default=1.0, nullable=False) # SE(\hat{\theta})
+    theta_history = Column(JSON, default=list) # List of \hat{\theta} at each step
+    se_history = Column(JSON, default=list) # List of SE at each step
+    target_questions = Column(Integer, default=10, nullable=False)
+    min_questions = Column(Integer, default=4, nullable=False)
+    current_step = Column(Integer, default=0, nullable=False)
+    is_completed = Column(Boolean, default=False, nullable=False)
+    stopping_reason = Column(String, nullable=True) # "SE_CONVERGED", "MAX_QUESTIONS", "LOW_INFO"
+    final_ability_band = Column(String, nullable=True) # "Novice", "Developing", "Proficient", "Master"
+    question_pool_ids = Column(JSON, default=list) # List of item IDs in pool
+    created_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+    # Relationships
+    user = relationship("User")
+    document = relationship("Document")
+    responses = relationship("AdaptiveQuizResponse", back_populates="session", cascade="all, delete-orphan")
+
+
+class AdaptiveQuizResponse(Base):
+    __tablename__ = "adaptive_quiz_responses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String, ForeignKey("adaptive_quiz_sessions.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    question_id = Column(String, ForeignKey("adaptive_quiz_items.id"), nullable=False, index=True)
+    concept_name = Column(String, nullable=False, index=True)
+    client_step_id = Column(String, nullable=False, index=True) # Idempotency key
+    selected_answer = Column(String, nullable=False)
+    is_correct = Column(Boolean, nullable=False)
+    response_time_ms = Column(Integer, default=0, nullable=False)
+    difficulty_b = Column(Float, nullable=False)
+    theta_before = Column(Float, nullable=False)
+    theta_after = Column(Float, nullable=False)
+    se_before = Column(Float, nullable=False)
+    se_after = Column(Float, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+    # Relationships
+    session = relationship("AdaptiveQuizSession", back_populates="responses")
+    question = relationship("AdaptiveQuizItem")
+    user = relationship("User")
+
+
