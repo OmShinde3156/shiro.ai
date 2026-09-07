@@ -27,7 +27,9 @@ import {
   Calendar,
   Trophy,
   Zap,
-  Info
+  Info,
+  Activity,
+  Cpu
 } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import { Context } from "../../../context/Context";
@@ -49,6 +51,7 @@ export const ProgressReport = () => {
   const [selectedYear, setSelectedYear] = useState("2026"); // "2026" | "2025" | "pastYear"
   const [hoveredDay, setHoveredDay] = useState(null);
   const [filterIntensity, setFilterIntensity] = useState(null); // null | 0 | 1 | 2 | 3 | 4
+  const [showBktInfo, setShowBktInfo] = useState(false);
 
   useEffect(() => {
     fetchStudentInsights();
@@ -237,6 +240,16 @@ export const ProgressReport = () => {
     navigate("/quiz", { state: { topic: subj.subject, documentId: subj.document_id, mode: "practice" } });
   };
 
+  const handleStudyConcept = (concept) => {
+    navigate("/quiz", {
+      state: {
+        topic: concept.concept_name,
+        documentId: concept.document_id,
+        mode: "surgical"
+      }
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-4">
@@ -256,6 +269,42 @@ export const ProgressReport = () => {
   const cognitivePeak = insights?.cognitive_peak || {};
   const recentActivities = insights?.recent_activities || [];
   const isDemo = insights?.is_demo;
+
+  // Bayesian Knowledge Tracing (BKT) Telemetry
+  const knowledgeTracing = insights?.knowledge_tracing || {
+    overall_knowledge_index: 0,
+    total_concepts_tracked: 0,
+    mastered_count: 0,
+    developing_count: 0,
+    needs_review_count: 0,
+    concepts: []
+  };
+
+  // Demo fallback when user hasn't completed diagnostic/evaluation sessions yet
+  const activeConcepts = (knowledgeTracing.concepts && knowledgeTracing.concepts.length > 0)
+    ? knowledgeTracing.concepts
+    : (isDemo ? [
+        { concept_name: "B-Tree Indexing", mastery_score: 88, p_known: 0.88, predicted_accuracy: 91, status: "Mastered", color_variant: "sage", opportunities: 7, consecutive_correct: 4 },
+        { concept_name: "CPU Scheduling Algorithms", mastery_score: 52, p_known: 0.52, predicted_accuracy: 58, status: "Needs Review", color_variant: "rose", opportunities: 5, consecutive_correct: 0 },
+        { concept_name: "Deadlock Prevention & Avoidance", mastery_score: 74, p_known: 0.74, predicted_accuracy: 78, status: "Developing", color_variant: "gold", opportunities: 4, consecutive_correct: 2 },
+        { concept_name: "Virtual Memory Paging", mastery_score: 63, p_known: 0.63, predicted_accuracy: 69, status: "Developing", color_variant: "gold", opportunities: 3, consecutive_correct: 1 }
+      ] : []);
+
+  const bktIndex = (knowledgeTracing.concepts && knowledgeTracing.concepts.length > 0)
+    ? knowledgeTracing.overall_knowledge_index
+    : (isDemo ? 69 : 0);
+
+  const bktMasteredCount = (knowledgeTracing.concepts && knowledgeTracing.concepts.length > 0)
+    ? knowledgeTracing.mastered_count
+    : (isDemo ? 1 : 0);
+
+  const bktDevelopingCount = (knowledgeTracing.concepts && knowledgeTracing.concepts.length > 0)
+    ? knowledgeTracing.developing_count
+    : (isDemo ? 2 : 0);
+
+  const bktReviewCount = (knowledgeTracing.concepts && knowledgeTracing.concepts.length > 0)
+    ? knowledgeTracing.needs_review_count
+    : (isDemo ? 1 : 0);
 
   // Format hours and minutes
   const totalHours = Math.floor((health.total_study_time_minutes || 0) / 60);
@@ -718,6 +767,239 @@ export const ProgressReport = () => {
               </div>
             </div>
           ))}
+        </div>
+      </motion.section>
+
+      {/* 4.5 BAYESIAN KNOWLEDGE TRACING (BKT) - COGNITIVE TRACE */}
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.18 }}
+        className="rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] p-6 sm:p-7 shadow-xs space-y-6"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-[var(--border)] pb-5">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-[var(--ai-subtle)] border border-[var(--ai-border)] flex items-center justify-center text-[var(--ai)]">
+                <Brain className="w-4 h-4" />
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
+                <span>Cognitive Knowledge Trace</span>
+                <Badge variant="ai" size="sm">BKT Engine</Badge>
+              </h3>
+            </div>
+            <p className="text-xs text-[var(--text-muted)] leading-relaxed max-w-2xl">
+              Hidden Markov Model estimating your true latent knowledge state <span className="font-mono text-[var(--text-secondary)]">P(Known)</span> by statistically filtering lucky guesses and careless slips.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setShowBktInfo(!showBktInfo)}
+            className="self-start flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] hover:bg-[var(--bg-surface)] text-xs font-medium text-[var(--text-secondary)] transition-all cursor-pointer shadow-2xs"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-[var(--primary)]" />
+            <span>How BKT Works</span>
+            {showBktInfo ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+        </div>
+
+        {/* Expandable Mathematical Model Explainer */}
+        {showBktInfo && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="p-4 rounded-2xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-xs text-[var(--text-secondary)] space-y-2.5"
+          >
+            <div className="flex items-center gap-2 font-semibold text-[var(--text-main)]">
+              <Cpu className="w-4 h-4 text-[var(--ai)]" />
+              <span>Corbett &amp; Anderson Bayesian Knowledge Tracing Protocol</span>
+            </div>
+            <p className="leading-relaxed">
+              Standard grading assumes every correct answer is pure mastery. In reality, students can guess correctly without knowing (<span className="font-mono text-amber-600 dark:text-amber-400">P(Guess) = 25%</span>), or make careless mistakes on concepts they actually understand (<span className="font-mono text-rose-600 dark:text-rose-400">P(Slip) = 10%</span>).
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 font-mono text-[11px]">
+              <div className="p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
+                <span className="text-[var(--text-muted)] block text-[10px]">Posterior Observation</span>
+                <span className="font-bold text-[var(--text-main)]">Bayes Theorem Update</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
+                <span className="text-[var(--text-muted)] block text-[10px]">Learning Transition</span>
+                <span className="font-bold text-[var(--text-main)]">P(Transition) = 15%</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
+                <span className="text-[var(--text-muted)] block text-[10px]">Mastery Barrier</span>
+                <span className="font-bold text-[#16A34A] dark:text-[#4ADE80]">P(Known) &ge; 85%</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* 4 Metric Summary Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] space-y-1">
+            <span className="text-xs font-medium text-[var(--text-muted)]">Overall Knowledge Index</span>
+            <div className="flex items-baseline gap-1.5 mt-0.5">
+              <span className="text-2xl sm:text-3xl font-extrabold font-body text-[var(--text-main)]">
+                {bktIndex}%
+              </span>
+              <span className="text-[11px] font-mono text-[var(--text-muted)]">mean P(L)</span>
+            </div>
+            <div className="w-full h-1.5 rounded-full bg-[var(--border)] overflow-hidden mt-2">
+              <div
+                className="h-full rounded-full bg-[var(--primary)] transition-all duration-700"
+                style={{ width: `${Math.max(5, bktIndex)}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] space-y-1">
+            <span className="text-xs font-medium text-[var(--text-muted)]">Mastered Concepts</span>
+            <div className="flex items-baseline gap-1.5 mt-0.5">
+              <span className="text-2xl sm:text-3xl font-extrabold font-body text-[#16A34A] dark:text-[#4ADE80]">
+                {bktMasteredCount}
+              </span>
+              <span className="text-[11px] font-mono text-[var(--text-muted)]">P(L) &ge; 85%</span>
+            </div>
+            <span className="text-[10px] font-mono text-[#16A34A] dark:text-[#4ADE80] block mt-1">High retention</span>
+          </div>
+
+          <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] space-y-1">
+            <span className="text-xs font-medium text-[var(--text-muted)]">Developing</span>
+            <div className="flex items-baseline gap-1.5 mt-0.5">
+              <span className="text-2xl sm:text-3xl font-extrabold font-body text-[#D97706] dark:text-[#FBBF24]">
+                {bktDevelopingCount}
+              </span>
+              <span className="text-[11px] font-mono text-[var(--text-muted)]">60% &ndash; 84%</span>
+            </div>
+            <span className="text-[10px] font-mono text-[#D97706] dark:text-[#FBBF24] block mt-1">Strengthening</span>
+          </div>
+
+          <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] space-y-1">
+            <span className="text-xs font-medium text-[var(--text-muted)]">Needs Review</span>
+            <div className="flex items-baseline gap-1.5 mt-0.5">
+              <span className="text-2xl sm:text-3xl font-extrabold font-body text-[#DC2626] dark:text-[#F87171]">
+                {bktReviewCount}
+              </span>
+              <span className="text-[11px] font-mono text-[var(--text-muted)]">&lt; 60%</span>
+            </div>
+            <span className="text-[10px] font-mono text-[#DC2626] dark:text-[#F87171] block mt-1">Priority target</span>
+          </div>
+        </div>
+
+        {/* Concept Cards Stack */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-secondary)] px-1">
+            <span>Latent Concept Breakdown</span>
+            <span className="font-mono text-[11px] text-[var(--text-muted)]">{activeConcepts.length} concepts tracked</span>
+          </div>
+
+          {activeConcepts.length === 0 ? (
+            <div className="p-8 rounded-2xl border border-dashed border-[var(--border)] text-center space-y-2">
+              <Activity className="w-6 h-6 text-[var(--text-muted)] mx-auto animate-pulse" />
+              <p className="text-xs font-medium text-[var(--text-main)]">No concept observations recorded yet</p>
+              <p className="text-[11px] text-[var(--text-muted)] max-w-sm mx-auto">
+                Complete a quiz or review flashcards to let the Bayesian Knowledge Tracing engine model your cognitive state.
+              </p>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="mt-2"
+                onClick={() => navigate("/quiz")}
+              >
+                Launch Diagnostic Quiz
+              </Button>
+            </div>
+          ) : (
+            activeConcepts.map((concept, idx) => {
+              const isMastered = concept.p_known >= 0.85;
+              const isDeveloping = concept.p_known >= 0.60 && !isMastered;
+              const statusVariant = isMastered ? "mastered" : isDeveloping ? "developing" : "weak";
+
+              return (
+                <div
+                  key={idx}
+                  className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] hover:border-[var(--primary)]/40 transition-all space-y-3 shadow-2xs"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-bold text-[var(--text-main)]">
+                          {concept.concept_name}
+                        </span>
+                        <Badge variant={statusVariant} size="sm">
+                          {concept.status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-3 text-[11px] font-mono text-[var(--text-muted)]">
+                        <span>{concept.opportunities} practice attempts</span>
+                        <span>&middot;</span>
+                        <span>{concept.consecutive_correct} streak</span>
+                        <span>&middot;</span>
+                        <span className="text-[var(--text-secondary)]">
+                          Predicted next accuracy: <strong className="text-[var(--text-main)]">{concept.predicted_accuracy}%</strong>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0 self-start sm:self-auto">
+                      <div className="text-right">
+                        <div className="flex items-baseline gap-1 justify-end">
+                          <span className="text-xs font-mono text-[var(--text-muted)]">P(L):</span>
+                          <span className="text-base font-mono font-extrabold text-[var(--text-main)]">
+                            {Number(concept.p_known).toFixed(3)}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                          {concept.mastery_score}% mastery
+                        </span>
+                      </div>
+
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="px-2.5 py-1 text-xs"
+                        onClick={() => handleStudyConcept(concept)}
+                      >
+                        <span>Drill</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Dual-layer Probability Bar with 85% Mastery Barrier Marker */}
+                  <div className="relative pt-1 pb-1">
+                    <div className="w-full h-2.5 rounded-full bg-[var(--border)] overflow-hidden relative">
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 ease-out ${
+                          isMastered
+                            ? "bg-[#16A34A] dark:bg-[#4ADE80]"
+                            : isDeveloping
+                            ? "bg-[#D97706] dark:bg-[#FBBF24]"
+                            : "bg-[#DC2626] dark:bg-[#F87171]"
+                        }`}
+                        style={{ width: `${Math.max(4, concept.mastery_score)}%` }}
+                      />
+                    </div>
+                    {/* Mastery Barrier Tick at 85% */}
+                    <div
+                      className="absolute top-0 bottom-0 w-[2px] bg-emerald-600/70 dark:bg-emerald-400/80 z-10 pointer-events-none"
+                      style={{ left: "85%" }}
+                      title="85% Mastery Barrier"
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Footer info label */}
+        <div className="flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)] pt-1 border-t border-[var(--border)]">
+          <span className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A] dark:text-[#4ADE80]" />
+            <span>Auto-calibrating Markov chains active</span>
+          </span>
+          <span>Target Mastery Threshold: 85%</span>
         </div>
       </motion.section>
 
