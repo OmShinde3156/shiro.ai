@@ -30,6 +30,8 @@ export async function streamChat({
     const token = localStorage.getItem("token") || localStorage.getItem("access_token") || localStorage.getItem("shiro_token");
     const headers = {
       "Content-Type": "application/json",
+      "X-Pinggy-No-Screen": "true",
+      "ngrok-skip-browser-warning": "true",
       ...(token ? { "Authorization": `Bearer ${token}` } : {})
     };
 

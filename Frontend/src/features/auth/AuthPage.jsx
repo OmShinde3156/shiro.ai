@@ -80,7 +80,11 @@ const AuthPage = ({ initialMode }) => {
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Pinggy-No-Screen': 'true',
+          'ngrok-skip-browser-warning': 'true',
+        },
         body: JSON.stringify(payload),
       });
       if (!response.ok) {
@@ -103,7 +107,11 @@ const AuthPage = ({ initialMode }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/guest`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Pinggy-No-Screen': 'true',
+          'ngrok-skip-browser-warning': 'true',
+        },
       });
       if (!response.ok) {
         throw new Error('Guest session failed');

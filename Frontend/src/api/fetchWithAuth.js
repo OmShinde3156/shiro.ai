@@ -2,6 +2,8 @@ export const fetchWithAuth = async (url, options = {}) => {
   const token = localStorage.getItem('token');
   
   const headers = {
+    'X-Pinggy-No-Screen': 'true',
+    'ngrok-skip-browser-warning': 'true',
     ...options.headers,
   };
   
