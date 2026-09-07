@@ -84,8 +84,9 @@ class QuizService:
             question_id = question['id']
             correct_answer = question['correct_answer']
             user_answer = submission.answers.get(question_id, '')
+            is_correct = (user_answer == correct_answer)
             
-            if user_answer == correct_answer:
+            if is_correct:
                 correct_count += 1
             else:
                 incorrect_answers.append({
@@ -95,6 +96,28 @@ class QuizService:
                     "correct_answer": correct_answer,
                     "explanation": question.get('explanation', '')
                 })
+
+            # KT-01: Update Bayesian Knowledge Tracing model for the concept tested
+            try:
+                from services.knowledge_tracing_service import knowledge_tracing_service
+                effective_user_id = user_id or getattr(submission, 'user_id', None) or 1
+                concept_name = question.get('concept') or knowledge_tracing_service.auto_tag_concept(
+                    text=f"{question.get('question', '')} {question.get('explanation', '')}",
+                    document_id=submission.document_id,
+                    user_id=effective_user_id,
+                    db=db
+                )
+                knowledge_tracing_service.update_knowledge_state(
+                    user_id=effective_user_id,
+                    concept_name=concept_name,
+                    is_correct=is_correct,
+                    interaction_type="quiz",
+                    item_id=question_id,
+                    document_id=submission.document_id,
+                    db=db
+                )
+            except Exception as e:
+                print(f"BKT tracking non-fatal error for question {question_id}: {e}")
         
         total_questions = len(questions)
         score = (correct_count / total_questions) * 100 if total_questions > 0 else 0

@@ -369,3 +369,45 @@ class StudyPack(Base):
     status = Column(String, default="processing")  # processing, completed, failed
     created_at = Column(DateTime, default=datetime.utcnow)
 
+
+# Shiro v3.0: Bayesian Knowledge Tracing & Statistical Learner Modeling (KT-01)
+class LearnerConceptState(Base):
+    __tablename__ = "learner_concept_states"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    concept_name = Column(String, nullable=False, index=True)
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=True)
+    p_known = Column(Float, default=0.20, nullable=False) # Latent knowledge probability P(L_t)
+    p_learn = Column(Float, default=0.15, nullable=False) # Transition rate P(T)
+    p_guess = Column(Float, default=0.25, nullable=False) # Guess rate P(G)
+    p_slip = Column(Float, default=0.10, nullable=False)  # Slip rate P(S)
+    total_opportunities = Column(Integer, default=0)
+    consecutive_correct = Column(Integer, default=0)
+    mastered = Column(Boolean, default=False)
+    last_interaction_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User")
+    document = relationship("Document")
+
+
+class LearnerEventLog(Base):
+    __tablename__ = "learner_event_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    concept_name = Column(String, nullable=False, index=True)
+    interaction_type = Column(String, nullable=False) # "quiz", "flashcard", "feynman"
+    item_id = Column(String, nullable=True) # question_id or flashcard_id
+    is_correct = Column(Boolean, nullable=False)
+    response_time_ms = Column(Integer, default=0)
+    p_known_before = Column(Float, nullable=False)
+    p_known_after = Column(Float, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+
+    # Relationships
+    user = relationship("User")
+
+

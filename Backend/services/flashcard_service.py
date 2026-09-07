@@ -227,6 +227,28 @@ class FlashcardService:
         except Exception:
             db.rollback()
             raise
+
+        # KT-01: Update Bayesian Knowledge Tracing model for the flashcard concept
+        try:
+            from services.knowledge_tracing_service import knowledge_tracing_service
+            card_obj = db.query(Flashcard).filter(Flashcard.id == study_request.flashcard_id).first()
+            if card_obj:
+                concept_name = knowledge_tracing_service.auto_tag_concept(
+                    text=f"{card_obj.question} {card_obj.answer}",
+                    user_id=user_id,
+                    db=db
+                )
+                knowledge_tracing_service.update_knowledge_state(
+                    user_id=user_id,
+                    concept_name=concept_name,
+                    is_correct=(study_request.ease_rating >= 3),
+                    response_time_ms=study_request.review_duration_ms or 0,
+                    interaction_type="flashcard",
+                    item_id=study_request.flashcard_id,
+                    db=db
+                )
+        except Exception as e:
+            print(f"BKT tracking non-fatal error for flashcard: {e}")
         
         return FlashcardStudyResponse(
             flashcard_id=study_request.flashcard_id,

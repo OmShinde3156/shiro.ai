@@ -841,5 +841,22 @@ class ProgressService:
                 "available_years": [2026, 2025]
             },
             "cognitive_peak": cognitive_peak,
-            "recent_activities": recent_acts[:10]
+            "recent_activities": recent_acts[:10],
+            "knowledge_tracing": await self._get_bkt_summary(user_id, db)
         }
+
+    async def _get_bkt_summary(self, user_id: int, db: Session) -> Dict[str, Any]:
+        """Fetch Bayesian Knowledge Tracing summary for student (KT-01)"""
+        try:
+            from services.knowledge_tracing_service import knowledge_tracing_service
+            return knowledge_tracing_service.get_student_concept_mastery(user_id=user_id, db=db)
+        except Exception as e:
+            return {
+                "overall_knowledge_index": 0,
+                "total_concepts_tracked": 0,
+                "mastered_count": 0,
+                "developing_count": 0,
+                "needs_review_count": 0,
+                "concepts": []
+            }
+

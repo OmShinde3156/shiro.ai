@@ -5,7 +5,8 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='repla
 from fastapi import FastAPI, Depends, Request, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
+from fastapi import Request
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 import os
@@ -14,6 +15,7 @@ import time
 import json
 import logging
 import asyncio
+import traceback
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -31,22 +33,40 @@ from routers import (
     documents_router, 
     features_router, 
     important_questions_router,
-    rooms_router
+    rooms_router,
+    knowledge_tracing_router
 )
 
 # ✅ Initialize App
 app = FastAPI(title="Shiro AI: Personalized Study Guide Generator", version="0.3.0")
 
+@app.middleware("http")
+async def global_exception_handler_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as e:
+        print(f"🔥 SERVER CRASH DETECTED: {str(e)}")
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Internal Server Error: {str(e)}"}
+        )
+
 # ✅ Register Universal Correlation & Access Logging Middleware (OBS-01)
 app.add_middleware(CorrelationIdMiddleware)
 
-# ✅ Middleware - Configurable CORS for Production and Local Dev
+# ✅ Middleware - Configurable CORS for Production, Local Dev, and Tunnels
 raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000")
 allowed_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+allowed_origins.extend([
+    "https://duller-trial-stegosaur.ngrok-free.dev",
+    "https://ksohx-152-58-35-234.run.pinggy-free.link",
+])
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=r"^https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -62,6 +82,7 @@ app.include_router(auth_router.router)
 app.include_router(documents_router.router)
 app.include_router(important_questions_router.router)
 app.include_router(rooms_router.router)
+app.include_router(knowledge_tracing_router.router)
 
 # ✅ Startup Event
 @app.on_event("startup")
@@ -255,6 +276,6 @@ if __name__ == "__main__":
         host="0.0.0.0", 
         port=8000, 
         reload=True,
-        reload_dirs=["routers", "services", "utils", "models", "database", "middleware", "prompts"],
+        reload_dirs=[".", "routers", "services", "utils", "models", "database", "middleware", "prompts"],
         reload_excludes=["*.mp3", "*.wav", "static/*", "venv/*", ".venv/*", "*\\venv\\*", "*\\.venv\\*", "*.log", "__pycache__/*"]
     )
