@@ -1,4 +1,3 @@
-from sentence_transformers import SentenceTransformer
 import os
 import json
 import time
@@ -126,10 +125,6 @@ class AIGateway:
             except Exception as e:
                 logger.error(f"Failed to initialize Gemini: {e}")
 
-        try:
-            self.embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-        except Exception:
-            self.embedding_model = None
 
     def check_user_quota(self, user_id: int, db: Any) -> None:
         """Enforce daily request quotas per user tier"""

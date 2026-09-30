@@ -97,9 +97,9 @@ def get_shared_embedding_fn():
     if _shared_embedding_fn is None:
         with _embedding_fn_lock:
             if _shared_embedding_fn is None:
-                _shared_embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-                    model_name="sentence-transformers/all-MiniLM-L6-v2"
-                )
+                # Use lightweight ONNX DefaultEmbeddingFunction (all-MiniLM-L6-v2)
+                # Consumes ~30-50MB RAM instead of ~400MB PyTorch/SentenceTransformers
+                _shared_embedding_fn = embedding_functions.DefaultEmbeddingFunction()
     return _shared_embedding_fn
 
 
@@ -118,7 +118,7 @@ def get_shared_chroma_client():
 class VectorDB:
     """
     Singleton Vector Database Manager (RAG-01):
-    Maintains a single process-wide in-memory instance of SentenceTransformer and ChromaDB client.
+    Maintains a single process-wide in-memory instance of ChromaDB client and ONNX embedding function.
     """
     _instance = None
     _lock = threading.Lock()
@@ -141,11 +141,8 @@ class VectorDB:
         self._initialized = True
 
     def warm_up(self):
-        """Warm up embedding model and ChromaDB client during application startup"""
+        """Warm up ChromaDB client heartbeat quickly without blocking startup"""
         try:
-            # 1. Warm embedding function with lightweight probe
-            _ = self.embedding_fn(["Shiro AI system initialization probe"])
-            # 2. Touch ChromaDB client heartbeat
             _ = self.client.heartbeat()
             return True
         except Exception as e:

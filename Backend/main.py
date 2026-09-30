@@ -106,11 +106,11 @@ async def startup_event():
     finally:
         db.close()
 
-    # Preload VectorDB embedding model once per process (eliminates cold start)
+    # Non-blocking VectorDB background check (allows instant port binding for Render/PaaS)
     try:
         from database.vector_db import VectorDB
-        await asyncio.to_thread(VectorDB().warm_up)
-        logger.info("VectorDB embedding model and Chroma client preloaded successfully.")
+        asyncio.create_task(asyncio.to_thread(VectorDB().warm_up))
+        logger.info("VectorDB client non-blocking warmup scheduled.")
     except Exception as e:
         logger.warning(f"VectorDB warmup non-fatal warning: {e}")
 
