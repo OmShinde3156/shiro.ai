@@ -18,7 +18,8 @@ import {
   LogOut, 
   Sun, 
   Moon,
-  BarChart3
+  BarChart3,
+  Activity
 } from "lucide-react";
 
 export const Sidebar = () => {
@@ -74,7 +75,8 @@ export const Sidebar = () => {
       items: [
         { label: t("examBlueprint", "Exam Blueprint"), icon: FileText, path: "/answer-planner" },
         { label: t("studyPlan", "Study Plan"), icon: Calendar, path: "/study-plan" },
-        { label: t("progress", "Analytics"), icon: BarChart3, path: "/progress-report" }
+        { label: t("progress", "Analytics"), icon: BarChart3, path: "/progress-report" },
+        { label: t("modelScience", "Model Science Lab"), icon: Activity, path: "/evaluation", badge: "v3.5" }
       ]
     }
   ];
@@ -134,6 +136,11 @@ export const Sidebar = () => {
                   <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
                     {item.label}
                   </span>
+                  {item.badge && (
+                    <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-[9px] px-1.5 py-0.5 rounded-full bg-[var(--primary-subtle)] text-[var(--primary-strong)] font-mono font-bold">
+                      {item.badge}
+                    </span>
+                  )}
                 </button>
               );
             })}

@@ -179,6 +179,22 @@ class KnowledgeTracingService:
             timestamp=datetime.utcnow()
         )
         db.add(event_log)
+
+        # 5. Synchronize with Concept-Level Memory Retention & Spaced Forgetting (FORGET-01)
+        retention_telemetry = None
+        try:
+            from services.retention_service import retention_service
+            retention_telemetry = retention_service.process_learning_interaction(
+                user_id=user_id,
+                concept_name=cleaned_concept,
+                is_correct=is_correct,
+                interaction_type=interaction_type,
+                source_event_id=item_id,
+                db=db
+            )
+        except Exception as e:
+            logger.warning(f"Retention sync warning for concept '{cleaned_concept}': {e}")
+
         db.commit()
         db.refresh(state)
 
@@ -192,7 +208,8 @@ class KnowledgeTracingService:
             "mastered": state.mastered,
             "total_opportunities": state.total_opportunities,
             "consecutive_correct": state.consecutive_correct,
-            "predicted_next_accuracy": round(next_pred, 4)
+            "predicted_next_accuracy": round(next_pred, 4),
+            "retention": retention_telemetry
         }
 
     # =========================================================================

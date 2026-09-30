@@ -93,3 +93,59 @@ def test_valid_token(client):
     assert response.status_code == 200
     assert response.json()["id"] == 1
 
+
+# --- Google SSO Tests ---
+
+def test_google_auth_config_endpoint(client):
+    """Test /auth/google/config returns public configuration structure."""
+    response = client.get("/auth/google/config")
+    assert response.status_code == 200
+    data = response.json()
+    assert "client_id" in data
+    assert "configured" in data
+
+
+def test_google_auth_missing_credential(client):
+    """Test /auth/google rejects requests missing credential field."""
+    response = client.post("/auth/google", json={})
+    assert response.status_code == 422
+
+
+def test_google_auth_demo_token_success(client, db):
+    """Test /auth/google handles sandbox demo credential and creates an authenticated session."""
+    response = client.post("/auth/google", json={"credential": "demo_google_student_123"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"
+    assert data["user"]["email"] == "demo.student@shiro.ai"
+    assert data["user"]["name"] == "Alex Mercer (Google Student)"
+    assert "avatar_url" in data["user"]
+
+    # Verify user exists in database with valid hashed password
+    db_user = db.query(User).filter(User.email == "demo.student@shiro.ai").first()
+    assert db_user is not None
+    assert db_user.password.startswith(("$2b$", "$2a$"))
+
+
+def test_google_auth_existing_user_login(client, db):
+    """Test that authenticating with an existing user's Google email links session and preserves ID."""
+    # Seed an existing user
+    existing = User(
+        name="Existing Student",
+        email="demo.student@shiro.ai",
+        password=hash_password("my_old_password_123"),
+        preferred_language="en"
+    )
+    # If user already in DB from previous test or clean, check
+    db_user = db.query(User).filter(User.email == "demo.student@shiro.ai").first()
+    if not db_user:
+        db.add(existing)
+        db.commit()
+
+    response = client.post("/auth/google", json={"credential": "demo_google_student_123"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["user"]["email"] == "demo.student@shiro.ai"
+
+

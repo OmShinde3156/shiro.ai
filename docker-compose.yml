@@ -63,5 +63,18 @@ services:
       - ./Backend:/app
       - ./Backend/static:/app/static
 
+  # Frontend: React 18 SPA + Nginx
+  frontend:
+    build:
+      context: ./Frontend
+    container_name: shiro_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "5173:80"
+
 volumes:
   postgres_data:
+

@@ -22,7 +22,8 @@ import {
   ProgressReport, 
   AnswerPlanner, 
   StudyPlanPage, 
-  SettingsPage 
+  SettingsPage,
+  EvaluationCockpit 
 } from "./features/insights";
 
 // Global Layout & Contexts
@@ -132,6 +133,8 @@ function App() {
                 <Route path="/room/:roomId" element={<ProtectedRoute><StudyRoom /></ProtectedRoute>} />
                 <Route path="/quiz" element={<ProtectedRoute><QuizPage /></ProtectedRoute>} />
                 <Route path="/progress-report" element={<ProtectedRoute><ProgressReport /></ProtectedRoute>} />
+                <Route path="/evaluation" element={<ProtectedRoute><EvaluationCockpit /></ProtectedRoute>} />
+                <Route path="/model-science" element={<ProtectedRoute><EvaluationCockpit /></ProtectedRoute>} />
                 <Route path="/audio-summary" element={<ProtectedRoute><AudioSummaryPage /></ProtectedRoute>} />
                 <Route path="/flashcards" element={<ProtectedRoute><FlashcardApp /></ProtectedRoute>} />
                 <Route path="/mindmap" element={<ProtectedRoute><MindMapPage /></ProtectedRoute>} />

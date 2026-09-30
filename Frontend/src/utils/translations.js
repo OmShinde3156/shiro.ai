@@ -13,6 +13,7 @@ export const translations = {
     audioSummary: "Audio Cast",
     examBlueprint: "Exam Blueprint",
     studyPlan: "Study Plan",
+    modelScience: "Model Science Lab",
     settings: "Settings",
     logout: "Log Out",
     learningOS: "Learning OS",

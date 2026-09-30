@@ -75,11 +75,9 @@ Shiro_AI_Project_Report.txt
 
 # Misc
 *.postman_environment.json
-B a c k e n d / u s e r _ c r e d e n t i a l s . t x t 
- 
- R A G _ m o d e l . i p y n b 
- 
- 
+Backend/user_credentials.txt
+RAG_model.ipynb
+
 *.env
 .env.*
 config.json
@@ -92,3 +90,15 @@ credentials.json
 
 *.log
 logs/
+
+# Private Career & Interview Guides (Keep local, off GitHub)
+PORTFOLIO_AND_RESUME_GUIDE.md
+CODEBASE_SUMMARY.md
+*portfolio*
+*resume*
+*interview*
+
+# Local Feature Queue & Backlog (Kept locally, off GitHub)
+QUEUED_FEATURES.md
+*queued*
+LOCAL_FEATURES.md

@@ -29,7 +29,13 @@ import {
   Zap,
   Info,
   Activity,
-  Cpu
+  Cpu,
+  Timer,
+  Check,
+  SkipForward,
+  BarChart3,
+  ShieldCheck,
+  Gauge
 } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import { Context } from "../../../context/Context";
@@ -52,6 +58,16 @@ export const ProgressReport = () => {
   const [hoveredDay, setHoveredDay] = useState(null);
   const [filterIntensity, setFilterIntensity] = useState(null); // null | 0 | 1 | 2 | 3 | 4
   const [showBktInfo, setShowBktInfo] = useState(false);
+  const [showRetentionInfo, setShowRetentionInfo] = useState(false);
+  const [launchingBooster, setLaunchingBooster] = useState(false);
+
+  // Multi-Constraint Study Pathway Studio (REC-01 v2)
+  const [timeBudget, setTimeBudget] = useState(30);
+  const [sessionMode, setSessionMode] = useState("balanced"); // "balanced" | "retention_rescue" | "mastery_sprint" | "exam_cram"
+  const [pathway, setPathway] = useState(null);
+  const [loadingPathway, setLoadingPathway] = useState(false);
+  const [completingStepId, setCompletingStepId] = useState(null);
+  const [showRoiDrawer, setShowRoiDrawer] = useState(false);
 
   useEffect(() => {
     fetchStudentInsights();
@@ -250,6 +266,183 @@ export const ProgressReport = () => {
     });
   };
 
+  const handleLaunchBooster = async () => {
+    setLaunchingBooster(true);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/retention/boost`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ max_concepts: 4 })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.session && data.session.id) {
+          navigate("/quiz", { state: { mode: "adaptive", sessionId: data.session.id, topic: data.topic } });
+        } else {
+          navigate("/quiz", { state: { mode: "adaptive", topic: "Memory Retention Booster" } });
+        }
+      } else {
+        navigate("/quiz", { state: { mode: "adaptive", topic: "Memory Retention Booster" } });
+      }
+    } catch (err) {
+      console.error("Failed to launch memory booster:", err);
+      navigate("/quiz", { state: { mode: "adaptive", topic: "Memory Retention Booster" } });
+    } finally {
+      setLaunchingBooster(false);
+    }
+  };
+
+  const handleRefreshConcept = (concept) => {
+    navigate("/quiz", {
+      state: {
+        mode: "adaptive",
+        topic: concept.concept_name,
+        documentId: concept.document_id
+      }
+    });
+  };
+
+  // =========================================================================
+  // MULTI-CONSTRAINT STUDY PATHWAY STUDIO (REC-01 v2)
+  // =========================================================================
+
+  const fetchPathway = async (budget = timeBudget, mode = sessionMode, forceRefresh = false) => {
+    setLoadingPathway(true);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/recommendations/pathway`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          duration_minutes: Number(budget),
+          mode: mode,
+          force_refresh: Boolean(forceRefresh)
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPathway(data);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch study pathway:", err);
+    } finally {
+      setLoadingPathway(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPathway(timeBudget, sessionMode, false);
+  }, [timeBudget, sessionMode, user]);
+
+  const handleLaunchStep = (step) => {
+    if (!step) return;
+    const tool = step.tool;
+    const topic = step.concept_name || recommended?.topic || "Operating Systems";
+    const docId = step.payload?.document_id || recommended?.document_id || null;
+
+    if (triggerStudyTool) {
+      try {
+        triggerStudyTool(tool === "adaptive_cat" ? "quiz" : tool, { topic, documentId: docId });
+      } catch (e) {
+        console.warn("triggerStudyTool failed, falling back to direct navigation:", e);
+      }
+    }
+
+    if (tool === "adaptive_cat") {
+      navigate("/quiz", {
+        state: {
+          mode: "adaptive",
+          topic,
+          documentId: docId,
+          numQuestions: step.payload?.num_questions || 6
+        }
+      });
+    } else if (tool === "flashcards") {
+      navigate("/flashcards", {
+        state: {
+          topic,
+          filter: "due",
+          documentId: docId
+        }
+      });
+    } else if (tool === "feynman") {
+      navigate("/feynman", {
+        state: {
+          topic,
+          documentId: docId
+        }
+      });
+    } else {
+      navigate("/quiz", {
+        state: {
+          topic,
+          documentId: docId,
+          mode: "surgical"
+        }
+      });
+    }
+  };
+
+  const handleCompleteStep = async (stepId, durationSeconds = 300) => {
+    if (!pathway?.id) {
+      // Local state update for demo or unauthenticated state
+      setPathway(prev => {
+        const base = prev || activePathway;
+        const newItems = (base.items || []).map(it => it.step_id === stepId ? { ...it, status: "completed" } : it);
+        const compCount = newItems.filter(it => it.status === "completed").length;
+        return { ...base, items: newItems, completed_step_count: compCount, current_step_index: compCount };
+      });
+      return;
+    }
+    setCompletingStepId(stepId);
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/recommendations/pathway/step/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pathway_id: pathway.id,
+          step_id: stepId,
+          duration_seconds: durationSeconds,
+          client_step_id: `step-${stepId}-${Date.now()}`
+        })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setPathway(updated);
+      }
+    } catch (err) {
+      console.error("Failed to complete pathway step:", err);
+    } finally {
+      setCompletingStepId(null);
+    }
+  };
+
+  const handleSkipStep = async (stepId) => {
+    if (!pathway?.id) {
+      setPathway(prev => {
+        const base = prev || activePathway;
+        const newItems = (base.items || []).map(it => it.step_id === stepId ? { ...it, status: "skipped" } : it);
+        return { ...base, items: newItems };
+      });
+      return;
+    }
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/recommendations/pathway/step/skip`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pathway_id: pathway.id,
+          step_id: stepId
+        })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setPathway(updated);
+      }
+    } catch (err) {
+      console.error("Failed to skip pathway step:", err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-4">
@@ -305,6 +498,234 @@ export const ProgressReport = () => {
   const bktReviewCount = (knowledgeTracing.concepts && knowledgeTracing.concepts.length > 0)
     ? knowledgeTracing.needs_review_count
     : (isDemo ? 1 : 0);
+
+  // Retention Radar Telemetry (FORGET-01)
+  const retentionRadar = insights?.retention_radar || {
+    overall_memory_health: isDemo ? 78.5 : 100.0,
+    total_concepts_tracked: isDemo ? 4 : 0,
+    resilient_count: isDemo ? 2 : 0,
+    decaying_count: isDemo ? 1 : 0,
+    critical_count: isDemo ? 1 : 0,
+    projected_7d_loss_count: isDemo ? 1 : 0,
+    at_risk_concepts: isDemo ? [
+      {
+        concept_name: "Deadlock Avoidance & Banker's Algorithm",
+        category: "critical",
+        retention_now: 52.4,
+        retention_in_7d: 38.1,
+        predicted_forgetting_7d: 96.4,
+        time_constant_days: 2.1,
+        half_life_days: 1.5,
+        elapsed_days: 3.2,
+        urgency_score: 0.78,
+        streak: 0
+      },
+      {
+        concept_name: "Virtual Memory & Page Replacement",
+        category: "decaying",
+        retention_now: 71.8,
+        retention_in_7d: 54.2,
+        predicted_forgetting_7d: 76.8,
+        time_constant_days: 4.8,
+        half_life_days: 3.3,
+        elapsed_days: 2.1,
+        urgency_score: 0.52,
+        streak: 1
+      }
+    ] : [],
+    all_concepts: isDemo ? [
+      {
+        concept_name: "Deadlock Avoidance & Banker's Algorithm",
+        category: "critical",
+        retention_now: 52.4,
+        retention_in_7d: 38.1,
+        predicted_forgetting_7d: 96.4,
+        time_constant_days: 2.1,
+        half_life_days: 1.5,
+        elapsed_days: 3.2,
+        urgency_score: 0.78,
+        streak: 0
+      },
+      {
+        concept_name: "Virtual Memory & Page Replacement",
+        category: "decaying",
+        retention_now: 71.8,
+        retention_in_7d: 54.2,
+        predicted_forgetting_7d: 76.8,
+        time_constant_days: 4.8,
+        half_life_days: 3.3,
+        elapsed_days: 2.1,
+        urgency_score: 0.52,
+        streak: 1
+      },
+      {
+        concept_name: "Process Synchronization & Semaphores",
+        category: "resilient",
+        retention_now: 88.5,
+        retention_in_7d: 77.2,
+        predicted_forgetting_7d: 44.2,
+        time_constant_days: 12.0,
+        half_life_days: 8.3,
+        elapsed_days: 1.5,
+        urgency_score: 0.24,
+        streak: 3
+      },
+      {
+        concept_name: "CPU Scheduling Algorithms",
+        category: "resilient",
+        retention_now: 94.2,
+        retention_in_7d: 87.8,
+        predicted_forgetting_7d: 24.9,
+        time_constant_days: 24.5,
+        half_life_days: 17.0,
+        elapsed_days: 1.4,
+        urgency_score: 0.14,
+        streak: 5
+      }
+    ] : []
+  };
+
+  const radarConcepts = (retentionRadar.all_concepts && retentionRadar.all_concepts.length > 0)
+    ? retentionRadar.all_concepts
+    : (isDemo ? [
+        {
+          concept_name: "Deadlock Avoidance & Banker's Algorithm",
+          category: "critical",
+          retention_now: 52.4,
+          retention_in_7d: 38.1,
+          predicted_forgetting_7d: 96.4,
+          time_constant_days: 2.1,
+          half_life_days: 1.5,
+          elapsed_days: 3.2,
+          urgency_score: 0.78,
+          streak: 0
+        },
+        {
+          concept_name: "Virtual Memory & Page Replacement",
+          category: "decaying",
+          retention_now: 71.8,
+          retention_in_7d: 54.2,
+          predicted_forgetting_7d: 76.8,
+          time_constant_days: 4.8,
+          half_life_days: 3.3,
+          elapsed_days: 2.1,
+          urgency_score: 0.52,
+          streak: 1
+        },
+        {
+          concept_name: "Process Synchronization & Semaphores",
+          category: "resilient",
+          retention_now: 88.5,
+          retention_in_7d: 77.2,
+          predicted_forgetting_7d: 44.2,
+          time_constant_days: 12.0,
+          half_life_days: 8.3,
+          elapsed_days: 1.5,
+          urgency_score: 0.24,
+          streak: 3
+        },
+        {
+          concept_name: "CPU Scheduling Algorithms",
+          category: "resilient",
+          retention_now: 94.2,
+          retention_in_7d: 87.8,
+          predicted_forgetting_7d: 24.9,
+          time_constant_days: 24.5,
+          half_life_days: 17.0,
+          elapsed_days: 1.4,
+          urgency_score: 0.14,
+          streak: 5
+        }
+      ] : []);
+
+  // Multi-Constraint Study Pathway Data Projection (REC-01 v2)
+  const activePathway = pathway || {
+    id: "demo-pathway-rec01",
+    target_duration_minutes: timeBudget,
+    session_mode: sessionMode,
+    total_utility_score: 1.35,
+    total_roi_score: 0.045,
+    algorithm_version: "REC-01-v2",
+    completed_step_count: 0,
+    current_step_index: 0,
+    items: [
+      {
+        step_id: "demo-s1",
+        step_index: 0,
+        title: `Spaced Retrieval Warmup: ${recommended?.topic || "Operating Systems"}`,
+        concept_name: recommended?.topic || "Operating Systems",
+        tool: "flashcards",
+        phase: "warmup",
+        duration_minutes: timeBudget <= 15 ? 5 : 8,
+        duration_seconds: (timeBudget <= 15 ? 5 : 8) * 60,
+        utility_score: 0.42,
+        expected_gain: 0.35,
+        roi_score: 0.052,
+        status: "pending",
+        rationale: "Stabilizes decayed memory retrievability before high-intensity problem solving.",
+        priority_components: {
+          retention_now: 54.0,
+          p_known: 48.0,
+          delta_retention: 0.38,
+          delta_mastery: 0.12,
+          exam_urgency: 1.15
+        },
+        payload: { tool: "flashcards", mode: "review", topic: recommended?.topic || "Operating Systems" }
+      },
+      {
+        step_id: "demo-s2",
+        step_index: 1,
+        title: `Adaptive CAT Diagnostic: ${recommended?.topic || "Operating Systems"}`,
+        concept_name: recommended?.topic || "Operating Systems",
+        tool: "adaptive_cat",
+        phase: "core",
+        duration_minutes: timeBudget <= 15 ? 10 : 15,
+        duration_seconds: (timeBudget <= 15 ? 10 : 15) * 60,
+        utility_score: 0.65,
+        expected_gain: 0.52,
+        roi_score: 0.043,
+        status: "pending",
+        rationale: "Calibrates latent ability θ and accelerates Bayesian Knowledge Tracing transitions.",
+        priority_components: {
+          retention_now: 60.0,
+          p_known: 52.0,
+          delta_retention: 0.25,
+          delta_mastery: 0.45,
+          exam_urgency: 1.15
+        },
+        payload: { tool: "adaptive_cat", mode: "adaptive", topic: recommended?.topic || "Operating Systems", num_questions: 6 }
+      },
+      ...(timeBudget > 15 ? [{
+        step_id: "demo-s3",
+        step_index: 2,
+        title: `Feynman Gap Check: ${recommended?.subtopic || "CPU Scheduling"}`,
+        concept_name: recommended?.subtopic || "CPU Scheduling",
+        tool: "feynman",
+        phase: "consolidation",
+        duration_minutes: Math.max(5, timeBudget - 23),
+        duration_seconds: Math.max(5, timeBudget - 23) * 60,
+        utility_score: 0.28,
+        expected_gain: 0.25,
+        roi_score: 0.040,
+        status: "pending",
+        rationale: "Synthesizes conceptual understanding into permanent semantic memory.",
+        priority_components: {
+          retention_now: 70.0,
+          p_known: 60.0,
+          delta_retention: 0.15,
+          delta_mastery: 0.30,
+          exam_urgency: 1.10
+        },
+        payload: { tool: "feynman", mode: "elaboration", topic: recommended?.subtopic || "CPU Scheduling" }
+      }] : [])
+    ]
+  };
+
+  const pathwayItems = activePathway.items || [];
+  const completedStepsCount = pathwayItems.filter(s => s.status === "completed").length;
+  const pathwayProgressPct = pathwayItems.length > 0 ? Math.round((completedStepsCount / pathwayItems.length) * 100) : 0;
+  const totalPlannedMinutes = pathwayItems.reduce((acc, it) => acc + (it.duration_minutes || 0), 0);
+  const totalExpectedGain = pathwayItems.reduce((acc, it) => acc + (it.expected_gain || 0), 0);
 
   // Format hours and minutes
   const totalHours = Math.floor((health.total_study_time_minutes || 0) / 60);
@@ -525,118 +946,364 @@ export const ProgressReport = () => {
         </div>
       </motion.section>
 
-      {/* 3. HERO SPLIT: WHAT TO STUDY NEXT (60%) + MEMORY & RETENTION (40%) */}
+      {/* 3. HERO SPLIT: MULTI-CONSTRAINT STUDY PATHWAY STUDIO (REC-01 v2) + MEMORY & RETENTION */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
-        {/* WHAT TO STUDY NEXT (The dominant decision card - 7 cols) */}
-        {recommended && (
-          <motion.section
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="lg:col-span-7 rounded-3xl border-2 border-[#DC2626]/30 bg-[#DC2626]/5 dark:border-[#F87171]/30 dark:bg-[#F87171]/10 p-6 md:p-7 flex flex-col justify-between relative overflow-hidden shadow-sm"
-          >
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
+        {/* DYNAMIC STUDY PATHWAY STUDIO (Dominant Decision Engine - 8 cols) */}
+        <motion.section
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="lg:col-span-8 rounded-3xl border-2 border-[var(--primary)]/30 bg-[var(--bg-surface)] p-6 md:p-7 flex flex-col justify-between relative overflow-hidden shadow-sm space-y-6"
+        >
+          <div className="space-y-5">
+            
+            {/* Studio Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border)] pb-4">
+              <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Badge variant="weak" size="sm">
-                    What to Study Next
+                  <Badge variant="primary" size="sm">
+                    Study Pathway Studio
                   </Badge>
-                  <span className="text-[11px] font-mono uppercase tracking-wider text-[#DC2626] dark:text-[#F87171] font-semibold">
-                    Priority Gap
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--primary)] font-bold">
+                    REC-01 v2
                   </span>
+                  {activePathway.algorithm_version && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-[var(--text-muted)]">
+                      {activePathway.algorithm_version}
+                    </span>
+                  )}
                 </div>
-                <span className="text-xs font-mono text-[var(--text-muted)]">
-                  1-Click Recovery
-                </span>
-              </div>
-
-              <div>
                 <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-main)] leading-tight">
-                  {recommended.topic}
+                  Adaptive Learning Pathway
                 </h2>
-                {recommended.subtopic && (
-                  <p className="text-sm font-medium text-[var(--text-secondary)] mt-0.5">
-                    {recommended.subtopic}
-                  </p>
-                )}
-
-                {/* Context metrics */}
-                <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--text-muted)] mt-2">
-                  <span className="font-semibold text-[#DC2626] dark:text-[#F87171]">
-                    {recommended.mastery_score}% mastery
-                  </span>
-                  <span>·</span>
-                  <span>{recommended.failed_questions_count} recent mistakes</span>
-                  <span>·</span>
-                  <span>{recommended.cards_due_count} cards due</span>
-                </div>
+                <p className="text-xs text-[var(--text-muted)] font-medium">
+                  Constrained Beam Search optimizer · Cognitive Pacing (Warmup → Core → Consolidation)
+                </p>
               </div>
 
-              {/* Your Recovery Session: 3 Adaptive Steps */}
-              <div className="pt-1">
-                <span className="text-xs font-semibold text-[var(--text-secondary)] block mb-2">
-                  Your Recovery Session:
-                </span>
-                <div className="space-y-2">
-                  {recommended.study_plan_steps?.map((step, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-start gap-2.5 p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-xs text-[var(--text-main)] shadow-2xs"
-                    >
-                      <span className="w-5 h-5 rounded-full bg-[var(--primary-subtle)] text-[var(--primary)] flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5">
-                        {idx + 1}
-                      </span>
-                      <span className="leading-snug">{step}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Launch CTA + "Why this recommendation?" */}
-            <div className="pt-6 space-y-3">
-              <Button
-                variant="primary"
-                size="lg"
-                className="w-full justify-center text-sm font-semibold shadow-sm"
-                onClick={() => handleLaunchRecovery(recommended.action_payload)}
-              >
-                <Play className="w-4 h-4 fill-current" />
-                <span>Start Recovery Session →</span>
-              </Button>
-
-              {/* Why this recommendation toggle */}
-              <div>
+              {/* Controls: Re-Optimize & Science Drawer */}
+              <div className="flex items-center gap-2 self-start sm:self-auto">
                 <button
-                  onClick={() => setShowWhy(!showWhy)}
-                  className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors mx-auto py-1 cursor-pointer"
+                  onClick={() => fetchPathway(timeBudget, sessionMode, true)}
+                  disabled={loadingPathway}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] hover:bg-[var(--bg-surface)] text-xs font-semibold text-[var(--text-secondary)] transition-all shadow-2xs active:scale-95 disabled:opacity-50 cursor-pointer"
+                  title="Force refresh recommendation sequence (bypass hysteresis)"
                 >
-                  <HelpCircle className="w-3.5 h-3.5 text-[#C96B62]" />
-                  <span className="underline decoration-dotted underline-offset-2">Why this recommendation?</span>
-                  {showWhy ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  <RotateCcw className={`w-3.5 h-3.5 ${loadingPathway ? "animate-spin text-[var(--primary)]" : ""}`} />
+                  <span>{loadingPathway ? "Optimizing..." : "Re-Optimize"}</span>
                 </button>
 
-                {showWhy && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="text-xs text-[var(--text-secondary)] bg-[var(--bg-surface-elevated)] p-3 rounded-xl border border-[var(--border)] mt-2 leading-relaxed"
-                  >
-                    {recommended.why_recommendation || `Based on ${recommended.failed_questions_count} recent quiz mistakes, ${recommended.cards_due_count} due flashcards, and ${recommended.mastery_score}% mastery in ${recommended.topic}.`}
-                  </motion.div>
-                )}
+                <button
+                  onClick={() => setShowRoiDrawer(!showRoiDrawer)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-2xs cursor-pointer ${
+                    showRoiDrawer
+                      ? "border-[var(--primary)] bg-[var(--primary-subtle)] text-[var(--primary)]"
+                      : "border-[var(--border)] bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]"
+                  }`}
+                  title="View Educational ROI & Decision Science formulation"
+                >
+                  <Brain className="w-3.5 h-3.5 text-[var(--primary)]" />
+                  <span>Science & ROI</span>
+                  {showRoiDrawer ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
               </div>
             </div>
-          </motion.section>
-        )}
 
-        {/* MEMORY & RETENTION (FSRS Gold Card - 5 cols) */}
+            {/* Selector 1: Available Time Budget Pills */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
+                  <Clock className="w-3 h-3 text-[var(--primary)]" />
+                  <span>Available Time Budget:</span>
+                </span>
+                <span className="text-xs font-semibold text-[var(--text-main)] font-mono">
+                  Target: {timeBudget} min · Planned: {totalPlannedMinutes} min
+                </span>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {[
+                  { mins: 15, label: "15m Sprint" },
+                  { mins: 30, label: "30m Standard" },
+                  { mins: 45, label: "45m Deep" },
+                  { mins: 60, label: "60m Focus" },
+                  { mins: 90, label: "90m Deep Dive" }
+                ].map(({ mins, label }) => {
+                  const isSelected = timeBudget === mins;
+                  return (
+                    <button
+                      key={mins}
+                      onClick={() => {
+                        setTimeBudget(mins);
+                        fetchPathway(mins, sessionMode, true);
+                      }}
+                      className={`py-2 px-1.5 sm:px-2 rounded-xl text-center text-xs font-semibold transition-all cursor-pointer border ${
+                        isSelected
+                          ? "border-[var(--primary)] bg-[var(--primary-subtle)] text-[var(--primary)] shadow-xs scale-[1.02]"
+                          : "border-[var(--border)] bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-surface)]"
+                      }`}
+                    >
+                      <div className="font-bold text-xs sm:text-sm">{mins}m</div>
+                      <div className="text-[10px] opacity-80 truncate hidden sm:block">{label.split(" ")[1]}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Selector 2: Session Mode Strategy Switcher */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
+                  <Target className="w-3 h-3 text-[#D6A84F]" />
+                  <span>Optimization Strategy:</span>
+                </span>
+                <span className="text-[11px] font-mono text-[var(--text-muted)]">
+                  {sessionMode === "retention_rescue" && "α=0.60 (Retention Focus)"}
+                  {sessionMode === "mastery_sprint" && "β=0.60 (BKT Transition Focus)"}
+                  {sessionMode === "exam_cram" && "Urgency Multiplier Prioritized"}
+                  {sessionMode === "balanced" && "Balanced Multi-Objective"}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { id: "balanced", label: "⚖️ Balanced", desc: "Gain across all pillars" },
+                  { id: "retention_rescue", label: "🛡️ Retention Rescue", desc: "Prevent memory decay" },
+                  { id: "mastery_sprint", label: "⚡ Mastery Sprint", desc: "Push BKT mastery" },
+                  { id: "exam_cram", label: "🎯 Exam Cram", desc: "Exam urgency scaled" }
+                ].map((mode) => {
+                  const isSelected = sessionMode === mode.id;
+                  return (
+                    <button
+                      key={mode.id}
+                      onClick={() => {
+                        setSessionMode(mode.id);
+                        fetchPathway(timeBudget, mode.id, true);
+                      }}
+                      className={`p-2.5 rounded-xl text-left transition-all cursor-pointer border ${
+                        isSelected
+                          ? "border-[var(--primary)] bg-[var(--primary-subtle)] text-[var(--primary)] shadow-xs"
+                          : "border-[var(--border)] bg-[var(--bg-surface-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-strong)]"
+                      }`}
+                    >
+                      <div className="text-xs font-bold truncate">{mode.label}</div>
+                      <div className="text-[10px] text-[var(--text-muted)] truncate mt-0.5">{mode.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Sequence Meta Progress Bar */}
+            <div className="p-3.5 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-[var(--text-main)] flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#16A34A] dark:text-[#4ADE80]" />
+                  <span>{completedStepsCount} of {pathwayItems.length} Steps Completed</span>
+                </span>
+                <div className="flex items-center gap-3 font-mono text-[11px] text-[var(--text-muted)]">
+                  <span>Gain: <strong className="text-[var(--text-main)]">+{Math.round(totalExpectedGain * 100)}%</strong></span>
+                  <span>·</span>
+                  <span>ROI: <strong className="text-[var(--primary)]">{activePathway.total_roi_score?.toFixed(3)}/m</strong></span>
+                </div>
+              </div>
+              <div className="w-full h-2 bg-[var(--bg-surface)] rounded-full overflow-hidden border border-[var(--border)]">
+                <div
+                  className="h-full bg-gradient-to-r from-[var(--primary)] to-[#10B981] transition-all duration-500 rounded-full"
+                  style={{ width: `${pathwayProgressPct}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Decision Science & ROI Collapsible Drawer */}
+            {showRoiDrawer && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="p-4 rounded-2xl border border-[var(--primary)]/30 bg-[var(--primary-subtle)] text-xs space-y-3"
+              >
+                <div className="flex items-center justify-between border-b border-[var(--primary)]/20 pb-2">
+                  <div className="flex items-center gap-1.5 font-bold text-[var(--text-main)]">
+                    <Activity className="w-4 h-4 text-[var(--primary)]" />
+                    <span>Multi-Constraint Decision Science Formulation</span>
+                  </div>
+                  <span className="font-mono text-[10px] text-[var(--primary)]">REC-01 v2 Math Kernel</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] font-mono text-xs text-[var(--text-main)] text-center font-bold leading-relaxed">
+                  {"ROI(c, a, t) = [ ΔR(c,a) + ΔL(c,a) + Δθ(c,a) + λ·G(c) ] / t × W_exam(c)"}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] text-[var(--text-secondary)]">
+                  <div className="space-y-1">
+                    <strong className="text-[var(--text-main)] block">1. Read-Only State Snapshot</strong>
+                    <p>Consumes BKT mastery P(L), FORGET-01 retrievability R(t), Rasch ability θ, and Knowledge Graph dependencies without mutating learner tables.</p>
+                  </div>
+                  <div className="space-y-1">
+                    <strong className="text-[var(--text-main)] block">2. Pruned Beam Search (K=8)</strong>
+                    <p>Evaluates combinations of candidates subject to exact duration budget T ≤ {timeBudget}m and cognitive pacing (Warmup ≺ Core ≺ Consolidation).</p>
+                  </div>
+                  <div className="space-y-1">
+                    <strong className="text-[var(--text-main)] block">3. Prerequisite Gap Unlocking</strong>
+                    <p>{"Calculates descendant gap propagation G(c) = Σ (1 - P(L_d)) so mastering root topics unlocks downstream concepts."}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <strong className="text-[var(--text-main)] block">4. Adaptive Replanning</strong>
+                    <p>Every completed step records pre- and post-learning states in the telemetry log and dynamically re-scores remaining steps if mastery is achieved early.</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Badge variant="sage" size="sm">KT-01 v2 (BKT)</Badge>
+                  <Badge variant="gold" size="sm">FORGET-01 v1 (Retention)</Badge>
+                  <Badge variant="primary" size="sm">ADAPT-01 v1 (CAT 1PL)</Badge>
+                  <Badge variant="weak" size="sm">REC-01 v2 (Beam Search)</Badge>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Stepper Execution HUD: Step Cards List */}
+            <div className="space-y-3 pt-1">
+              <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider font-mono block">
+                Optimized Study Sequence:
+              </span>
+
+              {pathwayItems.map((step, idx) => {
+                const isCompleted = step.status === "completed";
+                const isSkipped = step.status === "skipped";
+                const isPending = !isCompleted && !isSkipped;
+                const phase = step.phase || "core";
+
+                // Phase badge color
+                const phaseBadge =
+                  phase === "warmup"
+                    ? { bg: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20", label: "WARMUP" }
+                    : phase === "consolidation"
+                    ? { bg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20", label: "CONSOLIDATION" }
+                    : { bg: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20", label: "CORE FOCUS" };
+
+                // Tool Icon
+                const ToolIcon =
+                  step.tool === "flashcards" ? Layers :
+                  step.tool === "adaptive_cat" ? Cpu :
+                  step.tool === "feynman" ? Sparkles : BookOpen;
+
+                return (
+                  <motion.div
+                    key={step.step_id || idx}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.04 }}
+                    className={`p-4 rounded-2xl border transition-all ${
+                      isCompleted
+                        ? "border-emerald-500/30 bg-emerald-500/5 opacity-85"
+                        : isSkipped
+                        ? "border-[var(--border)] bg-[var(--bg-surface-elevated)] opacity-60"
+                        : "border-[var(--border)] bg-[var(--bg-surface-elevated)] hover:border-[var(--primary)]/40 hover:shadow-2xs"
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      
+                      {/* Left: Step index, Phase badge, Tool icon, Title */}
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="w-5 h-5 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text-secondary)] flex items-center justify-center text-[10px] font-bold shrink-0">
+                            {idx + 1}
+                          </span>
+                          <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${phaseBadge.bg}`}>
+                            {phaseBadge.label}
+                          </span>
+                          <span className="text-[11px] font-mono text-[var(--text-muted)] flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            <span>{step.duration_minutes}m</span>
+                          </span>
+                          {step.priority_components?.retention_now !== undefined && (
+                            <span className="text-[10px] font-mono text-[var(--text-muted)] hidden md:inline">
+                              R: {step.priority_components.retention_now}% · Mastery: {step.priority_components.p_known}%
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <ToolIcon className="w-4 h-4 text-[var(--primary)] shrink-0" />
+                          <h4 className={`text-sm font-bold text-[var(--text-main)] truncate ${isCompleted ? "line-through text-[var(--text-muted)]" : ""}`}>
+                            {step.title}
+                          </h4>
+                        </div>
+
+                        {step.rationale && (
+                          <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
+                            {step.rationale}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Right: Status badge & Action buttons */}
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        {isCompleted && (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Completed</span>
+                          </span>
+                        )}
+
+                        {isSkipped && (
+                          <span className="inline-flex items-center px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-xs text-[var(--text-muted)] font-semibold">
+                            Skipped
+                          </span>
+                        )}
+
+                        {isPending && (
+                          <div className="flex items-center gap-1.5">
+                            {/* 1-Click Launch Button */}
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              className="text-xs font-semibold shadow-2xs gap-1 cursor-pointer"
+                              onClick={() => handleLaunchStep(step)}
+                            >
+                              <Play className="w-3.5 h-3.5 fill-current" />
+                              <span>Launch</span>
+                            </Button>
+
+                            {/* Mark Step Completed Button */}
+                            <button
+                              onClick={() => handleCompleteStep(step.step_id, step.duration_seconds)}
+                              disabled={completingStepId === step.step_id}
+                              className="p-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-600 dark:hover:text-emerald-400 text-[var(--text-muted)] transition-all cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
+                              title="Mark step completed and log educational telemetry"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Skip Step Button */}
+                            <button
+                              onClick={() => handleSkipStep(step.step_id)}
+                              className="p-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-all cursor-pointer shadow-2xs active:scale-95"
+                              title="Skip step"
+                            >
+                              <SkipForward className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+          </div>
+        </motion.section>
+
+        {/* MEMORY & RETENTION (FSRS Gold Protocol Card - 4 cols) */}
         <motion.section
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="lg:col-span-5 rounded-3xl border border-[#D6A84F]/30 bg-[#D6A84F]/5 p-6 md:p-7 flex flex-col justify-between relative overflow-hidden shadow-xs"
+          className="lg:col-span-4 rounded-3xl border border-[#D6A84F]/30 bg-[#D6A84F]/5 p-6 md:p-7 flex flex-col justify-between relative overflow-hidden shadow-xs space-y-6"
         >
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -673,19 +1340,35 @@ export const ProgressReport = () => {
                 </span>
                 <strong className="font-mono text-[#DC2626] dark:text-[#F87171]">{health.cards_due_today} cards</strong>
               </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-[#10B981]" />
+                  <span>Memory Stability:</span>
+                </span>
+                <strong className="font-mono text-[var(--text-main)]">{retentionRadar.overall_memory_health?.toFixed(1) || "88.2"}%</strong>
+              </div>
             </div>
           </div>
 
-          <div className="pt-6">
+          <div className="pt-4 space-y-2">
             <Button
               variant="secondary"
               size="md"
-              className="w-full justify-center text-xs font-semibold"
+              className="w-full justify-center text-xs font-semibold shadow-2xs"
               onClick={() => navigate("/flashcards", { state: { filter: "due" } })}
             >
               <span>Review Due Cards ({health.cards_due_today})</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Button>
+            <button
+              onClick={handleLaunchBooster}
+              disabled={launchingBooster}
+              className="w-full py-2 px-3 rounded-xl border border-[var(--primary)]/30 bg-[var(--primary-subtle)] text-[var(--primary)] text-xs font-semibold hover:bg-[var(--primary)] hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <Cpu className="w-3.5 h-3.5" />
+              <span>{launchingBooster ? "Calibrating..." : "1-Click CAT Booster"}</span>
+            </button>
           </div>
         </motion.section>
 
@@ -1000,6 +1683,272 @@ export const ProgressReport = () => {
             <span>Auto-calibrating Markov chains active</span>
           </span>
           <span>Target Mastery Threshold: 85%</span>
+        </div>
+      </motion.section>
+
+      {/* 4.7 RETENTION DECAY RADAR & MEMORY BOOSTER (FORGET-01) */}
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.19 }}
+        className="rounded-3xl border border-[var(--border)] bg-[var(--bg-surface)] p-6 sm:p-7 shadow-xs space-y-6"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-[var(--border)] pb-5">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 dark:text-amber-400">
+                <Timer className="w-4 h-4" />
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
+                <span>Memory Retention Decay Radar</span>
+                <Badge variant="gold" size="sm">FORGET-01</Badge>
+              </h3>
+            </div>
+            <p className="text-xs text-[var(--text-muted)] leading-relaxed max-w-2xl">
+              Deterministic exponential retention model forecasting conceptual retrievability loss over elapsed time. Feeds decaying concepts directly into adaptive CAT recovery.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            <button
+              onClick={() => setShowRetentionInfo(!showRetentionInfo)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] hover:bg-[var(--bg-surface)] text-xs font-medium text-[var(--text-secondary)] transition-all cursor-pointer shadow-2xs"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-[var(--primary)]" />
+              <span>Model &amp; Science</span>
+              {showRetentionInfo ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </button>
+
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={launchingBooster}
+              onClick={handleLaunchBooster}
+              className="px-3.5 py-1.5 text-xs font-semibold flex items-center gap-1.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-xs"
+            >
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              <span>{launchingBooster ? "Launching CAT..." : "Launch Memory Booster"}</span>
+              {retentionRadar.critical_count > 0 && (
+                <span className="ml-1 px-1.5 py-0.2 rounded-full bg-black/30 text-[10px] font-mono font-bold">
+                  {retentionRadar.critical_count}
+                </span>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Expandable Mathematical Model Explainer */}
+        {showRetentionInfo && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="p-4 rounded-2xl bg-[var(--bg-surface-elevated)] border border-[var(--border)] text-xs text-[var(--text-secondary)] space-y-2.5"
+          >
+            <div className="flex items-center gap-2 font-semibold text-[var(--text-main)]">
+              <Timer className="w-4 h-4 text-amber-500" />
+              <span>Shiro Deterministic Concept Retention Model (forget-v1)</span>
+            </div>
+            <p className="leading-relaxed">
+              Human cognitive decay is modeled here as a deterministic exponential approximation <span className="font-mono text-[var(--text-main)]">R(t) = e^(-t / &tau;)</span>, calibrated to conceptual domains. It tracks concept-level retention risk across documents and operates strictly in parallel with card-level FSRS spaced repetition.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 font-mono text-[11px]">
+              <div className="p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
+                <span className="text-[var(--text-muted)] block text-[10px]">Time Constant (&tau;)</span>
+                <span className="font-bold text-[var(--text-main)]">R(&tau;) = e^-1 &approx; 36.8%</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
+                <span className="text-[var(--text-muted)] block text-[10px]">Memory Half-Life (h)</span>
+                <span className="font-bold text-[var(--text-main)]">h = &tau; &middot; ln(2) (R = 50%)</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)]">
+                <span className="text-[var(--text-muted)] block text-[10px]">Conditional 7-Day Risk</span>
+                <span className="font-bold text-rose-600 dark:text-rose-400">P_7d = 1 - e^(-7 / &tau;)</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* 4 Retention Metric Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] space-y-1">
+            <span className="text-xs font-medium text-[var(--text-muted)]">Overall Memory Health</span>
+            <div className="flex items-baseline gap-1.5 mt-0.5">
+              <span className="text-2xl sm:text-3xl font-extrabold font-body text-[var(--text-main)]">
+                {retentionRadar.overall_memory_health}%
+              </span>
+              <span className="text-[11px] font-mono text-[var(--text-muted)]">mean R(now)</span>
+            </div>
+            <div className="w-full h-1.5 rounded-full bg-[var(--border)] overflow-hidden mt-2">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all duration-700"
+                style={{ width: `${Math.max(5, retentionRadar.overall_memory_health)}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] space-y-1">
+            <span className="text-xs font-medium text-[var(--text-muted)]">Resilient Concepts</span>
+            <div className="flex items-baseline gap-1.5 mt-0.5">
+              <span className="text-2xl sm:text-3xl font-extrabold font-body text-[#16A34A] dark:text-[#4ADE80]">
+                {retentionRadar.resilient_count}
+              </span>
+              <span className="text-[11px] font-mono text-[var(--text-muted)]">R &ge; 80%</span>
+            </div>
+            <span className="text-[10px] font-mono text-[#16A34A] dark:text-[#4ADE80] block mt-1">Stable consolidation</span>
+          </div>
+
+          <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] space-y-1">
+            <span className="text-xs font-medium text-[var(--text-muted)]">Decaying Attrition</span>
+            <div className="flex items-baseline gap-1.5 mt-0.5">
+              <span className="text-2xl sm:text-3xl font-extrabold font-body text-[#D97706] dark:text-[#FBBF24]">
+                {retentionRadar.decaying_count}
+              </span>
+              <span className="text-[11px] font-mono text-[var(--text-muted)]">60% &ndash; 79%</span>
+            </div>
+            <span className="text-[10px] font-mono text-[#D97706] dark:text-[#FBBF24] block mt-1">Review window open</span>
+          </div>
+
+          <div className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] space-y-1">
+            <span className="text-xs font-medium text-[var(--text-muted)]">Critical Attrition</span>
+            <div className="flex items-baseline gap-1.5 mt-0.5">
+              <span className="text-2xl sm:text-3xl font-extrabold font-body text-[#DC2626] dark:text-[#F87171]">
+                {retentionRadar.critical_count}
+              </span>
+              <span className="text-[11px] font-mono text-[var(--text-muted)]">R &lt; 60%</span>
+            </div>
+            <span className="text-[10px] font-mono text-[#DC2626] dark:text-[#F87171] block mt-1">Immediate booster needed</span>
+          </div>
+        </div>
+
+        {/* Concept Retention Cards Stack */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-secondary)] px-1">
+            <span>Concept Retention Radar &amp; 7-Day Risk Forecast</span>
+            <span className="font-mono text-[11px] text-[var(--text-muted)]">{radarConcepts.length} concepts monitored</span>
+          </div>
+
+          {radarConcepts.length === 0 ? (
+            <div className="p-8 rounded-2xl border border-dashed border-[var(--border)] text-center space-y-2">
+              <Timer className="w-6 h-6 text-[var(--text-muted)] mx-auto animate-pulse" />
+              <p className="text-xs font-medium text-[var(--text-main)]">No concept retention trajectories active</p>
+              <p className="text-[11px] text-[var(--text-muted)] max-w-sm mx-auto">
+                Practice quizzes, flashcards, or adaptive assessments to initialize continuous retention modeling.
+              </p>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="mt-2"
+                onClick={() => navigate("/quiz")}
+              >
+                Launch Study Session
+              </Button>
+            </div>
+          ) : (
+            radarConcepts.map((concept, idx) => {
+              const isResilient = concept.category === "resilient" || concept.retention_now >= 80;
+              const isDecaying = (concept.category === "decaying" || (concept.retention_now >= 60 && concept.retention_now < 80)) && !isResilient;
+              const statusVariant = isResilient ? "mastered" : isDecaying ? "developing" : "weak";
+              const statusLabel = isResilient ? "Resilient" : isDecaying ? "Decaying" : "Critical Attrition";
+
+              return (
+                <div
+                  key={idx}
+                  className="p-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-surface-elevated)] hover:border-[var(--primary)]/40 transition-all space-y-3 shadow-2xs"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-bold text-[var(--text-main)]">
+                          {concept.concept_name}
+                        </span>
+                        <Badge variant={statusVariant} size="sm">
+                          {statusLabel}
+                        </Badge>
+                        {concept.urgency_score !== undefined && (
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text-muted)]">
+                            Urgency: {Number(concept.urgency_score).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-[11px] font-mono text-[var(--text-muted)] flex-wrap">
+                        <span>Time constant (&tau;): <strong className="text-[var(--text-secondary)]">{concept.time_constant_days}d</strong></span>
+                        <span>&middot;</span>
+                        <span>Half-life: <strong className="text-[var(--text-secondary)]">{concept.half_life_days}d</strong></span>
+                        <span>&middot;</span>
+                        <span>
+                          7-Day Forgetting Risk:{" "}
+                          <strong className={concept.predicted_forgetting_7d > 60 ? "text-rose-600 dark:text-rose-400 font-bold" : "text-[var(--text-main)]"}>
+                            {concept.predicted_forgetting_7d}%
+                          </strong>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0 self-start sm:self-auto">
+                      <div className="text-right">
+                        <div className="flex items-baseline gap-1 justify-end">
+                          <span className="text-xs font-mono text-[var(--text-muted)]">R(now):</span>
+                          <span className={`text-base font-mono font-extrabold ${
+                            isResilient
+                              ? "text-[#16A34A] dark:text-[#4ADE80]"
+                              : isDecaying
+                              ? "text-[#D97706] dark:text-[#FBBF24]"
+                              : "text-[#DC2626] dark:text-[#F87171]"
+                          }`}>
+                            {Number(concept.retention_now).toFixed(1)}%
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                          Projected in 7d: {Number(concept.retention_in_7d || concept.retention_now * 0.75).toFixed(1)}%
+                        </span>
+                      </div>
+
+                      <Button
+                        variant={isResilient ? "secondary" : "primary"}
+                        size="sm"
+                        className="px-2.5 py-1 text-xs"
+                        onClick={() => handleRefreshConcept(concept)}
+                      >
+                        <span>Refresh</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Retrievability Progress Bar */}
+                  <div className="relative pt-1 pb-1">
+                    <div className="w-full h-2.5 rounded-full bg-[var(--border)] overflow-hidden relative">
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 ease-out ${
+                          isResilient
+                            ? "bg-[#16A34A] dark:bg-[#4ADE80]"
+                            : isDecaying
+                            ? "bg-[#D97706] dark:bg-[#FBBF24]"
+                            : "bg-[#DC2626] dark:bg-[#F87171]"
+                        }`}
+                        style={{ width: `${Math.max(4, concept.retention_now)}%` }}
+                      />
+                    </div>
+                    {/* Critical Threshold Tick at 60% */}
+                    <div
+                      className="absolute top-0 bottom-0 w-[2px] bg-rose-600/60 dark:bg-rose-400/70 z-10 pointer-events-none"
+                      style={{ left: "60%" }}
+                      title="Critical Attrition Threshold (60%)"
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Footer info label */}
+        <div className="flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)] pt-1 border-t border-[var(--border)]">
+          <span className="flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A] dark:text-[#4ADE80]" />
+            <span>Debounced spacing model active &middot; Model forget-v1</span>
+          </span>
+          <span>Critical Threshold: 60%</span>
         </div>
       </motion.section>
 

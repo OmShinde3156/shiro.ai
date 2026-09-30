@@ -2,7 +2,6 @@ from fastapi import HTTPException
 import re
 import requests
 import trafilatura
-from youtube_transcript_api import YouTubeTranscriptApi
 from typing import Tuple, Optional
 import yt_dlp
 
@@ -25,67 +24,49 @@ class ResearchService:
         return None
 
     async def get_youtube_content(self, url: str) -> Tuple[str, str]:
-        """Fetch title and transcript from YouTube"""
+        """Fetch title and transcript from YouTube using yt-dlp subtitles and metadata"""
         video_id = self.extract_youtube_id(url)
         if not video_id:
             raise Exception("Invalid YouTube URL")
 
-        # Get Title using yt-dlp (lightweight)
         title = "YouTube Video"
+        content = ""
+
         try:
-            with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+            ydl_opts = {
+                'quiet': True,
+                'skip_download': True,
+                'writesubtitles': True,
+                'writeautomaticsub': True,
+                'subtitleslangs': ['en'],
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
                 title = info.get('title', 'YouTube Video')
-        except Exception:
-            pass
-
-        # Get Transcript
-        try:
-            transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
-            content = " ".join([t['text'] for t in transcript_list])
-            return title, content
-        except Exception as e:
-            # Fallback 1: yt-dlp auto-subtitles extraction
-            try:
-                ydl_opts = {
-                    'quiet': True,
-                    'skip_download': True,
-                    'writesubtitles': True,
-                    'writeautomaticsub': True,
-                    'subtitleslangs': ['en']
-                }
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(url, download=False)
-                    subs = info.get('requested_subtitles')
-                    if subs and 'en' in subs:
-                        sub_url = subs['en'].get('url')
-                        if sub_url:
-                            import requests
-                            sub_res = requests.get(sub_url)
-                            if sub_res.status_code == 200:
-                                raw_vtt = sub_res.text
-                                # Clean VTT tags and timestamps
-                                import re
-                                text = re.sub(r'<[^>]+>', '', raw_vtt)
-                                text = re.sub(r'[\d:\.]+ --> [\d:\.]+', '', text)
-                                text = re.sub(r'WEBVTT|Language: en|Kind: captions', '', text)
-                                text = re.sub(r'Align:[^\n]+|Position:[^\n]+', '', text)
-                                text = ' '.join(text.split())
-                                if text.strip():
-                                    return title, text.strip()
-            except Exception:
-                pass
-            
-            # Fallback 2: Description
-            try:
-                with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
-                    info = ydl.extract_info(url, download=False)
+                subs = info.get('requested_subtitles')
+                if subs and 'en' in subs:
+                    sub_url = subs['en'].get('url')
+                    if sub_url:
+                        sub_res = requests.get(sub_url, timeout=10)
+                        if sub_res.status_code == 200:
+                            raw_vtt = sub_res.text
+                            # Clean VTT tags and timestamps
+                            text = re.sub(r'<[^>]+>', '', raw_vtt)
+                            text = re.sub(r'[\d:\.]+ --> [\d:\.]+', '', text)
+                            text = re.sub(r'WEBVTT|Language: en|Kind: captions', '', text)
+                            text = re.sub(r'Align:[^\n]+|Position:[^\n]+', '', text)
+                            text = ' '.join(text.split())
+                            if text.strip():
+                                content = text.strip()
+                if not content:
                     content = info.get('description', '')
-                    if not content:
-                        raise Exception("No transcript or description found")
-                    return title, content
-            except Exception:
-                raise Exception(f"Failed to fetch YouTube content: {str(e)}")
+        except Exception as e:
+            raise Exception(f"Failed to fetch YouTube content: {str(e)}")
+
+        if not content:
+            raise Exception("No transcript or description found for this YouTube video")
+
+        return title, content
 
     async def get_web_content(self, url: str) -> Tuple[str, str]:
         """Fetch and clean content from a website with SSRF validation"""

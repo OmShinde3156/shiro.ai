@@ -13,7 +13,7 @@ export default defineConfig(({ command }) => {
         clientPort: 443,
       },
       proxy: {
-        '^/(activity|answer-planner|api-keys|api|chat|create-timetable|dashboard|documents|features|feynman|flashcards|generate-flashcards|generate-mindmap|generate-podcast|generate-quiz|guest|health|insights|login|logout|metrics|mindmap-details|mindmaps|podcast-status|podcasts|progress|quiz-history|request-otp|rooms|speak|static|stt|student-insights|study-flashcard|submit-quiz|summaries|summarize|timetable|translate|update-timetable-progress|upload-avatar|upload-document|upload-url|users|verify-otp|voice-samples)': {
+        '^/(activity|answer-planner|api-keys|api|auth|chat|create-timetable|dashboard|documents|features|feynman|flashcards|generate-flashcards|generate-mindmap|generate-podcast|generate-quiz|guest|health|insights|login|logout|metrics|mindmap-details|mindmaps|podcast-status|podcasts|progress|quiz-history|request-otp|rooms|speak|static|stt|student-insights|study-flashcard|submit-quiz|summaries|summarize|timetable|translate|update-timetable-progress|upload-avatar|upload-document|upload-url|users|verify-otp|voice-samples)': {
           target: 'http://127.0.0.1:8000',
           changeOrigin: true,
           ws: true,
@@ -33,7 +33,7 @@ export default defineConfig(({ command }) => {
       allowedHosts: true,
       cors: true,
       proxy: {
-        '^/(activity|answer-planner|api-keys|api|chat|create-timetable|dashboard|documents|features|feynman|flashcards|generate-flashcards|generate-mindmap|generate-podcast|generate-quiz|guest|health|insights|login|logout|metrics|mindmap-details|mindmaps|podcast-status|podcasts|progress|quiz-history|request-otp|rooms|speak|static|stt|student-insights|study-flashcard|submit-quiz|summaries|summarize|timetable|translate|update-timetable-progress|upload-avatar|upload-document|upload-url|users|verify-otp|voice-samples)': {
+        '^/(activity|answer-planner|api-keys|api|auth|chat|create-timetable|dashboard|documents|features|feynman|flashcards|generate-flashcards|generate-mindmap|generate-podcast|generate-quiz|guest|health|insights|login|logout|metrics|mindmap-details|mindmaps|podcast-status|podcasts|progress|quiz-history|request-otp|rooms|speak|static|stt|student-insights|study-flashcard|submit-quiz|summaries|summarize|timetable|translate|update-timetable-progress|upload-avatar|upload-document|upload-url|users|verify-otp|voice-samples)': {
           target: 'http://127.0.0.1:8000',
           changeOrigin: true,
           ws: true,

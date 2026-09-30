@@ -37,6 +37,24 @@ class Citation(BaseModel):
     rrf_score: float = 0.0
 
 
+LANGUAGE_MAP = {
+    "en": "English",
+    "es": "Spanish",
+    "hi": "Hindi",
+    "zh": "Chinese",
+    "fr": "French",
+    "de": "German",
+    "ja": "Japanese",
+    "pt": "Portuguese",
+    "ar": "Arabic",
+    "ru": "Russian",
+    "ko": "Korean",
+    "it": "Italian",
+    "bn": "Bengali",
+    "id": "Indonesian"
+}
+
+
 class ChatService:
     def __init__(self):
         self.vector_db = VectorDB()
@@ -570,13 +588,21 @@ class ChatService:
         """
         Constructs decoupled, intent-specific prompt without monolithic tutor pollution.
         """
+        lang_code = str(language or "en").strip().lower()
+        full_lang_name = LANGUAGE_MAP.get(lang_code, language or "English")
+
+        if lang_code and lang_code != "en":
+            lang_instruction = f"4. LANGUAGE: You MUST write your entire response, explanations, and guidance strictly in {full_lang_name}."
+        else:
+            lang_instruction = "4. LANGUAGE: Match the language of the user's message naturally (if the user writes in Spanish, answer in Spanish; if in Hindi, answer in Hindi; otherwise communicate in clear, natural English)."
+
         system_rules = (
             "You are Shiro, a grounded, precise, and human-centered academic AI system.\n\n"
             "CORE PRINCIPLES:\n"
             "1. Deliver direct, accurate, and proportional answers matching the user's intent.\n"
             "2. Never fabricate user progress, weak topics, quiz history, or deadlines.\n"
             "3. Output clean GitHub-flavored Markdown. Do NOT output conversational filler like 'Thinking...', 'Still working...', 'One moment...'.\n"
-            f"4. Answer in {language}."
+            f"{lang_instruction}"
         )
 
         intent_directive = ""
@@ -639,7 +665,8 @@ class ChatService:
         context_block = f"\n\nCONTEXT & EVIDENCE:\n{context_text}" if context_text else ""
         pedagogy = f"\n\nPEDAGOGY SETTINGS:\n{pedagogy_block}" if pedagogy_block and intent in ["EXPLANATION", "DEEP_EXPLANATION", "STUDY_COACHING", "EXAM_PREPARATION"] else ""
 
-        return f"{system_rules}\n\n{intent_directive}{context_block}{pedagogy}\n\nUSER MESSAGE: {message}"
+        lang_reminder = f"\n\n[MANDATORY: Answer completely in {full_lang_name}]" if lang_code and lang_code != "en" else ""
+        return f"{system_rules}\n\n{intent_directive}{context_block}{pedagogy}{lang_reminder}\n\nUSER MESSAGE: {message}"
 
     def _build_pedagogy_block(
         self,

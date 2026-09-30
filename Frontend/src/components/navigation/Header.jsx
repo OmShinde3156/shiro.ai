@@ -8,9 +8,6 @@ import { fetchWithAuth } from "../../api/fetchWithAuth";
 import toast from 'react-hot-toast';
 import { 
   Search, 
-  Flame, 
-  Globe, 
-  User as UserIcon, 
   LogOut, 
   Sparkles, 
   Award, 
@@ -25,7 +22,7 @@ import {
 import Badge from "../ui/Badge";
 
 export const Header = () => {
-  const { language, setLanguage, studyStats, fetchUserStats, t } = useContext(Context);
+  const { studyStats, fetchUserStats, t } = useContext(Context);
   const { theme, toggleTheme } = useTheme();
   const { user, updateUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -73,23 +70,6 @@ export const Header = () => {
     if (path === "/settings") return t("settings", "Settings");
     return t("learningHub", "Learning Hub");
   };
-
-  const popularLanguages = [
-    { code: 'en', label: 'English' },
-    { code: 'es', label: 'Español' },
-    { code: 'hi', label: 'हिंदी (Hindi)' },
-    { code: 'zh', label: '中文 (Chinese)' },
-    { code: 'fr', label: 'Français' },
-    { code: 'de', label: 'Deutsch' },
-    { code: 'ja', label: '日本語' },
-    { code: 'pt', label: 'Português' },
-    { code: 'ar', label: 'العربية' },
-    { code: 'ru', label: 'Русский' },
-    { code: 'ko', label: '한국어' },
-    { code: 'it', label: 'Italiano' },
-    { code: 'bn', label: 'বাংলা' },
-    { code: 'id', label: 'Bahasa Indonesia' },
-  ];
 
   return (
     <header className="w-full bg-[var(--header-bg)] backdrop-blur-md flex items-center justify-between px-3.5 sm:px-6 py-2.5 sm:py-3 border-b border-[var(--border)] sticky top-0 z-40 select-none">
@@ -147,23 +127,6 @@ export const Header = () => {
             <Moon className="w-3.5 h-3.5 text-[#1E293B]" />
           )}
         </button>
-
-        {/* Language Selector */}
-        <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors">
-          <Globe className="w-3.5 h-3.5 text-[#89A88D] hidden xs:block" />
-          <select 
-            value={language} 
-            onChange={(e) => setLanguage(e.target.value)} 
-            aria-label="Language selector"
-            className="bg-[var(--bg-surface-elevated)] border border-[var(--border)] rounded-lg px-1.5 sm:px-2 py-1 text-[11px] sm:text-xs font-medium outline-none cursor-pointer text-[var(--text-main)] max-w-[85px] sm:max-w-none"
-          >
-            {popularLanguages.map((lang) => (
-              <option key={lang.code} value={lang.code} className="bg-[var(--bg-surface)] text-[var(--text-main)]">
-                {lang.label}
-              </option>
-            ))}
-          </select>
-        </div>
 
         {/* Profile Avatar & Dropdown Menu */}
         <div className="relative" ref={menuRef}>

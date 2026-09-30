@@ -34,10 +34,11 @@ export const ChatComposer = ({
   onUploadFile,
   mode = 'human',
   setMode,
-  placeholder = 'Ask Shiro anything from your notes, request practice questions, or type / for commands...',
+  placeholder,
   onFocusExpand
 }) => {
   const { t, stopGeneration } = useContext(Context);
+  const effectivePlaceholder = placeholder || t("composerPlaceholder", "Ask Shiro anything from your notes, request practice questions, or type / for commands...");
   const textareaRef = useRef(null);
   const [showDocPicker, setShowDocPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -268,7 +269,7 @@ export const ChatComposer = ({
         {isDragging && (
           <div className="absolute inset-0 z-20 rounded-2xl sm:rounded-[20px] bg-[var(--bg-surface)]/90 backdrop-blur-sm border-2 border-dashed border-[#3F6048] flex flex-col items-center justify-center gap-2 text-[#3F6048]">
             <UploadCloud className="w-8 h-8 animate-bounce" />
-            <span className="text-sm font-semibold">Drop PDF or notes here to attach</span>
+            <span className="text-sm font-semibold">{t("dropFilesToAttach", "Drop PDF or notes here to attach")}</span>
           </div>
         )}
 
@@ -282,7 +283,7 @@ export const ChatComposer = ({
               className="absolute left-0 bottom-full mb-3 w-full max-w-md p-2 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-2xl z-40 space-y-1"
             >
               <div className="flex items-center justify-between px-3 py-1.5 text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border)] mb-1">
-                <span>Quick Study Commands</span>
+                <span>{t("quickStudyCommands", "Quick Study Commands")}</span>
                 <kbd className="text-[10px] hidden sm:inline">↑↓ to navigate · ⏎ to select</kbd>
               </div>
               <div className="max-h-60 overflow-y-auto space-y-1 custom-scroll touch-scroll">
@@ -330,7 +331,7 @@ export const ChatComposer = ({
           onClick={() => {
             if (onFocusExpand) onFocusExpand();
           }}
-          placeholder={placeholder}
+          placeholder={effectivePlaceholder}
           rows={1}
           disabled={loading}
           className="w-full bg-transparent border-0 text-[var(--text-main)] placeholder-[var(--text-muted)] text-sm sm:text-base focus:ring-0 focus:outline-none resize-none max-h-48 custom-scroll leading-relaxed"
@@ -381,7 +382,7 @@ export const ChatComposer = ({
                   className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[var(--bg-surface-elevated)] hover:bg-[var(--bg-card-hover)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-all text-xs active:scale-95 shrink-0"
                 >
                   <Paperclip className="w-3.5 h-3.5 text-[var(--primary)] shrink-0" />
-                  <span className="hidden xs:inline">Attach Source</span>
+                  <span className="hidden xs:inline">{t("attachSource", "Attach Source")}</span>
                   <span className="xs:hidden">Source</span>
                   <ChevronDown className="w-3 h-3 text-[var(--text-muted)] shrink-0" />
                 </button>
@@ -396,7 +397,7 @@ export const ChatComposer = ({
                       className="absolute left-0 bottom-full mb-2 w-64 max-w-[calc(100vw-2rem)] p-2 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-xl z-30 space-y-1"
                     >
                       <div className="text-[11px] font-semibold text-[var(--text-muted)] px-2 py-1 uppercase tracking-wider font-mono">
-                        Select Knowledge Sources
+                        {t("selectSources", "Select Knowledge Sources")}
                       </div>
                       <div className="max-h-48 overflow-y-auto space-y-1 custom-scroll touch-scroll">
                         {documents.map(doc => {

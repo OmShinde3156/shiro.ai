@@ -4,7 +4,8 @@ import os, uuid
 
 from database.database import get_db
 from services.user_service import UserService
-from models.schema import UserResponse, LoginRequest, UserCreate, UserOTPRequest, OTPVerifyRequest, UserUpdate
+from services.sso_service import sso_service
+from models.schema import UserResponse, LoginRequest, UserCreate, UserOTPRequest, OTPVerifyRequest, UserUpdate, GoogleAuthRequest
 from models.database import User
 from utils.auth import create_access_token, get_current_user
 
@@ -12,6 +13,67 @@ router = APIRouter(tags=["Authentication"])
 
 def get_user_service():
     return UserService()
+
+@router.get("/auth/google/config")
+@router.get("/api/auth/google/config")
+async def get_google_auth_config():
+    """Retrieve Google OAuth Client configuration for frontend integration."""
+    return sso_service.get_google_config()
+
+@router.post("/auth/google")
+@router.post("/api/auth/google")
+async def google_login(
+    request: GoogleAuthRequest,
+    db: Session = Depends(get_db)
+):
+    """Authenticate or register user via Google SSO (ID Token or OAuth Access Token)."""
+    try:
+        profile = await sso_service.verify_google_credential(request.credential)
+        user = sso_service.authenticate_or_create_user(profile, db)
+        access_token = create_access_token(data={"sub": str(user.id)})
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/auth/sso/config")
+@router.get("/api/auth/sso/config")
+async def get_sso_config():
+    """Retrieve public OAuth configuration for Google and GitHub."""
+    return sso_service.get_sso_config()
+
+@router.post("/auth/github")
+@router.post("/api/auth/github")
+async def github_login(
+    request: GoogleAuthRequest,
+    db: Session = Depends(get_db)
+):
+    """Authenticate or register user via GitHub OAuth Access Token, code, or demo credentials."""
+    try:
+        credential = request.credential
+        if request.code:
+            credential = await sso_service.exchange_github_code(request.code)
+        
+        if not credential:
+            raise HTTPException(status_code=400, detail="Missing GitHub authorization code or credential token.")
+
+        profile = await sso_service.verify_github_credential(credential)
+        user = sso_service.authenticate_or_create_user(profile, db)
+        access_token = create_access_token(data={"sub": str(user.id)})
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/login")
 async def login(

@@ -35,7 +35,10 @@ from routers import (
     important_questions_router,
     rooms_router,
     knowledge_tracing_router,
-    adaptive_quiz_router
+    adaptive_quiz_router,
+    retention_router,
+    recommendation_router,
+    evaluation_router
 )
 
 # ✅ Initialize App
@@ -85,6 +88,9 @@ app.include_router(important_questions_router.router)
 app.include_router(rooms_router.router)
 app.include_router(knowledge_tracing_router.router)
 app.include_router(adaptive_quiz_router.router)
+app.include_router(retention_router.router)
+app.include_router(recommendation_router.router)
+app.include_router(evaluation_router.router)
 
 # ✅ Startup Event
 @app.on_event("startup")

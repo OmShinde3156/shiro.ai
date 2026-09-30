@@ -42,10 +42,17 @@ class UserUpdate(BaseModel):
     preferred_language: Optional[Language] = None
 
 
+class SSOAuthRequest(BaseModel):
+    credential: Optional[str] = Field(default=None, description="OAuth ID Token or Bearer Access Token")
+    code: Optional[str] = Field(default=None, description="OAuth authorization code for server-side exchange")
+
+GoogleAuthRequest = SSOAuthRequest
+
 class UserResponse(BaseModel):
     id: int
     name: str
     email: str
+    avatar_url: Optional[str] = None
     preferred_language: str
     xp: int = 0
     level: int = 1

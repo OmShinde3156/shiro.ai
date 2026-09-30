@@ -663,28 +663,64 @@ class ProgressService:
             ]
             why_recommendation = f"Recommended to maintain mastery and verify retention in {subj_name}."
 
-        rec_doc_ids = [weakest_topic["document_id"]] if weakest_topic.get("document_id") else []
+        # 5. Adaptive "What to Study Next" Recommendation Engine (REC-01 Integration)
+        pathway_decision = None
+        try:
+            from services.recommendation_service import recommendation_service
+            pathway_decision = recommendation_service.get_quick_decision(user_id, db)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to fetch REC-01 pathway decision: {e}")
 
-        recommended_action = {
-            "topic": subj_name,
-            "subtopic": subtopic_name,
-            "mastery_score": mastery,
-            "failed_questions_count": failed_count,
-            "cards_due_count": subj_cards_due,
-            "study_plan_steps": study_plan_steps,
-            "primary_tool": rec_tool,
-            "why_recommendation": why_recommendation,
-            "document_id": weakest_topic.get("document_id"),
-            "difficulty": "medium",
-            "action_payload": {
-                "tool": rec_tool,
-                "topic": f"{subj_name} — {subtopic_name}",
-                "document_ids": rec_doc_ids,
-                "summary": f"Targeted recovery session for {subj_name} ({subtopic_name})",
-                "difficulty": "medium",
-                "mode": "surgical"
+        if pathway_decision and pathway_decision.get("next_action"):
+            next_act = pathway_decision["next_action"]
+            concept_target = next_act.get("concept_name", subj_name)
+            rec_tool = next_act.get("tool", "adaptive_cat")
+            study_plan_steps = [
+                step["title"] for step in pathway_decision.get("all_steps", [])
+            ] or study_plan_steps
+            why_recommendation = next_act.get("rationale", why_recommendation)
+            rec_payload = next_act.get("payload", {})
+
+            recommended_action = {
+                "topic": concept_target,
+                "subtopic": f"{next_act.get('phase', 'Core').title()} Phase · {next_act.get('duration_minutes', 15)}m",
+                "mastery_score": int(next_act.get("priority_components", {}).get("p_known", mastery)),
+                "failed_questions_count": failed_count,
+                "cards_due_count": subj_cards_due,
+                "study_plan_steps": study_plan_steps,
+                "primary_tool": rec_tool,
+                "why_recommendation": why_recommendation,
+                "document_id": next_act.get("document_id") or weakest_topic.get("document_id"),
+                "difficulty": "adaptive",
+                "action_payload": rec_payload,
+                "pathway_id": pathway_decision.get("pathway_id"),
+                "step_id": next_act.get("step_id"),
+                "roi_score": next_act.get("roi_score"),
+                "total_steps": pathway_decision.get("total_steps")
             }
-        }
+        else:
+            rec_doc_ids = [weakest_topic["document_id"]] if weakest_topic.get("document_id") else []
+            recommended_action = {
+                "topic": subj_name,
+                "subtopic": subtopic_name,
+                "mastery_score": mastery,
+                "failed_questions_count": failed_count,
+                "cards_due_count": subj_cards_due,
+                "study_plan_steps": study_plan_steps,
+                "primary_tool": rec_tool,
+                "why_recommendation": why_recommendation,
+                "document_id": weakest_topic.get("document_id"),
+                "difficulty": "medium",
+                "action_payload": {
+                    "tool": rec_tool,
+                    "topic": f"{subj_name} — {subtopic_name}",
+                    "document_ids": rec_doc_ids,
+                    "summary": f"Targeted recovery session for {subj_name} ({subtopic_name})",
+                    "difficulty": "medium",
+                    "mode": "surgical"
+                }
+            }
 
         # Dynamic takeaway headline
         if is_demo or mastery_change_pct >= 0:
@@ -842,7 +878,8 @@ class ProgressService:
             },
             "cognitive_peak": cognitive_peak,
             "recent_activities": recent_acts[:10],
-            "knowledge_tracing": await self._get_bkt_summary(user_id, db)
+            "knowledge_tracing": await self._get_bkt_summary(user_id, db),
+            "retention_radar": await self._get_retention_summary(user_id, db)
         }
 
     async def _get_bkt_summary(self, user_id: int, db: Session) -> Dict[str, Any]:
@@ -858,5 +895,22 @@ class ProgressService:
                 "developing_count": 0,
                 "needs_review_count": 0,
                 "concepts": []
+            }
+
+    async def _get_retention_summary(self, user_id: int, db: Session) -> Dict[str, Any]:
+        """Fetch Memory Retention & Spaced Forgetting summary for student (FORGET-01)"""
+        try:
+            from services.retention_service import retention_service
+            return retention_service.scan_retention_radar(user_id=user_id, db=db)
+        except Exception as e:
+            return {
+                "overall_memory_health": 100.0,
+                "total_concepts_tracked": 0,
+                "resilient_count": 0,
+                "decaying_count": 0,
+                "critical_count": 0,
+                "projected_7d_loss_count": 0,
+                "at_risk_concepts": [],
+                "all_concepts": []
             }
 
