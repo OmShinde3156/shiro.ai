@@ -2,17 +2,14 @@ import sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-from fastapi import FastAPI, Depends, Request, HTTPException, Response
+from fastapi import FastAPI, Depends, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, Response
-from fastapi import Request
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 import os
 import uvicorn
-import time
-import json
 import logging
 import asyncio
 import traceback
@@ -25,7 +22,7 @@ logger = logging.getLogger(__name__)
 # Load .env file explicitly
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
-from database.database import get_db, init_db, Base, engine
+from database.database import get_db, init_db
 from middleware.correlation_middleware import CorrelationIdMiddleware
 from utils.metrics import metrics
 from routers import (

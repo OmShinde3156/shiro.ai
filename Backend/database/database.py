@@ -56,7 +56,8 @@ def init_db():
                 ("gemini_api_key_encrypted", "TEXT"),
                 ("openai_api_key_encrypted", "TEXT"),
                 ("preferred_ai_provider", "TEXT DEFAULT 'auto'"),
-                ("byok_enabled", "BOOLEAN DEFAULT 1")
+                ("byok_enabled", "BOOLEAN DEFAULT 1"),
+                ("preferred_language", "TEXT DEFAULT 'en'")
             ]:
                 try:
                     # Check if column exists
@@ -171,6 +172,40 @@ def init_db():
                         conn.commit()
                     except Exception as e:
                         print(f"Migration for {col} on chat_history failed: {e}")
+
+            # LearnerConceptState table migrations (FORGET-01)
+            for col, col_type in [
+                ("retention_tau_days", "FLOAT DEFAULT 2.5"),
+                ("memory_difficulty", "FLOAT DEFAULT 5.0"),
+                ("last_reviewed_at", "DATETIME"),
+                ("retention_cached", "FLOAT DEFAULT 1.0"),
+                ("predicted_forgetting_7d_cached", "FLOAT DEFAULT 0.20"),
+                ("retention_model_version", "TEXT DEFAULT 'forget-v1'")
+            ]:
+                try:
+                    conn.execute(text(f"SELECT {col} FROM learner_concept_states LIMIT 1"))
+                except Exception:
+                    print(f"Adding missing {col} column to learner_concept_states table...")
+                    try:
+                        conn.execute(text(f"ALTER TABLE learner_concept_states ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception as e:
+                        print(f"Migration for {col} on learner_concept_states failed: {e}")
+
+            # RoomMessage table migrations (WS-01)
+            for col, col_type in [
+                ("client_message_id", "TEXT"),
+                ("sequence", "INTEGER DEFAULT 1")
+            ]:
+                try:
+                    conn.execute(text(f"SELECT {col} FROM room_messages LIMIT 1"))
+                except Exception:
+                    print(f"Adding missing {col} column to room_messages table...")
+                    try:
+                        conn.execute(text(f"ALTER TABLE room_messages ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception as e:
+                        print(f"Migration for {col} on room_messages failed: {e}")
 
 def get_db():
     """Database dependency"""

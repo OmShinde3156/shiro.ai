@@ -9,17 +9,13 @@ import toast from 'react-hot-toast';
 import { 
   Search, 
   LogOut, 
-  Sparkles, 
-  Award, 
-  BarChart3,
-  Command,
-  Sun,
-  Moon,
-  TrendingUp,
-  BookOpen,
-  Headphones
+  Sun, 
+  Moon, 
+  TrendingUp, 
+  BookOpen, 
+  Headphones, 
+  User as UserIcon 
 } from "lucide-react";
-import Badge from "../ui/Badge";
 
 export const Header = () => {
   const { studyStats, fetchUserStats, t } = useContext(Context);

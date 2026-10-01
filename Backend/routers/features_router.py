@@ -1,12 +1,11 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from typing import Optional, List
+from typing import Optional
 from pydantic import BaseModel
 import uuid, os
 
 from database.database import get_db
 from services.quiz_service import QuizService
-from services.pdf_service import PDFService
 from services.flashcard_service import FlashcardService
 from services.chat_service import ChatService
 from services.summarizer_service import SummarizerService
